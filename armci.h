@@ -1,0 +1,100 @@
+#ifndef _ARMCI_H_
+#define _ARMCI_H_
+
+#include <mpi.h>
+#include <armci_msg.h>
+
+enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG  /*           long */,
+                    ARMCI_ACC_FLT /*   float */, ARMCI_ACC_DBL  /*         double */,
+                    ARMCI_ACC_CPL /* complex */, ARMCI_ACC_DCPL /* double complex */ };
+
+int   ARMCI_Init();
+int   ARMCI_Init_args(int *argc, char ***argv);
+   
+int   ARMCI_Finalize();
+void  ARMCI_Cleanup();
+void  ARMCI_Error(char *msg, int code);
+
+int   ARMCI_Malloc(void **base_ptrs, int size);
+void  ARMCI_Free(void *ptr);
+
+void *ARMCI_Malloc_local(int size);
+int   ARMCI_Free_local(void *ptr);
+
+void  ARMCI_Barrier();
+void  ARMCI_Fence(int proc);
+void  ARMCI_AllFence();
+
+void  ARMCI_Access_start(void *ptr);
+void  ARMCI_Access_end(void *ptr);
+
+int   ARMCI_Get(void *src, void *dst, int size, int target);
+int   ARMCI_Put(void *src, void *dst, int size, int target);
+int   ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc);
+
+int   ARMCI_PutS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                 int count[/*stride_levels+1*/], int stride_levels, int proc);
+int   ARMCI_GetS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                 int count[/*stride_levels+1*/], int stride_levels, int proc);
+int   ARMCI_AccS(int datatype, void *scale,
+                 void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/],
+                 int count[/*stride_levels+1*/], int stride_levels, int proc);
+
+
+/** Non-blocking ops.  MPI-2 forces remote completion on everything so these all
+  * currently behave the same as the blocking ops.
+  */
+
+typedef int armci_hdl_t;
+
+void  ARMCI_INIT_HANDLE(armci_hdl_t *hdl);
+void  ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t* handle);
+void  ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t* handle);
+
+int   ARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
+int   ARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
+int   ARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
+
+int   ARMCI_Wait(armci_hdl_t* hdl);
+int   ARMCI_Test(armci_hdl_t* hdl);
+
+int   ARMCI_NbPutS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                   int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
+int   ARMCI_NbGetS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                   int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
+int   ARMCI_NbAccS(int datatype, void *scale,
+                   void* src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/],
+                   int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
+
+
+/** Mutexes: Two flavors, ARMCI mutexes and mutex groups.  The
+  * diff is that you can create multiple mutex groups and only one
+  * batch of ARMCI mutexes at a time.
+  */
+
+struct mutex_grp_s {
+  int      count;
+  MPI_Win  window;
+  long    *base;
+};
+
+typedef struct mutex_grp_s * mutex_grp_t;
+
+mutex_grp_t ARMCI_Create_mutexes_grp(int count);
+int         ARMCI_Destroy_mutexes_grp(mutex_grp_t grp);
+void        ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc);
+int         ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc);
+void        ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc);
+
+int   ARMCI_Create_mutexes(int count);
+int   ARMCI_Destroy_mutexes(void);
+void  ARMCI_Lock(int mutex, int proc);
+void  ARMCI_Unlock(int mutex, int proc);
+
+#endif /* _ARMCI_H_ */
