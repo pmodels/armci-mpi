@@ -42,42 +42,30 @@ void armci_msg_bcast(void* buffer, int len, int root) {
   * @param[in]    op One of '+', '*', 'max', 'min', 'absmax', 'absmin'
   */
 void armci_msg_dgop(double x[], int n, char *op) {
-  int i;
-  double *y;
+  double *out;
   MPI_Op  mpi_op;
 
-  if (strcmp(op, "absmax") == 0) {
-      if (n==1){ /* optimize for the really common case */
-          y[0] = abs(x[0]);
-      } else {
-          y = malloc(n*sizeof(double));
-          assert(out != y);
-          for (i=0;i<n,i++) y[i] = abs(x[i]);
-      }
-      MPI_Allreduce(y, x, n, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  out = malloc(n*sizeof(double));
+  assert(out != NULL);
+
+  if (op[0] == '+') {
+    mpi_op = MPI_SUM;
+  } else if (op[0] == '*') {
+    mpi_op = MPI_PROD;
+  } else if (strcmp(op, "max") == 0) {
+    mpi_op = MPI_MAX;
+  } else if (strcmp(op, "min") == 0) {
+    mpi_op = MPI_MIN;
+  } else if (strcmp(op, "absmax") == 0) {
+    assert(0); // FIXME
   } else if (strcmp(op, "absmin") == 0) {
-      if (n==1){ /* optimize for the really common case */
-          y[0] = abs(x[0]);
-      } else {
-          y = malloc(n*sizeof(double));
-          assert(out != y);
-          for (i=0;i<n,i++) y[i] = abs(x[i]);
-      }
-      MPI_Allreduce(y, x, n, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    assert(0); // FIXME
   } else {
-      if (op[0] == '+') {
-          mpi_op = MPI_SUM;
-      } else if (op[0] == '*') {
-          mpi_op = MPI_PROD;
-      } else if (strcmp(op, "max") == 0) {
-          mpi_op = MPI_MAX;
-      } else if (strcmp(op, "min") == 0) {
-          mpi_op = MPI_MIN;
-      } else {
-          assert(0);
-      }
-      MPI_Allreduce(MPI_IN_PLACE, x, n, MPI_DOUBLE, mpi_op, MPI_COMM_WORLD);
+    assert(0);
   }
 
+  MPI_Allreduce(x, out, n, MPI_DOUBLE, mpi_op, MPI_COMM_WORLD);
+
+  memcpy(x, out, n*sizeof(double));
   free(out);
 }
