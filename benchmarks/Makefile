@@ -1,7 +1,7 @@
 CC       = mpicc
 CFLAGS   = -g -Wall -O0
 
-CFLAGS  += -DDIRECT_ACCESS # Enable direct access to shared buffers
+#CFLAGS  += -DDIRECT_ACCESS # Enable direct access to shared buffers
 CFLAGS  += -I../
 LIBARMCI = ../libarmci.a
 

@@ -11,8 +11,8 @@ int main(int argc, char **argv) {
   int        me, nproc;
   int        msg_length, round, i;
   double     t_start, t_stop;
-  volatile u_int8_t  *snd_buf;  // Send buffer (byte array)
-  volatile u_int8_t  *rcv_buf;  // Receive buffer (byte array)
+  u_int8_t  *snd_buf;  // Send buffer (byte array)
+  u_int8_t  *rcv_buf;  // Receive buffer (byte array)
   MPI_Win    window;
 
   MPI_Init(&argc, &argv);
@@ -55,25 +55,23 @@ int main(int argc, char **argv) {
         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, (me+1)%2, 0, window);
         MPI_Put(snd_buf, msg_length, MPI_BYTE, (me+1)%2, 0, msg_length, MPI_BYTE, window);
         MPI_Win_unlock((me+1)%2, window);
-
-        // MPI_Barrier(MPI_COMM_WORLD);
       }
 
       // I am the receiver: Poll start and end markers
       else {
         u_int8_t val;
 
-        // MPI_Barrier(MPI_COMM_WORLD);
-
         do {
+          //MPI_Iprobe(0, 0, MPI_COMM_WORLD, &val, MPI_STATUS_IGNORE);
           MPI_Win_lock(MPI_LOCK_EXCLUSIVE, me, 0, window);
-          val = rcv_buf[0];
+          val = ((volatile u_int8_t*)rcv_buf)[0];
           MPI_Win_unlock(me, window);
         } while (val == 0);
 
         do {
+          //MPI_Iprobe(0, 0, MPI_COMM_WORLD, &val, MPI_STATUS_IGNORE);
           MPI_Win_lock(MPI_LOCK_EXCLUSIVE, me, 0, window);
-          val = rcv_buf[msg_length-1];
+          val = ((volatile u_int8_t*)rcv_buf)[msg_length-1];
           MPI_Win_unlock(me, window);
         } while (val == 0);
       }
