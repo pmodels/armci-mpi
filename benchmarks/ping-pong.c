@@ -59,10 +59,14 @@ int main(int argc, char **argv) {
 
         ARMCI_Put(snd_buf, rcv_buf[(me+1)%2], msg_length, (me+1)%2);
         ARMCI_Fence((me+1)%2);
+
+        ARMCI_Barrier();
       }
 
       // I am the receiver
       else {
+        ARMCI_Barrier();
+
 #ifdef DIRECT_ACCESS
         while (((volatile u_int8_t*)rcv_buf[me])[0] == 0) ;
         while (((volatile u_int8_t*)rcv_buf[me])[msg_length-1] == 0) ;

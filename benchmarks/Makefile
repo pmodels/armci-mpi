@@ -1,6 +1,7 @@
 CC       = mpicc
 CFLAGS   = -g -Wall -O0
 
+CFLAGS  += -DDIRECT_ACCESS # Enable direct access to shared buffers
 CFLAGS  += -I../
 LIBARMCI = ../libarmci.a
 
@@ -8,7 +9,8 @@ LIBARMCI = ../libarmci.a
 #LIBARMCI = $(HOME)/opt/lib/libarmci.a -lm
 
 TESTS    = ping-pong                    \
-           flood                        \
+	   ping-pong-mpi		\
+           ring-flood                   \
            # end
 
 all: $(TESTS)
