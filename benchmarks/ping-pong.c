@@ -9,7 +9,7 @@
 #define NUM_ROUNDS 1000
 
 int main(int argc, char **argv) {
-  int        me, nproc, zero;
+  int        me, nproc, zero, target;
   int        msg_length, round, i;
   double     t_start, t_stop;
   u_int8_t  *snd_buf;  // Send buffer (byte array)
@@ -21,11 +21,11 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  if (nproc != 2)
-    ARMCI_Error("This benchmark should be run on exactly two processes", 1);
+  if (nproc < 2)
+    ARMCI_Error("This benchmark should be run on at least two processes", 1);
 
   if (me == 0)
-    printf("ARMCI ping-pong latency test, performing %d rounds at each xfer size.\n\n", NUM_ROUNDS);
+    printf("ARMCI ping-pong latency test, performing %d rounds at each xfer size.\n", NUM_ROUNDS);
 
   rcv_buf = malloc(nproc*sizeof(void*));
 
@@ -38,57 +38,64 @@ int main(int argc, char **argv) {
     snd_buf[i] = 1;
   }
 
-  for (msg_length = 1; msg_length <= MAX_SIZE; msg_length *= 2) {
-    ARMCI_Barrier();
-    t_start = MPI_Wtime();
+  for (target = 1; target < nproc; target++) {
+    if (me == 0) printf("\n========== Process pair: %d and %d ==========\n\n", 0, target);
 
-    // Perform NUM_ROUNDS ping-pongs
-    for (round = 0; round < NUM_ROUNDS*2; round++) {
-      // printf("%d: msg_length = %d round = %d\n", me, msg_length, round);
+    for (msg_length = 1; msg_length <= MAX_SIZE; msg_length *= 2) {
+      ARMCI_Barrier();
+      t_start = MPI_Wtime();
 
-      // I am the sender
-      if (round % 2 == me) {
-        // Clear start and end markers for next round
+      if (me == 0 || me == target) {
+
+        // Perform NUM_ROUNDS ping-pongs
+        for (round = 0; round < NUM_ROUNDS*2; round++) {
+          int my_target = me == 0 ? target : 0;
+
+          // I am the sender
+          if (round % 2 == me) {
+            if ((round % 2 == 0 && me == 0) || (round % 2 != 0 && me != 0)) {
+              // Clear start and end markers for next round
 #ifdef DIRECT_ACCESS
-        ((u_int8_t*)rcv_buf[me])[0] = 0;
-        ((u_int8_t*)rcv_buf[me])[msg_length-1] = 0;
+              ((u_int8_t*)rcv_buf[me])[0] = 0;
+              ((u_int8_t*)rcv_buf[me])[msg_length-1] = 0;
 #else
-        ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[0]),            1, me);
-        ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[msg_length-1]), 1, me);
+              ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[0]),            1, me);
+              ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[msg_length-1]), 1, me);
 #endif
 
-        ARMCI_Put(snd_buf, rcv_buf[(me+1)%2], msg_length, (me+1)%2);
-        ARMCI_Fence((me+1)%2);
+              ARMCI_Put(snd_buf, rcv_buf[my_target], msg_length, my_target);
+              ARMCI_Fence(my_target); // This is optional, we don't need notification
+            }
 
-        ARMCI_Barrier();
-      }
-
-      // I am the receiver
-      else {
-        ARMCI_Barrier();
-
+            // I am the receiver
+            else {
 #ifdef DIRECT_ACCESS
-        while (((volatile u_int8_t*)rcv_buf[me])[0] == 0) ;
-        while (((volatile u_int8_t*)rcv_buf[me])[msg_length-1] == 0) ;
+              while (((volatile u_int8_t*)rcv_buf[me])[0] == 0) ;
+              while (((volatile u_int8_t*)rcv_buf[me])[msg_length-1] == 0) ;
 #else
-        u_int8_t val;
+              u_int8_t val;
 
-        do {
-          ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[0]), &val, 1, me);
-        } while (val == 0);
+              do {
+                ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[0]), &val, 1, me);
+              } while (val == 0);
 
-        do {
-          ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[msg_length-1]), &val, 1, me);
-        } while (val == 0);
+              do {
+                ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[msg_length-1]), &val, 1, me);
+              } while (val == 0);
 #endif
+            }
+          }
+        }
       }
+
+      ARMCI_Barrier(); // FIXME: Time here increases with nproc :(
+      t_stop = MPI_Wtime();
+
+      if (me == 0)
+        printf("%8d bytes \t %12.8f us\n", msg_length, (t_stop-t_start)/NUM_ROUNDS*1.0e6);
     }
 
     ARMCI_Barrier();
-    t_stop = MPI_Wtime();
-
-    if (me == 0)
-      printf("%8d bytes \t %12.8f us\n", msg_length, (t_stop-t_start)/NUM_ROUNDS*1.0e6);
   }
 
   ARMCI_Free(rcv_buf[me]);
