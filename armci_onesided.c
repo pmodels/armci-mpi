@@ -68,7 +68,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) (src - mreg->slices[target].base);
+  disp = (int) ((u_int8_t*)src - (u_int8_t*)mreg->slices[target].base);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -94,7 +94,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) (dst - mreg->slices[target].base);
+  disp = (int) ((u_int8_t*)dst - (u_int8_t*)mreg->slices[target].base);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -205,10 +205,12 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
   assert(mreg != NULL);
 
   assert(bytes % type_size == 0);
-  assert(dst-mreg->slices[proc].base >= 0);
+  assert((u_int8_t*)dst-(u_int8_t*)mreg->slices[proc].base >= 0); // Check for positive displacement
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
-  MPI_Accumulate(src_data, count, type, proc, dst-mreg->slices[proc].base, count, type, MPI_SUM, mreg->window);
+  MPI_Accumulate(src_data, count, type, proc, 
+                 (u_int8_t*)dst - (u_int8_t*)mreg->slices[proc].base,
+                 count, type, MPI_SUM, mreg->window);
   MPI_Win_unlock(proc, mreg->window);
 
   if (scaled_data != NULL) 

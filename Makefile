@@ -1,5 +1,6 @@
-CC     = mpicc
-CFLAGS = -g -Wall -O0 -I.
+CC      = mpicc
+CFLAGS  = -g -O0 -I.
+#CFLAGS += -Wall
 
 ### For timing runs when you don't care about safety:
 # CFLAGS += -DNO_SEATBELTS
