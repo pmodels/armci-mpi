@@ -6,7 +6,7 @@ CFLAGS = -g -Wall -O0 -I.
 
 OBJ    = armci_util.o     \
          armci_malloc.o   \
-         seg_hdl.o        \
+         mem_region.o     \
          armci_onesided.o \
          armci_mutex.o    \
          armci_onesided_nb.o \

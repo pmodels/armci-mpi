@@ -4,7 +4,7 @@
 #include "debug.h"
 
 #include "armci.h"
-#include "seg_hdl.h"
+#include "mem_region.h"
 
 
 /** Allocate a shared memory segment.  Collective.
@@ -15,23 +15,28 @@
   * @param[in]       size Number of bytes to allocate on the local process.
   */
 int ARMCI_Malloc(void **base_ptrs, int size) {
-  MPI_Group grp;
-  int   rank, nproc, i;
-  seg_hdl_t *seg;
-  
-  seg = seg_hdl_alloc();
-  seg->nbytes = size;
+  int i;
+  mem_region_t *mreg;
+ 
+  mreg = mem_region_create(size);
 
-  MPI_Alloc_mem(size, MPI_INFO_NULL, &seg->base);
-  MPI_Win_create(seg->base, size, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &seg->window);
+  for (i = 0; i < mreg->nslices; i++)
+    base_ptrs[i] = mreg->slices[i].base;
 
-  MPI_Win_get_group(seg->window, &grp);
-  MPI_Group_rank(grp, &rank);
-  MPI_Group_size(grp, &nproc);
-  MPI_Group_free(&grp);
+  {
+#define BUF_LEN 1000
+    int  rank;
+    char ptr_string[BUF_LEN];
+    int  count = 0;
 
-  for (i = 0; i < nproc; i++)
-    base_ptrs[i] = seg->base;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    for (i = 0; i < mreg->nslices && count < BUF_LEN; i++)
+      count += snprintf(ptr_string+count, BUF_LEN-count, (i == mreg->nslices-1) ? "%p" : "%p ", base_ptrs[i]);
+
+    printf("%d: Allocation %d = [%s]\n", rank, mreg->id, ptr_string);
+#undef BUF_LEN
+  }
 
   return 0;
 }
@@ -42,18 +47,18 @@ int ARMCI_Malloc(void **base_ptrs, int size) {
   * @param[in] ptr Pointer to the local patch of the allocation
   */
 void ARMCI_Free(void *ptr) {
-  int flag, ierr;
-  void *base;
-  seg_hdl_t *seg;
-  
-  seg = seg_hdl_lookup(ptr);
+  int me;
+  mem_region_t *mreg;
 
-  ierr = MPI_Win_get_attr(seg->window, MPI_WIN_BASE, &base, &flag);
-  assert(ierr == 0);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
-  MPI_Win_free(&seg->window);
-  MPI_Free_mem(base);
-  seg_hdl_free(ptr);
+  if (ptr != NULL) {
+    mreg = mem_region_lookup(ptr, me);
+    assert(mreg != NULL);
+  } else
+    mreg = NULL;
+
+  mem_region_destroy(mreg);
 }
 
 

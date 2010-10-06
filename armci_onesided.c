@@ -4,7 +4,7 @@
 #include "debug.h"
 
 #include "armci.h"
-#include "seg_hdl.h"
+#include "mem_region.h"
 
 
 /** Declare the start of a local access epoch.  This allows direct access to
@@ -13,16 +13,18 @@
   * @param[in] ptr Pointer to the allocation that will be accessed directly 
   */
 void ARMCI_Access_start(void *ptr) {
-  int        rank;
-  MPI_Group  grp;
-  MPI_Win   *access_win;
+  int           me, grp_rank;
+  mem_region_t *mreg;
+  MPI_Group     grp;
 
-  access_win = seg_hdl_win_lookup(ptr);
-  assert(access_win != NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
-  MPI_Win_get_group(*access_win, &grp);
-  MPI_Group_rank(grp, &rank);
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, *access_win);
+  mreg = mem_region_lookup(ptr, me);
+  assert(mreg != NULL);
+
+  MPI_Win_get_group(mreg->window, &grp);
+  MPI_Group_rank(grp, &grp_rank);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_rank, 0, mreg->window);
   MPI_Group_free(&grp);
 }
 
@@ -34,16 +36,18 @@ void ARMCI_Access_start(void *ptr) {
   * @param[in] ptr Pointer to the allocation that was accessed directly 
   */
 void ARMCI_Access_end(void *ptr) {
-  int        rank;
-  MPI_Group  grp;
-  MPI_Win   *access_win;
+  int           me, grp_rank;
+  mem_region_t *mreg;
+  MPI_Group     grp;
 
-  access_win = seg_hdl_win_lookup(ptr);
-  assert(access_win != NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
-  MPI_Win_get_group(*access_win, &grp);
-  MPI_Group_rank(grp, &rank);
-  MPI_Win_unlock(rank, *access_win);
+  mreg = mem_region_lookup(ptr, me);
+  assert(mreg != NULL);
+
+  MPI_Win_get_group(mreg->window, &grp);
+  MPI_Group_rank(grp, &grp_rank);
+  MPI_Win_unlock(grp_rank, mreg->window);
   MPI_Group_free(&grp);
 }
 
@@ -58,20 +62,23 @@ void ARMCI_Access_end(void *ptr) {
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
   int disp;
-  MPI_Win *win = seg_hdl_win_lookup(src);
+  mem_region_t *mreg;
+
+  mreg = mem_region_lookup(src, target);
+  assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) (src - seg_hdl_base_lookup(src));
+  disp = (int) (src - mreg->slices[target].base);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, *win);
-  MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, *win);
-  MPI_Win_unlock(target, *win);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
+  MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(target, mreg->window);
 
   return 0;
 }
 
 
-/** One-sided get operation.
+/** One-sided put operation.
   *
   * @param[in] src    Source address (remote)
   * @param[in] dst    Destination address (local)
@@ -81,20 +88,23 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
   int disp;
-  MPI_Win *win = seg_hdl_win_lookup(dst);
+  mem_region_t *mreg;
+
+  mreg = mem_region_lookup(dst, target);
+  assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) (dst - seg_hdl_base_lookup(dst));
+  disp = (int) (dst - mreg->slices[target].base);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, *win);
-  MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, *win);
-  MPI_Win_unlock(target, *win);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
+  MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(target, mreg->window);
 
   return 0;
 }
 
 
-/** One-sided get operation.
+/** One-sided accumulate operation.
   *
   * @param[in] datatype ARMCI data type for the accumulate operation (see armci.h)
   * @param[in] scale    Pointer for a scalar of type datatype that will be used to
@@ -107,10 +117,10 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   */
 int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int proc) {
   void *scaled_data = NULL;
-  void *src_data, *base;
+  void *src_data;
   int   count, type_size, i;
   MPI_Datatype type;
-  MPI_Win *win;
+  mem_region_t *mreg;
 
   switch (datatype) {
     case ARMCI_ACC_INT:
@@ -129,6 +139,7 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
           scl_i[i] = src_i[i]*s;
       }
       break;
+
     case ARMCI_ACC_LNG:
       MPI_Type_size(MPI_LONG, &type_size);
       type = MPI_LONG;
@@ -145,6 +156,7 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
           scl_l[i] = src_l[i]*s;
       }
       break;
+
     case ARMCI_ACC_FLT:
       MPI_Type_size(MPI_FLOAT, &type_size);
       type = MPI_FLOAT;
@@ -161,6 +173,7 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
           scl_f[i] = src_f[i]*s;
       }
       break;
+
     case ARMCI_ACC_DBL:
       MPI_Type_size(MPI_DOUBLE, &type_size);
       type = MPI_DOUBLE;
@@ -177,6 +190,7 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
           scl_d[i] = src_d[i]*s;
       }
       break;
+
     default:
       ARMCI_Error("ARMCI_Acc() unsupported operation", 100);
   }
@@ -187,15 +201,15 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
     src_data = src;
 
   // Calculate displacement from window's base address
-  base = seg_hdl_base_lookup(dst);
-  win  = seg_hdl_win_lookup(dst);
+  mreg = mem_region_lookup(dst, proc);
+  assert(mreg != NULL);
 
   assert(bytes % type_size == 0);
-  assert(dst-base >= 0);
+  assert(dst-mreg->slices[proc].base >= 0);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, *win);
-  MPI_Accumulate(src_data, count, type, proc, dst-base, count, type, MPI_SUM, *win);
-  MPI_Win_unlock(proc, *win);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
+  MPI_Accumulate(src_data, count, type, proc, dst-mreg->slices[proc].base, count, type, MPI_SUM, mreg->window);
+  MPI_Win_unlock(proc, mreg->window);
 
   if (scaled_data != NULL) 
     free(scaled_data);

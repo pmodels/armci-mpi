@@ -2,7 +2,7 @@
 #define _DEBUG_H_
 
 enum debug_cats_e {
-  DEBUG_CAT_SEG_HDL
+  DEBUG_CAT_MEM_REGION
 };
 
 #define MAX_DEBUG_LABEL_LENGTH 20
