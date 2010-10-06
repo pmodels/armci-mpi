@@ -68,7 +68,10 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((u_int8_t*)src - (u_int8_t*)mreg->slices[target].base);
+  disp = (int) (src - mreg->slices[target].base);
+
+  assert(disp >= 0 && disp < mreg->slices[target].size);
+  assert((u_int8_t*)src + size < (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -94,7 +97,10 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((u_int8_t*)dst - (u_int8_t*)mreg->slices[target].base);
+  disp = (int) (dst - mreg->slices[target].base);
+
+  assert(disp >= 0 && disp < mreg->slices[target].size);
+  assert((u_int8_t*)dst + size < (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -118,7 +124,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int proc) {
   void *scaled_data = NULL;
   void *src_data;
-  int   count, type_size, i;
+  int   count, type_size, i, disp;
   MPI_Datatype type;
   mem_region_t *mreg;
 
@@ -205,12 +211,14 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
   assert(mreg != NULL);
 
   assert(bytes % type_size == 0);
-  assert((u_int8_t*)dst-(u_int8_t*)mreg->slices[proc].base >= 0); // Check for positive displacement
+
+  disp = (int) ((u_int8_t*)dst - (u_int8_t*)mreg->slices[proc].base);
+
+  assert(disp >= 0 && disp < mreg->slices[proc].size);
+  assert((u_int8_t*)dst + bytes < (u_int8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
-  MPI_Accumulate(src_data, count, type, proc, 
-                 (u_int8_t*)dst - (u_int8_t*)mreg->slices[proc].base,
-                 count, type, MPI_SUM, mreg->window);
+  MPI_Accumulate(src_data, count, type, proc, disp, count, type, MPI_SUM, mreg->window);
   MPI_Win_unlock(proc, mreg->window);
 
   if (scaled_data != NULL) 

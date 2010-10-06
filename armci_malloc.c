@@ -55,8 +55,10 @@ void ARMCI_Free(void *ptr) {
   if (ptr != NULL) {
     mreg = mem_region_lookup(ptr, me);
     assert(mreg != NULL);
-  } else
+  } else {
+    printf("%d: passed NULL into ARMCI_Free()\n", me);
     mreg = NULL;
+  }
 
   mem_region_destroy(mreg);
 }
