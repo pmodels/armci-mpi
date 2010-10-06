@@ -2,8 +2,8 @@
 #define _DEBUG_H_
 
 enum debug_cats_e {
-  DEBUG_CAT_MEM_REGION,
-  DEBUG_CAT_ALLOC
+  DEBUG_CAT_MEM_REGION = 1, // 2^0
+  DEBUG_CAT_ALLOC      = 2  // 2^1
 };
 
 #define MAX_DEBUG_LABEL_LENGTH 20
@@ -44,7 +44,7 @@ static inline void dprint(unsigned category, char *format, ...) {
   fprintf(stderr, format, ap);
 }
 
-#define DEBUG_CAT_ENABLED(X) (DEBUG_CATS_ENABLED | (X))
+#define DEBUG_CAT_ENABLED(X) (DEBUG_CATS_ENABLED & (X))
 
 #endif /* NO_SEATBELTS */
 
