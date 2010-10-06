@@ -1,27 +1,15 @@
-#if HAVE_CONFIG_H
-#   include "config.h"
-#endif
-
 /**************************************************
  *             LU factorization                   *
  *             Armci Version                      *
  *             Block and Cyclic distribution      *
  **************************************************/
-#if HAVE_STDIO_H
 #   include <stdio.h>
-#endif
-#if HAVE_MATH_H
 #   include <math.h>
-#endif
-#if HAVE_STDLIB_H
 #   include <stdlib.h>
-#endif
-#if HAVE_UNISTD_H
 #   include <unistd.h>
-#endif
 
 #include "mp3.h"
-#include "armci.h"
+#include <armci.h>
 
 #define DEBUG_
 #define MAXRAND                         32767.0
