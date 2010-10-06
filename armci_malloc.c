@@ -23,7 +23,7 @@ int ARMCI_Malloc(void **base_ptrs, int size) {
   for (i = 0; i < mreg->nslices; i++)
     base_ptrs[i] = mreg->slices[i].base;
 
-  {
+  if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000
     int  rank;
     char ptr_string[BUF_LEN];

@@ -60,6 +60,7 @@ int   ARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, in
 
 int   ARMCI_Wait(armci_hdl_t* hdl);
 int   ARMCI_Test(armci_hdl_t* hdl);
+int   ARMCI_WaitAll();
 
 int   ARMCI_NbPutS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
                    void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
@@ -71,6 +72,25 @@ int   ARMCI_NbAccS(int datatype, void *scale,
                    void* src_ptr, int src_stride_ar[/*stride_levels*/],
                    void* dst_ptr, int dst_stride_ar[/*stride_levels*/],
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
+
+
+/** Generalized I/O Vector operations.
+  */
+
+typedef struct {
+  void **src_ptr_array;  // Source starting addresses of each data segment.
+  void **dst_ptr_array;  // Destination starting addresses of each data segment.
+  int    bytes;          // The length of each segment in bytes.
+  int    ptr_array_len;  // Number of data segment.
+} armci_giov_t;
+
+int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc);
+int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc);
+int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc);
+
+int ARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle);
+int ARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle);
+int ARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle);
 
 
 /** Mutexes: Two flavors, ARMCI mutexes and mutex groups.  The

@@ -59,3 +59,11 @@ int ARMCI_Test(armci_hdl_t* handle) {
   return 0;
 }
 
+
+/** Wait for all non-blocking operations with implicit (NULL) handles to finish.
+  */
+int ARMCI_WaitAll() {
+  return 0;
+}
+
+
