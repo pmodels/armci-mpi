@@ -1808,7 +1808,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim);
+        for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim); // FIXME
         ARMCI_AllFence();
         MP_BARRIER();
 
@@ -1817,7 +1817,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        test_nbdim(); 
+        test_nbdim(); // FIXME
         ARMCI_AllFence();
         MP_BARRIER();
 
@@ -1835,7 +1835,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        for(ndim=1; ndim<= MAXDIMS; ndim++) test_acc(ndim); 
+        for(ndim=1; ndim<= MAXDIMS; ndim++) test_acc(ndim); // FIXME
         ARMCI_AllFence();
         MP_BARRIER();
 

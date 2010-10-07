@@ -72,7 +72,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
 
   assert(disp >= 0 && disp < mreg->slices[target].size);
   assert(src >= mreg->slices[target].base);
-  assert((u_int8_t*)src + size < (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert((u_int8_t*)src + size <= (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -102,7 +102,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 
   assert(disp >= 0 && disp < mreg->slices[target].size);
   assert(dst >= mreg->slices[target].base);
-  assert((u_int8_t*)dst + size < (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert((u_int8_t*)dst + size <= (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -218,7 +218,7 @@ int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int pr
 
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
-  assert((u_int8_t*)dst + bytes < (u_int8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+  assert((u_int8_t*)dst + bytes <= (u_int8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
   MPI_Accumulate(src_data, count, type, proc, disp, count, type, MPI_SUM, mreg->window);

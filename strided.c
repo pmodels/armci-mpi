@@ -247,7 +247,7 @@ int ARMCI_ImplS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
     // Propagate "carry" overflows outward.  We're done when the outermost
     // index is greater than the requested count.
     for (i = 0; i < stride_levels-1; i++) {
-      if (idx[i] > count[i+1]) {
+      if (idx[i] >= count[i+1]) {
         idx[i]    = 0;
         idx[i+1] += 1;
       }
