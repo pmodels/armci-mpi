@@ -93,6 +93,25 @@ int ARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle);
 int ARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle);
 
 
+/** Scalar/value operations.
+  */
+
+int ARMCI_PutValueInt(int src, void *dst, int proc);
+int ARMCI_PutValueLong(long src, void *dst, int proc);
+int ARMCI_PutValueFloat(float src, void *dst, int proc);
+int ARMCI_PutValueDouble(double src, void *dst, int proc);
+
+int ARMCI_NbPutValueInt(int src, void *dst, int proc, armci_hdl_t *hdl);
+int ARMCI_NbPutValueLong(long src, void *dst, int proc, armci_hdl_t *hdl);
+int ARMCI_NbPutValueFloat(float src, void *dst, int proc, armci_hdl_t *hdl);
+int ARMCI_NbPutValueDouble(double src, void *dst, int proc, armci_hdl_t *hdl);
+
+int    ARMCI_GetValueInt(void *src, int proc);
+long   ARMCI_GetValueLong(void *src, int proc);
+float  ARMCI_GetValueFloat(void *src, int proc);     
+double ARMCI_GetValueDouble(void *src, int proc);     
+
+
 /** Mutexes: Two flavors, ARMCI mutexes and mutex groups.  The
   * diff is that you can create multiple mutex groups and only one
   * batch of ARMCI mutexes at a time.

@@ -1408,7 +1408,6 @@ void test_memlock()
 
 void test_rput()
 {
-#if 0
     int i, elems = nproc, one=1;
     int *idst[MAXPROC], idst_get[MAXPROC], *isrc_get[MAXPROC];
     long *ldst[MAXPROC], ldst_get[MAXPROC], *lsrc_get[MAXPROC];
@@ -1495,7 +1494,6 @@ void test_rput()
     destroy_array((void **)lsrc_get);
     destroy_array((void **)fsrc_get);
     destroy_array((void **)dsrc_get);
-#endif
 }
 
 
@@ -1505,7 +1503,6 @@ void test_rput()
 #define COUNT         50
 
 void test_aggregate() {
-#if 0 
     int i, j, k, rc, bytes, elems[2] = {MAXPROC, MAXELEMS};
     double *ddst_put[MAXPROC];
     double *ddst_get[MAXPROC];
@@ -1640,11 +1637,9 @@ void test_aggregate() {
     destroy_array((void **)ddst_put);
     destroy_array((void **)ddst_get);
     destroy_array((void **)dsrc);
-#endif
 }
 
 void test_implicit() {
-#if 0 
     int i, j, k, rc, bytes, elems[2] = {MAXPROC, MAXELEMS};
     double *ddst_put[MAXPROC];
     double *ddst_get[MAXPROC];
@@ -1769,7 +1764,6 @@ void test_implicit() {
     destroy_array((void **)ddst_put);
     destroy_array((void **)ddst_get);
     destroy_array((void **)dsrc);
-#endif
 }
 
 

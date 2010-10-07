@@ -15,6 +15,7 @@ OBJ    = armci_util.o           \
          strided.o              \
          vector.o               \
          debug.o                \
+         value_ops.o            \
          # end
 
 
