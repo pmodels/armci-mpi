@@ -46,7 +46,7 @@ int ARMCI_Malloc(void **base_ptrs, int size) {
   *
   * @param[in] ptr Pointer to the local patch of the allocation
   */
-void ARMCI_Free(void *ptr) {
+int ARMCI_Free(void *ptr) {
   int me;
   mem_region_t *mreg;
 
@@ -61,6 +61,8 @@ void ARMCI_Free(void *ptr) {
   }
 
   mem_region_destroy(mreg);
+
+  return 0;
 }
 
 

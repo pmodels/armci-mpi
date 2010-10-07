@@ -16,7 +16,7 @@ void  ARMCI_Cleanup();
 void  ARMCI_Error(char *msg, int code);
 
 int   ARMCI_Malloc(void **base_ptrs, int size);
-void  ARMCI_Free(void *ptr);
+int   ARMCI_Free(void *ptr);
 
 void *ARMCI_Malloc_local(int size);
 int   ARMCI_Free_local(void *ptr);

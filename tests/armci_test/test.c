@@ -409,9 +409,9 @@ void create_array(void *a[], int elem_size, int ndim, int dims[])
 void destroy_array(void *ptr[])
 {
     MP_BARRIER();
-#if 0
+//#if 0
     assert(!ARMCI_Free(ptr[me]));
-#endif
+//#endif
 }
 
 
