@@ -1802,7 +1802,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim); // FIXME
+        for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim);
         ARMCI_AllFence();
         MP_BARRIER();
 
@@ -1811,7 +1811,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        test_nbdim(); // FIXME
+        test_nbdim();
         ARMCI_AllFence();
         MP_BARRIER();
 
@@ -1829,7 +1829,7 @@ int main(int argc, char* argv[])
            fflush(stdout);
            sleep(1);
         }
-        for(ndim=1; ndim<= MAXDIMS; ndim++) test_acc(ndim); // FIXME
+        for(ndim=1; ndim<= MAXDIMS; ndim++) test_acc(ndim);
         ARMCI_AllFence();
         MP_BARRIER();
 
@@ -1861,7 +1861,7 @@ int main(int argc, char* argv[])
         }
         MP_BARRIER();
 
-        test_fetch_add();
+        test_fetch_add(); // FIXME
 
         ARMCI_AllFence();
         MP_BARRIER();
@@ -1870,7 +1870,7 @@ int main(int argc, char* argv[])
            printf("\nTesting atomic swap\n");
            fflush(stdout);
         }
-        test_swap();
+        test_swap(); // FIXME
         ARMCI_AllFence();
         MP_BARRIER();
 
