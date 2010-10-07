@@ -68,7 +68,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) (src - mreg->slices[target].base);
+  disp = (int) ((u_int8_t*)src - (u_int8_t*)mreg->slices[target].base);
 
   assert(disp >= 0 && disp < mreg->slices[target].size);
   assert(src >= mreg->slices[target].base);
