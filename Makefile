@@ -5,12 +5,12 @@ CFLAGS  = -g -O0 -I.
 ### For timing runs when you don't care about safety:
 # CFLAGS += -DNO_SEATBELTS
 
-OBJ    = armci_util.o           \
-         armci_malloc.o         \
+OBJ    = util.o           	\
+         malloc.o         	\
          mem_region.o           \
-         armci_onesided.o       \
-         armci_mutex.o          \
-         armci_onesided_nb.o    \
+         onesided.o       	\
+         mutex.o          	\
+         onesided_nb.o    	\
          armci_msg.o            \
          strided.o              \
          vector.o               \
