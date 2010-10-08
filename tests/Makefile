@@ -9,6 +9,7 @@ TESTS    = test_onesided                \
            test_mutex_contention        \
            test_mutex_rmw               \
            test_mutex_trylock           \
+           test_malloc                  \
            ARMCI_PutS_latency           \
            ARMCI_PutAccS_latency        \
            # end
