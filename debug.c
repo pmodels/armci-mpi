@@ -8,4 +8,5 @@ char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH] = {
   "alloc"
 };
 
-unsigned DEBUG_CATS_ENABLED = 0;
+unsigned DEBUG_CATS_ENABLED = 0; // | DEBUG_CAT_ALLOC | DEBUG_CAT_MEM_REGION
+//unsigned DEBUG_CATS_ENABLED = DEBUG_CAT_ALLOC;
