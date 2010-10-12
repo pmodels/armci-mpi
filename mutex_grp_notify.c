@@ -6,10 +6,7 @@
 #include "armci.h"
 #include "debug.h"
 
-// FIXME: Need to use a mutex communicator / MPI_Comm_dup here
-
 #define ARMCI_MUTEX_TAG 100
-
 
 /** Create a group of ARMCI mutexes.  Collective.
   *
@@ -20,11 +17,13 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   int rank, nproc;
   mutex_grp_t grp;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-
   grp = malloc(sizeof(struct mutex_grp_s));
   assert(grp != NULL);
+
+  MPI_Comm_dup(MPI_COMM_WORLD, &grp->comm);
+
+  MPI_Comm_rank(grp->comm, &rank);
+  MPI_Comm_size(grp->comm, &nproc);
 
   grp->count = count;
 
@@ -36,7 +35,7 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
     grp->base = NULL;
   }
 
-  MPI_Win_create(grp->base, nproc*count, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &grp->window);
+  MPI_Win_create(grp->base, nproc*count, 1, MPI_INFO_NULL, grp->comm, &grp->window);
 
   return grp;
 }
@@ -55,6 +54,8 @@ int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
   if (grp->base != NULL)
     free(grp->base);
 
+  MPI_Comm_free(&grp->comm);
+
   free(grp);
 
   return ret;
@@ -71,8 +72,8 @@ void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, already_locked, i;
   u_int8_t *buf;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_rank(grp->comm, &rank);
+  MPI_Comm_size(grp->comm, &nproc);
 
   buf = malloc(nproc*sizeof(u_int8_t));
   assert(buf != NULL);
@@ -107,7 +108,7 @@ void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
   if (already_locked) {
     MPI_Status status;
     dprint(DEBUG_CAT_MUTEX, "%d: Lock waiting for notification.  proc = %d, mutex = %d\n", rank, proc, mutex);
-    MPI_Recv(NULL, 0, MPI_BYTE, MPI_ANY_SOURCE, ARMCI_MUTEX_TAG+mutex, MPI_COMM_WORLD, &status);
+    MPI_Recv(NULL, 0, MPI_BYTE, MPI_ANY_SOURCE, ARMCI_MUTEX_TAG+mutex, grp->comm, &status);
   }
 
   dprint(DEBUG_CAT_MUTEX, "%d: Lock acquired.  proc = %d, mutex = %d\n", rank, proc, mutex);
@@ -138,8 +139,8 @@ void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, i;
   u_int8_t *buf;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_rank(grp->comm, &rank);
+  MPI_Comm_size(grp->comm, &nproc);
 
   buf = malloc(nproc*sizeof(u_int8_t));
 
@@ -169,7 +170,7 @@ void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
   for (i = 0; i < nproc; i++) {
     if (buf[i] == 1) {
       dprint(DEBUG_CAT_MUTEX, "%d: Notifying %d.  proc = %d, mutex = %d\n", rank, i, proc, mutex);
-      MPI_Send(NULL, 0, MPI_BYTE, i, ARMCI_MUTEX_TAG+mutex, MPI_COMM_WORLD);
+      MPI_Send(NULL, 0, MPI_BYTE, i, ARMCI_MUTEX_TAG+mutex, grp->comm);
       break;
     }
   }
