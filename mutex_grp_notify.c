@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
 
 #include "armci.h"
@@ -9,7 +10,8 @@
 
 #define ARMCI_MUTEX_TAG 100
 
-/** Create a group of ARMCI mutexes.
+
+/** Create a group of ARMCI mutexes.  Collective.
   *
   * @param[in] count Number of mutexes on the local process.
   * @return          Handle to the mutex group.
@@ -27,18 +29,20 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   grp->count = count;
 
   if (count > 0) {
-    grp->base = malloc(nproc*count);
+    grp->base = malloc(nproc*count); // FIXME: These can be unaligned
     memset(grp->base, 0, nproc*count);
 
   } else {
     grp->base = NULL;
   }
 
-  return MPI_Win_create(grp->base, nproc*count, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &grp->window);
+  MPI_Win_create(grp->base, nproc*count, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &grp->window);
+
+  return grp;
 }
 
 
-/** Destroy a group of ARMCI mutexes.
+/** Destroy a group of ARMCI mutexes.  Collective.
   *
   * @param[in] grp Handle to the group that should be destroyed.
   * @return        Zero on success, non-zero otherwise.
@@ -57,20 +61,27 @@ int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
 }
 
 
-int ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
-  int       rank, nproc, already_locked;
+/** Lock a mutex.
+  * 
+  * @param[in] grp   Mutex group that the mutex belongs to.
+  * @param[in] mutex Desired mutex number [0..count-1]
+  * @param[in] proc  Process where the mutex lives
+  */
+void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
+  int       rank, nproc, already_locked, i;
   u_int8_t *buf;
 
-  MPI_Comm_rank(mutex->comm, &rank);
-  MPI_Comm_size(mutex->comm, &nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   buf = malloc(nproc*sizeof(u_int8_t));
+  assert(buf != NULL);
 
   buf[rank] = 1;
 
   /* Get all data from the lock_buf, except the byte belonging to
    * me. Set the byte belonging to me to 1. */
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, grp->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, grp->window);
   
   MPI_Put(&buf[rank], 1, MPI_BYTE, proc, (mutex*nproc) + rank, 1, MPI_BYTE, grp->window);
 
@@ -84,33 +95,51 @@ int ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
     MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, mutex*nproc + rank + 1, nproc-1-rank, MPI_BYTE, grp->window);
   }
   
-  MPI_Win_unlock(0, grp->window);
+  MPI_Win_unlock(proc, grp->window);
+
+  assert(buf[rank] == 1);
 
   for (i = already_locked = 0; i < nproc; i++)
-    if (local_lock_buf[i] && i != rank)
+    if (buf[i] && i != rank)
       already_locked = 1;
 
   /* Wait for notification */
   if (already_locked) {
     MPI_Status status;
-    MPI_Recv(NULL, 0, MPI_BYTE, MPI_SOURCE_ANY, ARMCI_MUTEX_TAG+mutex, &status, MPI_COMM_WORLD);
+    dprint(DEBUG_CAT_MUTEX, "%d: Lock waiting for notification.  proc = %d, mutex = %d\n", rank, proc, mutex);
+    MPI_Recv(NULL, 0, MPI_BYTE, MPI_ANY_SOURCE, ARMCI_MUTEX_TAG+mutex, MPI_COMM_WORLD, &status);
   }
 
+  dprint(DEBUG_CAT_MUTEX, "%d: Lock acquired.  proc = %d, mutex = %d\n", rank, proc, mutex);
   free(buf);
 }
 
 
+/** Attempt to lock a mutex (implemented as a blocking call).
+  * 
+  * @param[in] grp   Mutex group that the mutex belongs to.
+  * @param[in] mutex Desired mutex number [0..count-1]
+  * @param[in] proc  Process where the mutex lives
+  * @return          0 on success, non-zero on failure
+  */
 int ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc) {
-  return ARMCI_Lock_grp(gtp, mutex, proc);
+  ARMCI_Lock_grp(grp, mutex, proc);
+  return 0;
 }
 
 
+/** Unlock a mutex.
+  * 
+  * @param[in] grp   Mutex group that the mutex belongs to.
+  * @param[in] mutex Desired mutex number [0..count-1]
+  * @param[in] proc  Process where the mutex lives
+  */
 void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
-  int       rank, nproc;
+  int       rank, nproc, i;
   u_int8_t *buf;
 
-  MPI_Comm_rank(mutex->comm, &rank);
-  MPI_Comm_size(mutex->comm, &nproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   buf = malloc(nproc*sizeof(u_int8_t));
 
@@ -118,7 +147,7 @@ void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
 
   /* Get all data from the lock_buf, except the byte belonging to
    * me. Set the byte belonging to me to 0. */
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, grp->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, grp->window);
   
   MPI_Put(&buf[rank], 1, MPI_BYTE, proc, (mutex*nproc) + rank, 1, MPI_BYTE, grp->window);
 
@@ -132,15 +161,19 @@ void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
     MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, mutex*nproc + rank + 1, nproc-1-rank, MPI_BYTE, grp->window);
   }
   
-  MPI_Win_unlock(0, grp->window);
+  MPI_Win_unlock(proc, grp->window);
+
+  assert(buf[rank] == 0);
 
   /* Notify the next waiting process */
   for (i = 0; i < nproc; i++) {
     if (buf[i] == 1) {
+      dprint(DEBUG_CAT_MUTEX, "%d: Notifying %d.  proc = %d, mutex = %d\n", rank, i, proc, mutex);
       MPI_Send(NULL, 0, MPI_BYTE, i, ARMCI_MUTEX_TAG+mutex, MPI_COMM_WORLD);
       break;
     }
   }
 
+  dprint(DEBUG_CAT_MUTEX, "%d: Lock released.  proc = %d, mutex = %d\n", rank, proc, mutex);
   free(buf);
 }

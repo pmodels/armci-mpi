@@ -5,7 +5,8 @@
 
 char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH] = {
   "mem_region",
-  "alloc"
+  "alloc",
+  "mutex"
 };
 
 unsigned DEBUG_CATS_ENABLED = 0; // | DEBUG_CAT_ALLOC | DEBUG_CAT_MEM_REGION

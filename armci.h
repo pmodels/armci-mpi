@@ -119,6 +119,7 @@ double ARMCI_GetValueDouble(void *src, int proc);
 
 struct mutex_grp_s {
   int      count;
+  MPI_Comm comm;
   MPI_Win  window;
   long    *base;
 };
