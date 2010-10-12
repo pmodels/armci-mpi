@@ -16,6 +16,8 @@ OBJ    = util.o           	\
          vector.o               \
          debug.o                \
          value_ops.o            \
+         mutex_grp_spin.o       \
+         #mutex_grp_notify.o     \
          # end
 
 
