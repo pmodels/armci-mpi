@@ -1,3 +1,8 @@
+/** ARMCI Malloc test -- James Dinan <dinan@mcs.anl.gov>
+  * 
+  * Perform a pile of allocations and then free them.
+  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

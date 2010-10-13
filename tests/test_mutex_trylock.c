@@ -1,3 +1,9 @@
+/** ARMCI Mutex test -- James Dinan <dinan@mcs.anl.gov>
+  * 
+  * All processes create N mutexes then lock+unlock all mutexes on all
+  * processes.  Locking is accomplished via trylock in a loop.
+  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

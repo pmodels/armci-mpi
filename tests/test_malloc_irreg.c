@@ -1,3 +1,10 @@
+/** ARMCI Irregular memory allocation test -- James Dinan <dinan@mcs.anl.gov>
+  * 
+  * Perform a series of allocations where all processes but one give zero bytes
+  * to ARMCI_Malloc.  The process that does a non-zero allocation initializes
+  * their shared memory and then the data is fetched by a neighbor and tested.
+  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

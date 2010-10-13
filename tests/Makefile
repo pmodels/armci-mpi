@@ -6,7 +6,6 @@ LIBARMCI = ../libarmci.a
 
 TESTS    = test_onesided                \
            test_mutex                   \
-           test_mutex_contention        \
            test_mutex_rmw               \
            test_mutex_trylock           \
            test_malloc                  \
