@@ -137,4 +137,26 @@ int   ARMCI_Destroy_mutexes(void);
 void  ARMCI_Lock(int mutex, int proc);
 void  ARMCI_Unlock(int mutex, int proc);
 
+/** ARMCI Groups API
+  */
+
+typedef struct {
+  MPI_Comm  comm;
+  MPI_Group group;
+} ARMCI_Group;
+
+void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out);
+void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *group_out, ARMCI_Group *group_parent);
+void ARMCI_Group_free(ARMCI_Group *group);
+
+int  ARMCI_Group_rank(ARMCI_Group *group, int *rank);
+void ARMCI_Group_size(ARMCI_Group *group, int *size);
+
+void ARMCI_Group_set_default(ARMCI_Group *group);
+void ARMCI_Group_get_default(ARMCI_Group *group_out);
+void ARMCI_Group_get_world(ARMCI_Group *group_out);
+
+int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
+int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
+
 #endif /* _ARMCI_H_ */

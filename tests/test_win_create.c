@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 #define DATA_NELTS  1000
-#define NUM_WIN     17   // Error starts at 17.  Up to 16 is ok.
+#define NUM_WIN     1000   // Error starts at 17.  Up to 16 is ok.
 #define DATA_SZ     (DATA_NELTS*sizeof(int))
 
 int main(int argc, char ** argv) {
