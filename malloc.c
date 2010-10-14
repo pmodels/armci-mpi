@@ -4,11 +4,9 @@
 #include "debug.h"
 
 #include "armci.h"
+#include "armci-internals.h"
 #include "mem_region.h"
 
-// TODO:
-//int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
-//int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 
 /** Allocate a shared memory segment.  Collective.
   *
@@ -17,7 +15,28 @@
   *                       segment.
   * @param[in]       size Number of bytes to allocate on the local process.
   */
-int ARMCI_Malloc(void **base_ptrs, int size) {
+int ARMCI_Malloc(void **ptr_arr, int bytes) {
+  return ARMCI_Malloc_group(ptr_arr, bytes, &ARMCI_GROUP_WORLD);
+}
+
+
+/** Free a shared memory allocation.  Collective.
+  *
+  * @param[in] ptr Pointer to the local patch of the allocation
+  */
+int ARMCI_Free(void *ptr) {
+  return ARMCI_Free_group(ptr, &ARMCI_GROUP_WORLD);
+}
+
+
+/** Allocate a shared memory segment.  Collective.
+  *
+  * @param[out] base_ptrs Array of length nproc that will contain pointers to
+  *                       the base address of each process' patch of the
+  *                       segment.
+  * @param[in]       size Number of bytes to allocate on the local process.
+  */
+int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
   mem_region_t *mreg;
  
@@ -46,7 +65,7 @@ int ARMCI_Malloc(void **base_ptrs, int size) {
   *
   * @param[in] ptr Pointer to the local patch of the allocation
   */
-int ARMCI_Free(void *ptr) {
+int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
   int me;
   mem_region_t *mreg;
 
