@@ -25,16 +25,13 @@ int ARMCI_Malloc(void **base_ptrs, int size) {
 
   if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000
-    int  rank;
     char ptr_string[BUF_LEN];
     int  count = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     for (i = 0; i < mreg->nslices && count < BUF_LEN; i++)
       count += snprintf(ptr_string+count, BUF_LEN-count, (i == mreg->nslices-1) ? "%p" : "%p ", base_ptrs[i]);
 
-    printf("%d: Allocation %d = [%s]\n", rank, mreg->id, ptr_string);
+    dprint(DEBUG_CAT_ALLOC, __func__, "base ptrs [%s]\n", ptr_string);
 #undef BUF_LEN
   }
 
@@ -56,7 +53,7 @@ int ARMCI_Free(void *ptr) {
     mreg = mem_region_lookup(ptr, me);
     assert(mreg != NULL);
   } else {
-    dprint(DEBUG_CAT_ALLOC, "ARMCI_Free() given NULL\n");
+    dprint(DEBUG_CAT_ALLOC, __func__, "given NULL\n");
     mreg = NULL;
   }
 

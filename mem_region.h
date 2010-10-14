@@ -8,11 +8,9 @@ typedef struct {
   int   size;
 } mem_region_slice_t;
 
-// TODO: how to handle groups here?  Should we identify
-//       regions by <id, group>?
+// TODO: how to handle groups here?
 typedef struct mem_region_s {
   MPI_Win             window;
-  int                 id;
   int                 nslices;
   struct mem_region_s *prev;
   struct mem_region_s *next;
@@ -23,8 +21,6 @@ extern mem_region_t *mreg_list;
 
 mem_region_t *mem_region_create(int local_size);
 void          mem_region_destroy(mem_region_t *mreg);
-
 mem_region_t *mem_region_lookup(void *ptr, int proc);
-mem_region_t *mem_region_lookup_by_id(int id);
 
 #endif /* _MEM_REGION_H_ */

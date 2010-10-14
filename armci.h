@@ -143,6 +143,8 @@ void  ARMCI_Unlock(int mutex, int proc);
 typedef struct {
   MPI_Comm  comm;
   MPI_Group group;
+  int       rank;
+  int       size;
 } ARMCI_Group;
 
 void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out);

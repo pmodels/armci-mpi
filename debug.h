@@ -28,7 +28,7 @@ extern unsigned DEBUG_CATS_ENABLED;
 
 
 #ifdef NO_SEATBELTS
-static inline void dprint(unsigned category, char *format, ...) {
+static inline void dprint(unsigned category, const char *func, char *format, ...) {
   return;
 }
 
@@ -38,10 +38,10 @@ static inline void dprint(unsigned category, char *format, ...) {
 #include <stdarg.h>
 #include <mpi.h>
 
-static inline void dprint(unsigned category, char *format, ...) {
+static inline void dprint(unsigned category, const char *func, char *format, ...) {
   va_list ap;
   int     rank, disp;
-  char    string[200];
+  char    string[500];
 
   if ((category & DEBUG_CATS_ENABLED) == 0)
     return;
@@ -49,10 +49,13 @@ static inline void dprint(unsigned category, char *format, ...) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   disp  = 0;
-  disp += snprintf(string, 200, "%d: ", rank);
-  disp += snprintf(string+disp, 200-disp, format, ap);
+  disp += snprintf(string, 500, "[%4d] %s: ", rank, func);
+  va_start(ap, format);
+  disp += vsnprintf(string+disp, 500-disp, format, ap);
+  va_end(ap);
 
   fprintf(stderr, "%s", string);
+
 }
 #endif /* NO_SEATBELTS */
 

@@ -6,8 +6,10 @@
 #include "armci.h"
 #include "mem_region.h"
 
-mem_region_t *mreg_list = NULL; // Linked list of mem regions
-static int    region_ids  = 0;    // Used to hand out region ids...Won't work with groups.
+
+/** Linked list of shared memory regions.
+  */
+mem_region_t *mreg_list = NULL;
 
 
 /** Create a distributed shared memory region.
@@ -29,7 +31,6 @@ mem_region_t *mem_region_create(int local_size) {
   mreg->slices = malloc(sizeof(mem_region_slice_t)*nproc);
   assert(mreg->slices != NULL);
 
-  mreg->id      = region_ids++;
   mreg->nslices = nproc;
   mreg->prev    = NULL;
   mreg->next    = NULL;
@@ -72,29 +73,38 @@ mem_region_t *mem_region_create(int local_size) {
   * @param[in] ptr Pointer within range of the segment (e.g. base pointer).
   */
 void mem_region_destroy(mem_region_t *mreg) {
-  int my_id, our_id;
-  int me, nproc;
+  int   search_proc_in, search_proc_out;
+  void *search_base;
+  int   me, nproc;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  // All-to-all exchange of ids.  This is so that we can support passing NULL
-  // into ARMCI_Free() which is permitted when a process allocates 0 bytes.
-  // Unfortunately, in this case we still need to identify the mem region and
-  // free it.
+  // All-to-all exchange of a <base address, proc> pair.  This is so that we
+  // can support passing NULL into ARMCI_Free() which is permitted when a
+  // process allocates 0 bytes.  Unfortunately, in this case we still need to
+  // identify the mem region and free it.
 
   if (mreg == NULL)
-    my_id = 0;
-  else
-    my_id = mreg->id;
+    search_proc_in = -1;
+  else {
+    search_proc_in = me;
+    search_base    = mreg->slices[me].base;
+  }
 
-  MPI_Allreduce(&my_id, &our_id, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  // Collectively decide on who will provide the base address
+  MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  assert(search_proc_out != -1); // Somebody must pass in non-NULL
 
-  assert(mreg == NULL || our_id == my_id);
+  // Broadcast the base address
+  MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out, MPI_COMM_WORLD);
 
-  // If we were passed NULL, look up the mem region using the id
+  // If we were passed NULL, look up the mem region using the <base, proc> pair
   if (mreg == NULL)
-    mreg = mem_region_lookup_by_id(our_id);
+    mreg = mem_region_lookup(search_base, search_proc_out);
+
+  if (mreg == NULL) printf("Err: mreg == NULL.  base=%p proc=%d\n", search_base, search_proc_out);
+  assert(mreg != NULL);
 
   // Remove from the list of mem regions
   if (mreg->prev == NULL) {
@@ -143,24 +153,6 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
         break;
     }
 
-    mreg = mreg->next;
-  }
-
-  return mreg;
-}
-
-
-/** Lookup a shared memory region using its ID.
-  *
-  * @param[in] id   Unique ID of the desired mem region.
-  * @return         Pointer to the mem region object.
-  */
-mem_region_t *mem_region_lookup_by_id(int id) {
-  mem_region_t *mreg;
-
-  mreg = mreg_list;
-
-  while (mreg != NULL && mreg->id != id) {
     mreg = mreg->next;
   }
 
