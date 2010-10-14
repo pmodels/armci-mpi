@@ -158,6 +158,8 @@ void ARMCI_Group_set_default(ARMCI_Group *group);
 void ARMCI_Group_get_default(ARMCI_Group *group_out);
 void ARMCI_Group_get_world(ARMCI_Group *group_out);
 
+int ARMCI_Absolute_id(ARMCI_Group *group,int group_rank);
+
 int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 

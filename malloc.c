@@ -6,6 +6,9 @@
 #include "armci.h"
 #include "mem_region.h"
 
+// TODO:
+//int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
+//int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 
 /** Allocate a shared memory segment.  Collective.
   *

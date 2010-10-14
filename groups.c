@@ -5,11 +5,12 @@
 /** The ARMCI world group.  This is accessed from outside via
   * ARMCI_Group_get_world.
   */
-ARMCI_Group ARMCI_GROUP_WORLD;
+ARMCI_Group  ARMCI_GROUP_WORLD;
+ARMCI_Group *ARMCI_DEFAULT_GROUP = &ARMCI_GROUP_WORLD;
 
 
-/** Create an ARMCI group that contains a subset of the nodes in the world
-  * group.  Collective.
+/** Create an ARMCI group that contains a subset of the nodes in the current
+  * default group.  Collective.
   *
   * @param[in]  grp_size         Number of entries in pid_list.
   * @param[in]  pid_list         List of process ids that will be in the new group.
@@ -17,7 +18,7 @@ ARMCI_Group ARMCI_GROUP_WORLD;
   * @param[in]  armci_grp_parent The parent of the new ARMCI group.
   */
 void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out) {
-  ARMCI_Group_create_child(grp_size, pid_list, group_out, &ARMCI_GROUP_WORLD);
+  ARMCI_Group_create_child(grp_size, pid_list, group_out, ARMCI_DEFAULT_GROUP);
 }
 
 
@@ -80,9 +81,22 @@ void ARMCI_Group_size(ARMCI_Group *group, int *size) {
 }
 
 
-// FIXME: WTF do these do?
-//void ARMCI_Group_set_default(ARMCI_Group *group);
-//void ARMCI_Group_get_default(ARMCI_Group *group_out);
+/** Set the default group.
+  *
+  * @param[in] group The new default group
+  */
+void ARMCI_Group_set_default(ARMCI_Group *group) {
+  ARMCI_DEFAULT_GROUP = group;
+}
+
+
+/** Get the default group.
+  *
+  * @param[out] group_out Pointer to the default group.
+  */
+void ARMCI_Group_get_default(ARMCI_Group *group_out) {
+  group_out = ARMCI_DEFAULT_GROUP;
+}
 
 
 /** Fetch the world group.
@@ -93,7 +107,24 @@ void ARMCI_Group_get_world(ARMCI_Group *group_out) {
   group_out = &ARMCI_GROUP_WORLD;
 }
 
-// FIXME
-//int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
-//int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 
+/** Translate a group process rank to the corresponding process rank in the
+  * ARMCI world group.
+  *
+  * @param[in] group      Group to translate from.
+  * @param[in] group_rank Rank of the process in group.
+  */
+int ARMCI_Absolute_id(ARMCI_Group *group, int group_rank) {
+  int       world_rank;
+  MPI_Group world_group, sub_group;
+
+  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
+  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &sub_group);
+
+  MPI_Group_translate_ranks(sub_group, 1, &group_rank, world_group, &world_rank);
+
+  MPI_Group_free(&world_group);
+  MPI_Group_free(&sub_group);
+
+  return world_rank;
+}
