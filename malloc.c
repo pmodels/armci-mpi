@@ -40,7 +40,7 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
   mem_region_t *mreg;
  
-  mreg = mem_region_create(size);
+  mreg = mem_region_create(size, group->comm, ARMCI_GROUP_WORLD.comm);
 
   for (i = 0; i < mreg->nslices; i++)
     base_ptrs[i] = mreg->slices[i].base;
@@ -66,20 +66,17 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   * @param[in] ptr Pointer to the local patch of the allocation
   */
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
-  int me;
   mem_region_t *mreg;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-
   if (ptr != NULL) {
-    mreg = mem_region_lookup(ptr, me);
+    mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
     assert(mreg != NULL);
   } else {
     dprint(DEBUG_CAT_ALLOC, __func__, "given NULL\n");
     mreg = NULL;
   }
 
-  mem_region_destroy(mreg);
+  mem_region_destroy(mreg, group->comm, ARMCI_GROUP_WORLD.comm);
 
   return 0;
 }

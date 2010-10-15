@@ -2,7 +2,6 @@
 #define _ARMCI_H_
 
 #include <mpi.h>
-#include <armci_msg.h>
 
 enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG  /*           long */,
                     ARMCI_ACC_FLT /*   float */, ARMCI_ACC_DBL  /*         double */,
@@ -161,5 +160,8 @@ int ARMCI_Absolute_id(ARMCI_Group *group,int group_rank);
 
 int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
+
+#include <armci_msg.h>
+#include <armcix.h>
 
 #endif /* _ARMCI_H_ */

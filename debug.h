@@ -4,7 +4,8 @@
 enum debug_cats_e {
   DEBUG_CAT_MEM_REGION = 1, // 2^0
   DEBUG_CAT_ALLOC      = 2, // 2^1
-  DEBUG_CAT_MUTEX      = 4  // 2^2 ...
+  DEBUG_CAT_MUTEX      = 4, // 2^2 ...
+  DEBUG_CAT_GROUPS     = 8
 };
 
 #define MAX_DEBUG_LABEL_LENGTH 20

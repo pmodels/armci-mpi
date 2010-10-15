@@ -19,8 +19,8 @@ typedef struct mem_region_s {
 
 extern mem_region_t *mreg_list;
 
-mem_region_t *mem_region_create(int local_size);
-void          mem_region_destroy(mem_region_t *mreg);
+mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm world_comm);
+void          mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_comm);
 mem_region_t *mem_region_lookup(void *ptr, int proc);
 
 #endif /* _MEM_REGION_H_ */

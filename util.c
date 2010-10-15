@@ -14,10 +14,11 @@ int ARMCI_Init() {
 }
 
 int ARMCI_Init_args(int *argc, char ***argv) {
-  return 0;
+  return ARMCI_Init();
 }
 
 int ARMCI_Finalize() {
+  ARMCI_Cleanup();
   return 0;
 }
 
