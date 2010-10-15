@@ -13,8 +13,8 @@ TESTS    = test_onesided                \
            ARMCI_PutS_latency           \
            ARMCI_PutAccS_latency        \
            test_groups                  \
-           test_group_partition         \
            test_group_split             \
+           test_malloc_group            \
            # end
 
 all: $(TESTS)

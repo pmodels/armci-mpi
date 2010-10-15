@@ -21,7 +21,7 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
   int           i;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
-  MPI_Group     world_group, sub_group;
+  MPI_Group     world_group, alloc_group;
   mem_region_t *mreg;
   mem_region_slice_t *alloc_slices, mreg_slice;
 
@@ -62,16 +62,16 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
   memset(mreg->slices, 0, sizeof(mem_region_slice_t)*world_nproc);
 
   MPI_Comm_group(world_comm, &world_group);
-  MPI_Comm_group(alloc_comm, &sub_group);
+  MPI_Comm_group(alloc_comm, &alloc_group);
 
   for (i = 0; i < alloc_nproc; i++) {
     int world_rank;
-    MPI_Group_translate_ranks(sub_group, 1, &i, world_group, &world_rank);
+    MPI_Group_translate_ranks(alloc_group, 1, &i, world_group, &world_rank);
     mreg->slices[world_rank] = alloc_slices[i];
   }
 
   MPI_Group_free(&world_group);
-  MPI_Group_free(&sub_group);
+  MPI_Group_free(&alloc_group);
 
 
   // Append the new region onto the region list
@@ -97,10 +97,11 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
   * @param[in] ptr Pointer within range of the segment (e.g. base pointer).
   */
 void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_comm) {
-  int   search_proc_in, search_proc_out;
+  int   search_proc_in, search_proc_out, search_proc_out_grp;
   void *search_base;
   int   alloc_me, alloc_nproc;
   int   world_me, world_nproc;
+  MPI_Group world_group, alloc_group;
 
   MPI_Comm_rank(alloc_comm, &alloc_me);
   MPI_Comm_size(alloc_comm, &alloc_nproc);
@@ -123,8 +124,17 @@ void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_
   MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, alloc_comm);
   assert(search_proc_out != -1); // Somebody must pass in non-NULL
 
+  // Translate world rank to group rank
+  MPI_Comm_group(world_comm, &world_group);
+  MPI_Comm_group(alloc_comm, &alloc_group);
+
+  MPI_Group_translate_ranks(world_group, 1, &search_proc_out, alloc_group, &search_proc_out_grp);
+
+  MPI_Group_free(&world_group);
+  MPI_Group_free(&alloc_group);
+
   // Broadcast the base address
-  MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out, alloc_comm);
+  MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out_grp, alloc_comm);
 
   // If we were passed NULL, look up the mem region using the <base, proc> pair
   if (mreg == NULL)
