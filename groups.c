@@ -158,6 +158,16 @@ int ARMCI_Absolute_id(ARMCI_Group *group, int group_rank) {
 }
 
 
+/** Split a parent group into multiple child groups.  This is similar to
+  * MPI_Comm_split.  Collective across the parent group.
+  *
+  * @param[in]  parent The parent group.
+  * @param[in]  color  The id number of the new group.  Processes are grouped
+  *                    together so allthat give the same color will be placed
+  *                    in the same new group.
+  * @param[in]  key    Relative ordering of processes in the new group.
+  * @param[out] new_group Pointer to a handle where group info will be stored.
+  */
 int ARMCIX_Group_split(ARMCI_Group *parent, int color, int key, ARMCI_Group *new_group) {
   int err;
 
