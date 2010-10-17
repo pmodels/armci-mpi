@@ -1,6 +1,7 @@
 #ifndef _MEM_REGION_H_
 #define _MEM_REGION_H_
 
+#include <armci.h>
 #include <mpi.h>
 
 typedef struct {
@@ -8,13 +9,13 @@ typedef struct {
   int   size;
 } mem_region_slice_t;
 
-// TODO: how to handle groups here?
 typedef struct mem_region_s {
-  MPI_Win             window;
-  int                 nslices;
+  MPI_Win              window;
+  mutex_grp_t          rmw_mutex;
   struct mem_region_s *prev;
   struct mem_region_s *next;
-  mem_region_slice_t *slices;
+  int                  nslices;
+  mem_region_slice_t  *slices;
 } mem_region_t;
 
 extern mem_region_t *mreg_list;

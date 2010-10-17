@@ -136,6 +136,14 @@ int   ARMCI_Destroy_mutexes(void);
 void  ARMCI_Lock(int mutex, int proc);
 void  ARMCI_Unlock(int mutex, int proc);
 
+/** ARMCI Read-Modify-Write API
+  */
+
+enum ARMCI_Rmw_e { ARMCI_FETCH_AND_ADD, ARMCI_FETCH_AND_ADD_LONG, 
+                   ARMCI_SWAP, ARMCI_SWAP_LONG };
+
+int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc);
+
 /** ARMCI Groups API
   */
 

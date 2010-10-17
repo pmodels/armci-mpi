@@ -17,6 +17,7 @@ OBJ    = util.o           	\
          debug.o                \
          groups.o               \
          value_ops.o            \
+         rmw.o                  \
          mutex_grp_notify.o     \
          #mutex_grp_spin.o       \
          # end
