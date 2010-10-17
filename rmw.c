@@ -33,10 +33,10 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
   if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG) {
     long swap_val;
-    ARMCI_Lock_grp(mreg->rmw_mutex, 1, proc);
+    ARMCI_Lock_grp(mreg->rmw_mutex, 0, proc);
     ARMCI_Get(prem, &swap_val, is_long ? sizeof(long) : sizeof(int), proc);
     ARMCI_Put(ploc, prem,      is_long ? sizeof(long) : sizeof(int), proc);
-    ARMCI_Unlock_grp(mreg->rmw_mutex, 1, proc);
+    ARMCI_Unlock_grp(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
       *(long*) ploc = swap_val;
@@ -47,7 +47,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG) {
     long fetch_val, new_val;
     
-    ARMCI_Lock_grp(mreg->rmw_mutex, 1, proc);
+    ARMCI_Lock_grp(mreg->rmw_mutex, 0, proc);
     ARMCI_Get(prem, &fetch_val, is_long ? sizeof(long) : sizeof(int), proc);
     
     if (is_long)
@@ -56,7 +56,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
       *((int*) (&new_val)) = *((int*)(&fetch_val)) + value;
 
     ARMCI_Put(&new_val, prem, is_long ? sizeof(long) : sizeof(int), proc);
-    ARMCI_Unlock_grp(mreg->rmw_mutex, 1, proc);
+    ARMCI_Unlock_grp(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
       *(long*) ploc = fetch_val;

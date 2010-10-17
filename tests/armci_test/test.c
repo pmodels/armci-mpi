@@ -409,9 +409,7 @@ void create_array(void *a[], int elem_size, int ndim, int dims[])
 void destroy_array(void *ptr[])
 {
     MP_BARRIER();
-//#if 0
     assert(!ARMCI_Free(ptr[me]));
-//#endif
 }
 
 
@@ -1208,7 +1206,6 @@ void test_vector_acc()
 
 void test_fetch_add()
 {
-#if 0
     int rc, bytes, i, val, times =0;
     int *arr[MAXPROC];
 
@@ -1282,14 +1279,12 @@ void test_fetch_add()
     }
 
     ARMCI_Free(arr[me]);
-#endif
 }
 
 
 #define LOCKED -1
 void test_swap()
 {
-#if 0
     int rc, bytes, i, val, whatever=-8999;
     int *arr[MAXPROC];
 
@@ -1326,7 +1321,6 @@ void test_swap()
     }
 
     ARMCI_Free(arr[me]);
-#endif
 }
 
 
