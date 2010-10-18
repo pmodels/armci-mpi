@@ -81,20 +81,28 @@ void armci_msg_rcv(int tag, void *buf, int nbytes_buf, int *nbytes_msg, int src)
 }
 
 
-void armci_msg_bintree(int scope, int* Root, int *Up, int *Left, int *Right) {
-  int root, up, left, right, index, nproc;
+/** Map process IDs onto a binary tree.
+  *
+  * @param[in]  scope Scope of processes involved
+  * @param[out] root  Process id of the root
+  * @param[out] up    Process id of my parent
+  * @param[out] left  Process id of my left child
+  * @param[out] right Process if of my right child
+  */
+void armci_msg_bintree(int scope, int* root, int *up, int *left, int *right) {
+  int me, nproc;
 
-  assert(scope == SCOPE_ALL); // TODO: Don't support others
+  assert(scope == SCOPE_ALL); // TODO: Other scopes are not currently supported
 
-  root  = 0;
-  nproc = ARMCI_GROUP_WORLD.size;
-  index = ARMCI_GROUP_WORLD.rank - root;
-  up    = (index-1)/2 + root; if ( up < root) up = -1;
-  left  = 2*index + 1 + root; if (left >= root+nproc) left = -1;
-  right = 2*index + 2 + root; if (right >= root+nproc)right = -1;
+  me    = armci_msg_me();
+  nproc = armci_msg_nproc();
 
-  *Up = up;
-  *Left = left;
-  *Right = right;
-  *Root = root;
+  *root = 0;
+  *up   =  (me == 0) ? -1 : (me - 1) / 2;
+
+  *left = 2*me + 1;
+  if (*left >= nproc) *left = -1;
+
+  *right = 2*me + 2;
+  if (*right >= nproc) *right = -1;
 }
