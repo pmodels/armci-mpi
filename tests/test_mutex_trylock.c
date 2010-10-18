@@ -11,6 +11,7 @@
 
 #include <mpi.h>
 #include <armci.h>
+#include <armcix.h>
 
 #define NUM_MUTEXES 10
 
