@@ -4,6 +4,9 @@
 int  armci_msg_me();
 int  armci_msg_nproc();
 
+void armci_msg_snd(int tag, void* buffer, int len, int to);
+void armci_msg_rcv(int tag, void* buffer, int buflen, int *msglen, int from);
+
 void armci_msg_barrier();
 void armci_msg_bcast(void* buffer, int len, int root);
 
@@ -15,8 +18,6 @@ void armci_msg_bintree(int scope, int* Root, int *Up, int *Left, int *Right);
 
 #define armci_msg_sel(x,n,op,type,contribute)\
         armci_msg_sel_scope(SCOPE_ALL,(x),(n),(op),(type),(contribute)) 
-void armci_msg_snd(int tag, void* buffer, int len, int to);
-void armci_msg_rcv(int tag, void* buffer, int buflen, int *msglen, int from);
 
 void armci_msg_gop_scope(int scope, void *x, int n, char* op, int type);
 void armci_msg_igop(int *x, int n, char* op);

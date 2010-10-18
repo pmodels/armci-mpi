@@ -77,3 +77,33 @@ void armci_msg_dgop(double x[], int n, char *op) {
 void armci_msg_barrier() {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 }
+
+
+/** Send a two-sided message.
+  *
+  * @param[in] tag    Message tag (must match on sender and receiver)
+  * @param[in] buf    Buffer containing the message
+  * @param[in] nbytes Length of the message in bytes
+  * @param[in] dest   Destination process id
+  */
+void armci_msg_snd(int tag, void *buf, int nbytes, int dest) {
+  MPI_Send(buf, nbytes, MPI_BYTE, dest, tag, ARMCI_GROUP_WORLD.comm);
+}
+
+
+/** Receive a two-sided message.
+  *
+  * @param[in]  tag    Message tag (must match on sender and receiver)
+  * @param[in]  buf    Buffer containing the message
+  * @param[in]  nbytes_buf Size of the buffer in bytes
+  * @param[out] nbytes_msg Length of the message received in bytes (NULL to ignore)
+  * @param[in]  dest   Destination process id
+  */
+void armci_msg_rcv(int tag, void *buf, int nbytes_buf, int *nbytes_msg, int src) {
+  MPI_Status status;
+  MPI_Recv(buf, nbytes_buf, MPI_BYTE, src, tag, ARMCI_GROUP_WORLD.comm, &status);
+
+  if (nbytes_msg != NULL)
+    MPI_Get_count(&status, MPI_BYTE, nbytes_msg);
+}
+
