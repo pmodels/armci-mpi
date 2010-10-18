@@ -10,6 +10,7 @@ OBJ    =  debug.o               \
           malloc.o              \
           mem_region.o          \
           message.o             \
+          message_gop.o         \
           mutex.o               \
           mutex_grp_notify.o    \
           onesided.o            \
