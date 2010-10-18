@@ -79,6 +79,15 @@ void armci_msg_barrier() {
 }
 
 
+/** Message barrier on a group.
+  *
+  * @param[in] group Group on which to perform barrier
+  */
+void armci_msg_group_barrier(ARMCI_Group *group) {
+  MPI_Barrier(group->comm);
+}
+
+
 /** Send a two-sided message.
   *
   * @param[in] tag    Message tag (must match on sender and receiver)

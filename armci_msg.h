@@ -1,6 +1,9 @@
 #ifndef _ARMCI_MSG_H_
 #define _ARMCI_MSG_H_
 
+enum armci_scope_e { SCOPE_ALL, SCOPE_NODE, SCOPE_MASTERS};
+enum armci_type_e  { ARMCI_INT, ARMCI_LONG, ARMCI_LONG_LONG, ARMCI_FLOAT, ARMCI_DOUBLE };
+
 int  armci_msg_me();
 int  armci_msg_nproc();
 
@@ -8,9 +11,9 @@ void armci_msg_snd(int tag, void* buffer, int len, int to);
 void armci_msg_rcv(int tag, void* buffer, int buflen, int *msglen, int from);
 
 void armci_msg_barrier();
-void armci_msg_bcast(void* buffer, int len, int root);
+void armci_msg_group_barrier(ARMCI_Group *group);
 
-void armci_msg_dgop(double x[], int n, char *op);
+void armci_msg_bcast(void* buffer, int len, int root);
 
 // Unimplemented:
 
@@ -33,7 +36,6 @@ void armci_msg_group_llgop(long long *x, int n, char* op,ARMCI_Group *group);
 void armci_msg_group_fgop(float *x, int n, char* op,ARMCI_Group *group);
 void armci_msg_group_dgop(double *x, int n,char* op,ARMCI_Group *group);
 
-void armci_msg_group_barrier(ARMCI_Group *group);
 void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_Group *group);
 
 #endif /* _ARMCI_MSG_H_ */
