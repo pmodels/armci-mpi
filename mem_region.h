@@ -1,8 +1,10 @@
 #ifndef _MEM_REGION_H_
 #define _MEM_REGION_H_
 
-#include <armci.h>
 #include <mpi.h>
+
+#include "armci.h"
+#include "armcix.h"
 
 typedef struct {
   void *base;

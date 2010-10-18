@@ -28,12 +28,12 @@ void ARMCI_Cleanup() {
 
 void ARMCI_Error(char *msg, int code) {
   fprintf(stderr, "ARMCI_Error: %s\n", msg);
-  MPI_Abort(MPI_COMM_WORLD, code);
+  MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }
 
 void ARMCI_Barrier() {
   ARMCI_AllFence();
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 }
 
 /** \brief Wait for remote completion on one-sided operations targeting

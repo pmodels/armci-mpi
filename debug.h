@@ -39,6 +39,8 @@ static inline void dprint(unsigned category, const char *func, char *format, ...
 #include <stdarg.h>
 #include <mpi.h>
 
+#include "armci-internals.h"
+
 static inline void dprint(unsigned category, const char *func, char *format, ...) {
   va_list ap;
   int     rank, disp;
@@ -47,7 +49,7 @@ static inline void dprint(unsigned category, const char *func, char *format, ...
   if ((category & DEBUG_CATS_ENABLED) == 0)
     return;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &rank);
 
   disp  = 0;
   disp += snprintf(string, 500, "[%4d] %s: ", rank, func);

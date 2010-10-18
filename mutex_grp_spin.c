@@ -28,6 +28,7 @@
 
 #include "debug.h"
 #include "armci.h"
+#include "armcix.h"
 
 #define MAX_TIMEOUT 1000
 #define TIMEOUT_MUL 2
@@ -124,7 +125,7 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   // MPI_Barrier?
 
   ierr = MPI_Win_create(grp->base, count*sizeof(long), sizeof(long) /* displacement size */,
-                        MPI_INFO_NULL, MPI_COMM_WORLD, &grp->window);
+                        MPI_INFO_NULL, ARMCI_GROUP_WORLD.comm, &grp->window);
   assert(ierr == MPI_SUCCESS);
 
   return grp;

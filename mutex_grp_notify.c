@@ -4,6 +4,7 @@
 #include <mpi.h>
 
 #include "armci.h"
+#include "armcix.h"
 #include "debug.h"
 
 #define ARMCI_MUTEX_TAG 100
@@ -20,7 +21,7 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   grp = malloc(sizeof(struct mutex_grp_s));
   assert(grp != NULL);
 
-  MPI_Comm_dup(MPI_COMM_WORLD, &grp->comm);
+  MPI_Comm_dup(ARMCI_GROUP_WORLD.comm, &grp->comm);
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);

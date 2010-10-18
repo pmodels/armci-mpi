@@ -24,8 +24,8 @@ void  ARMCI_Barrier();
 void  ARMCI_Fence(int proc);
 void  ARMCI_AllFence();
 
-void  ARMCI_Access_start(void *ptr);
-void  ARMCI_Access_end(void *ptr);
+void  ARMCI_Access_start(void *ptr); // NEW
+void  ARMCI_Access_end(void *ptr);   // NEW
 
 int   ARMCI_Get(void *src, void *dst, int size, int target);
 int   ARMCI_Put(void *src, void *dst, int size, int target);
@@ -111,25 +111,8 @@ float  ARMCI_GetValueFloat(void *src, int proc);
 double ARMCI_GetValueDouble(void *src, int proc);     
 
 
-/** Mutexes: Two flavors, ARMCI mutexes and mutex groups.  The
-  * diff is that you can create multiple mutex groups and only one
-  * batch of ARMCI mutexes at a time.
+/** Mutexes
   */
-
-struct mutex_grp_s {
-  int      count;
-  MPI_Comm comm;
-  MPI_Win  window;
-  long    *base;
-};
-
-typedef struct mutex_grp_s * mutex_grp_t;
-
-mutex_grp_t ARMCI_Create_mutexes_grp(int count);
-int         ARMCI_Destroy_mutexes_grp(mutex_grp_t grp);
-void        ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc);
-int         ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc);
-void        ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc);
 
 int   ARMCI_Create_mutexes(int count);
 int   ARMCI_Destroy_mutexes(void);
@@ -170,6 +153,5 @@ int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 
 #include <armci_msg.h>
-#include <armcix.h>
 
 #endif /* _ARMCI_H_ */

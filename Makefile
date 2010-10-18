@@ -22,9 +22,9 @@ OBJ    = util.o           	\
          #mutex_grp_spin.o       \
          # end
 
-
 libarmci.a: $(OBJ)
-	ar r $@ $+
+	ar rcs $@ $+
+	ranlib $@
 
 .PHONY: clean
 clean:

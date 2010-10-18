@@ -5,12 +5,13 @@
 
 #include "debug.h"
 #include "armci.h"
+#include "armci-internals.h"
 
 /** Query process rank from messaging (MPI) layer.
   */
 int armci_msg_me() {
   int me;
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
   return me;
 }
 
@@ -19,7 +20,7 @@ int armci_msg_me() {
   */
 int armci_msg_nproc() {
   int nproc;
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &nproc);
   return nproc;
 }
 
@@ -31,7 +32,7 @@ int armci_msg_nproc() {
   * @param[in] root   Rank of the root process.
   */
 void armci_msg_bcast(void* buffer, int len, int root) {
-  MPI_Bcast(buffer, len, MPI_BYTE, root, MPI_COMM_WORLD);
+  MPI_Bcast(buffer, len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
 }
 
 
@@ -64,8 +65,15 @@ void armci_msg_dgop(double x[], int n, char *op) {
     assert(0);
   }
 
-  MPI_Allreduce(x, out, n, MPI_DOUBLE, mpi_op, MPI_COMM_WORLD);
+  MPI_Allreduce(x, out, n, MPI_DOUBLE, mpi_op, ARMCI_GROUP_WORLD.comm);
 
   memcpy(x, out, n*sizeof(double));
   free(out);
+}
+
+
+/** Barrier from the messaging layer.
+  */
+void armci_msg_barrier() {
+  MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 }

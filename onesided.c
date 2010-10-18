@@ -17,7 +17,7 @@ void ARMCI_Access_start(void *ptr) {
   mem_region_t *mreg;
   MPI_Group     grp;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
 
   mreg = mem_region_lookup(ptr, me);
   assert(mreg != NULL);
@@ -40,7 +40,7 @@ void ARMCI_Access_end(void *ptr) {
   mem_region_t *mreg;
   MPI_Group     grp;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
 
   mreg = mem_region_lookup(ptr, me);
   assert(mreg != NULL);
