@@ -9,7 +9,7 @@
 /** The ARMCI world group.  This is accessed from outside via
   * ARMCI_Group_get_world.
   */
-ARMCI_Group  ARMCI_GROUP_WORLD;
+ARMCI_Group  ARMCI_GROUP_WORLD = {0};
 ARMCI_Group *ARMCI_DEFAULT_GROUP = &ARMCI_GROUP_WORLD;
 
 
