@@ -24,3 +24,4 @@ $(TESTS): $(% : %.c) $(LIBARMCI)
 .PHONY: clean
 clean:
 	rm -f *.o $(TESTS)
+	rm -rf $(TESTS:%=%.dSYM)
