@@ -36,42 +36,6 @@ void armci_msg_bcast(void* buffer, int len, int root) {
 }
 
 
-/** ARMCI double precision global operation.  Collective.
-  *
-  * @param[inout] x  Vector of n doubles, contains input and will contain output.
-  * @param[in]    n  Length of x
-  * @param[in]    op One of '+', '*', 'max', 'min', 'absmax', 'absmin'
-  */
-void armci_msg_dgop(double x[], int n, char *op) {
-  double *out;
-  MPI_Op  mpi_op;
-
-  out = malloc(n*sizeof(double));
-  assert(out != NULL);
-
-  if (op[0] == '+') {
-    mpi_op = MPI_SUM;
-  } else if (op[0] == '*') {
-    mpi_op = MPI_PROD;
-  } else if (strcmp(op, "max") == 0) {
-    mpi_op = MPI_MAX;
-  } else if (strcmp(op, "min") == 0) {
-    mpi_op = MPI_MIN;
-  } else if (strcmp(op, "absmax") == 0) {
-    assert(0); // FIXME
-  } else if (strcmp(op, "absmin") == 0) {
-    assert(0); // FIXME
-  } else {
-    assert(0);
-  }
-
-  MPI_Allreduce(x, out, n, MPI_DOUBLE, mpi_op, ARMCI_GROUP_WORLD.comm);
-
-  memcpy(x, out, n*sizeof(double));
-  free(out);
-}
-
-
 /** Barrier from the messaging layer.
   */
 void armci_msg_barrier() {
@@ -116,3 +80,21 @@ void armci_msg_rcv(int tag, void *buf, int nbytes_buf, int *nbytes_msg, int src)
     MPI_Get_count(&status, MPI_BYTE, nbytes_msg);
 }
 
+
+void armci_msg_bintree(int scope, int* Root, int *Up, int *Left, int *Right) {
+  int root, up, left, right, index, nproc;
+
+  assert(scope == SCOPE_ALL); // TODO: Don't support others
+
+  root  = 0;
+  nproc = ARMCI_GROUP_WORLD.size;
+  index = ARMCI_GROUP_WORLD.rank - root;
+  up    = (index-1)/2 + root; if ( up < root) up = -1;
+  left  = 2*index + 1 + root; if (left >= root+nproc) left = -1;
+  right = 2*index + 2 + root; if (right >= root+nproc)right = -1;
+
+  *Up = up;
+  *Left = left;
+  *Right = right;
+  *Root = root;
+}

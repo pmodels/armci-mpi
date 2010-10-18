@@ -18,6 +18,7 @@ OBJ    = util.o           	\
          groups.o               \
          value_ops.o            \
          rmw.o                  \
+         topology.o             \
          mutex_grp_notify.o     \
          #mutex_grp_spin.o       \
          # end

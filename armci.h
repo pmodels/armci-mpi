@@ -152,6 +152,24 @@ int ARMCI_Absolute_id(ARMCI_Group *group,int group_rank);
 int ARMCI_Malloc_group(void **ptr_arr, int bytes, ARMCI_Group *group);
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 
+/** ARMCI Message API is in another file:
+  */
+
 #include <armci_msg.h>
+
+/** Topology API
+  */
+
+enum armci_domain_e { ARMCI_DOMAIN_SMP };
+
+typedef int armci_domain_t;
+
+int armci_domain_nprocs(armci_domain_t domain, int id);
+int armci_domain_id(armci_domain_t domain, int glob_proc_id);
+int armci_domain_glob_proc_id(armci_domain_t domain, int id, int loc_proc_id);
+int armci_domain_my_id(armci_domain_t domain);
+int armci_domain_count(armci_domain_t domain);
+int armci_domain_same_id(armci_domain_t domain, int proc);
+
 
 #endif /* _ARMCI_H_ */
