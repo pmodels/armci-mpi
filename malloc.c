@@ -4,7 +4,7 @@
 #include "debug.h"
 
 #include "armci.h"
-#include "armci-internals.h"
+#include "armci_internals.h"
 #include "mem_region.h"
 
 

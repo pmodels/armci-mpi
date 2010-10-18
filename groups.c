@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "armci.h"
-#include "armci-internals.h"
+#include "armci_internals.h"
 #include "debug.h"
 
 

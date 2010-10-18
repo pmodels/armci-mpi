@@ -39,7 +39,7 @@ static inline void dprint(unsigned category, const char *func, char *format, ...
 #include <stdarg.h>
 #include <mpi.h>
 
-#include "armci-internals.h"
+#include "armci_internals.h"
 
 static inline void dprint(unsigned category, const char *func, char *format, ...) {
   va_list ap;

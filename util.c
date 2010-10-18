@@ -4,7 +4,7 @@
 #include "debug.h"
 
 #include "armci.h"
-#include "armci-internals.h"
+#include "armci_internals.h"
 
 int ARMCI_Init() {
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);

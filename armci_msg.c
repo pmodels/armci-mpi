@@ -5,7 +5,7 @@
 
 #include "debug.h"
 #include "armci.h"
-#include "armci-internals.h"
+#include "armci_internals.h"
 
 /** Query process rank from messaging (MPI) layer.
   */
