@@ -52,6 +52,21 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
 }
 
 
+/** Broadcast on a group. Collective.
+  *
+  * @param[in]    scope ARMCI scope
+  * @param[inout] buf   Input on the root, output on all other processes
+  * @param[in]    len   Number of bytes in the message
+  * @param[in]    root  Rank of the process at the root of the broadcast
+  * @param[in]    group ARMCI group on which to perform communication
+  */
+void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_Group *group) {
+  assert(scope == SCOPE_ALL); // TODO: Only support SCOPE_ALL
+
+  MPI_Bcast(buf, len, MPI_BYTE, root, group->comm);
+}
+
+
 /** Send a two-sided message.
   *
   * @param[in] tag    Message tag (must match on sender and receiver)
