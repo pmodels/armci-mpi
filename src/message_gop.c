@@ -17,10 +17,10 @@
   * @param[in]    group Group on which to perform the GOP
   */
 void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, ARMCI_Group *group) {
-  void    *out;
-  MPI_Op   mpi_op;
-  MPI_Type mpi_type;
-  int      mpi_type_size;
+  void        *out;
+  MPI_Op       mpi_op;
+  MPI_Datatype mpi_type;
+  int          mpi_type_size;
 
   assert(scope == SCOPE_ALL); // FIXME: other scopes not supported
 
@@ -92,7 +92,7 @@ void armci_msg_group_dgop(double *x, int n, char *op, ARMCI_Group *group) {
 }
 
 void armci_msg_gop_scope(int scope, void *x, int n, char *op, int type) {
-  armci_msg_group_gop_scope(scope, x, n, op, type, ARMCI_GROUP_WORLD);
+  armci_msg_group_gop_scope(scope, x, n, op, type, &ARMCI_GROUP_WORLD);
 }
 
 void armci_msg_igop(int *x, int n, char *op) {
@@ -104,7 +104,7 @@ void armci_msg_lgop(long *x, int n, char *op) {
 }
 
 void armci_msg_llgop(long long *x, int n, char *op) {
-  armci_msg_gop_scope(SCOPE_ALL, x, n, op, ARMCI_LONGLONG);
+  armci_msg_gop_scope(SCOPE_ALL, x, n, op, ARMCI_LONG_LONG);
 }
 
 void armci_msg_fgop(float *x, int n, char *op) {
