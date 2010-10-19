@@ -96,7 +96,7 @@ void ARMCI_Group_free(ARMCI_Group *group) {
 int  ARMCI_Group_rank(ARMCI_Group *group, int *rank) {
   *rank = group->rank;
 
-  if (rank >= 0)
+  if (*rank >= 0)
     return 0;
   else
     return 1;

@@ -33,7 +33,7 @@ extern unsigned DEBUG_CATS_ENABLED;
 
 
 #ifdef NO_SEATBELTS
-static inline void dprint(unsigned category, const char *func, char *format, ...) {
+static inline void dprint(unsigned category, const char *func, const char *format, ...) {
   return;
 }
 
@@ -45,7 +45,7 @@ static inline void dprint(unsigned category, const char *func, char *format, ...
 
 #include "armci_internals.h"
 
-static inline void dprint(unsigned category, const char *func, char *format, ...) {
+static inline void dprint(unsigned category, const char *func, const char *format, ...) {
   va_list ap;
   int     rank, disp;
   char    string[500];

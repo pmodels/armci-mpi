@@ -13,7 +13,7 @@
 
 /** Query process rank from messaging (MPI) layer.
   */
-int armci_msg_me() {
+int armci_msg_me(void) {
   int me;
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
   return me;
@@ -22,7 +22,7 @@ int armci_msg_me() {
 
 /** Query number of processes.
   */
-int armci_msg_nproc() {
+int armci_msg_nproc(void) {
   int nproc;
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &nproc);
   return nproc;
@@ -42,7 +42,7 @@ void armci_msg_abort(int code) {
   *
   * @return Wall clock time
   */
-double armci_timer() {
+double armci_timer(void) {
   return MPI_Wtime();
 }
 
@@ -64,14 +64,14 @@ void armci_msg_bcast(void *buffer, int len, int root) {
   * @param[in] len    Length of the message in bytes.
   * @param[in] root   Rank of the root process.
   */
-void armci_msg_brdcast(void *buffer, int len, int root) {
+void armci_msg_brdcst(void *buffer, int len, int root) {
   MPI_Bcast(buffer, len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
 }
 
 
 /** Barrier from the messaging layer.
   */
-void armci_msg_barrier() {
+void armci_msg_barrier(void) {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 }
 
