@@ -111,6 +111,10 @@ fi
 ## Check if __VA_ARGS__ is defined by the compiler
 PAC_C_MACRO_VA_ARGS
 
+## const and restrict
+AC_C_CONST
+AC_C_RESTRICT
+
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
                  [ debug=$enableval ],
