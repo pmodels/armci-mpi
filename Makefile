@@ -1,5 +1,5 @@
 CC      = mpicc
-CFLAGS  = -g -O0 -Iinclude
+CFLAGS  = -g -O0 -Iinclude -Isrc
 CFLAGS += -Wall
 
 ### For timing runs when you don't care about safety:
