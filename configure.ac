@@ -97,7 +97,7 @@ PAC_CC_FUNCTION_NAME_SYMBOL
 
 ## Check if the necessary headers are available
 AC_CHECK_HEADERS(stdio.h stdlib.h string.h strings.h unistd.h stdarg.h sys/types.h \
-		sys/stat.h time.h errno.h)
+		 sys/stat.h time.h errno.h types.h)
 
 ## Error checking functionality
 AC_ARG_ENABLE(error-checking,
