@@ -115,6 +115,12 @@ PAC_C_MACRO_VA_ARGS
 AC_C_CONST
 AC_C_RESTRICT
 
+## Chcek for C99
+AC_PROG_CC_C99
+if test "$ac_cv_prog_cc_c99" = "no" ; then
+   AC_ERROR([C99 not supported by the compiler])
+fi
+
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
                  [ debug=$enableval ],
