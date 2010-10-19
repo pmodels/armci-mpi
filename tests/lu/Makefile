@@ -1,6 +1,6 @@
 CC      = mpicc
-CFLAGS  = -g -Wall -O0 -I../../
-LDFLAGS = -L../../
+CFLAGS  = -g -Wall -O0 -I../../include
+LDFLAGS = -L../../lib
 LIBS    = -larmci -lm
 
 all: lu lu-block lu-b-bc

@@ -1,9 +1,7 @@
 CC     = mpicc
-CFLAGS = -I../../
+CFLAGS = -I../../include
+LDFLAGS= -L../../lib
 LIBS   = -larmci -lm
-
-#LDFLAGS= -L/home/dinan/opt/lib
-LDFLAGS= -L../../
 
 OBJ    = cg.o           \
          compute.o      \

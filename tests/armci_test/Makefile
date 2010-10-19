@@ -1,6 +1,6 @@
 CC     = mpicc
-CFLAGS = -I../../
-LDFLAGS= -L../../
+CFLAGS = -I../../include
+LDFLAGS= -L../../lib
 LIBS   = -larmci -lm
 
 OBJ    = test.o

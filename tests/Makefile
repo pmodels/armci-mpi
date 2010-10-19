@@ -1,8 +1,7 @@
 CC       = mpicc
-CFLAGS   = -g -Wall -O0 -I../
+CFLAGS   = -g -Wall -O0 -I../include
 
-LIBARMCI = ../libarmci.a
-#LIBARMCI = $(HOME)/opt/lib/libarmci.a -lm
+LIBARMCI = ../lib/libarmci.a
 
 TESTS    = test_onesided                \
            test_mutex                   \
@@ -17,11 +16,23 @@ TESTS    = test_onesided                \
            test_malloc_group            \
            # end
 
-all: $(TESTS)
+SUBMAKES = armci_test                   \
+           cg                           \
+           lu                           \
+           transp1D                     \
+           non-blocking                 \
+           # end
+
+all: $(TESTS) $(SUBMAKES)
 
 $(TESTS): $(% : %.c) $(LIBARMCI)
+
+.PHONY: $(SUBMAKES)
+$(SUBMAKES):
+	$(MAKE) -C $@
 
 .PHONY: clean
 clean:
 	rm -f *.o $(TESTS)
 	rm -rf $(TESTS:%=%.dSYM)
+	@for d in $(SUBMAKES); do make -C $$d clean; done
