@@ -18,9 +18,8 @@ void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_
 
 void armci_msg_bintree(int scope, int* Root, int *Up, int *Left, int *Right);
 
-// FIXME: armci_msg_sel unimplemented
-#define armci_msg_sel(x,n,op,type,contribute)\
-        armci_msg_sel_scope(SCOPE_ALL,(x),(n),(op),(type),(contribute)) 
+void armci_msg_sel(void *x, int n, char *op, int type, int contribute);
+void armci_msg_sel_scope(int scope, void *x, int n, char *op, int type, int contribute);
 
 void armci_msg_gop_scope(int scope, void *x, int n, char *op, int type);
 void armci_msg_igop(int *x, int n, char *op);

@@ -121,3 +121,17 @@ void armci_msg_bintree(int scope, int* root, int *up, int *left, int *right) {
   *right = 2*me + 2;
   if (*right >= nproc) *right = -1;
 }
+
+
+/** FIXME: Unimpemented.
+  */
+void armci_msg_sel(void *x, int n, char *op, int type, int contribute) {
+  ARMCI_Error("armci_msg_sel: unimplemented", 10);
+}
+
+
+/** FIXME: Unimpemented.
+  */
+void armci_msg_sel_scope(int scope, void *x, int n, char *op, int type, int contribute) {
+  ARMCI_Error("armci_msg_sel_scope: unimplemented", 10);
+}
