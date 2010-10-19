@@ -1,8 +1,5 @@
 dnl
-dnl $Id: configure.in 16 2008-02-05 02:18:30Z balaji $
-dnl
-dnl Copyright (C) 2010 by Argonne National Laboratory.
-dnl     See COPYRIGHT in top-level directory.
+dnl Copyright (C) 2010. See COPYRIGHT in top-level directory.
 dnl
 
 AC_PREREQ(2.62)
@@ -122,8 +119,25 @@ AC_MSG_CHECKING(debugging support)
 AC_MSG_RESULT($debug)
 if test "$debug" = "yes"; then
    CFLAGS="$CFLAGS -g"
-   AC_DEFINE(ENABLE_DEBUG,1,[Define if debugging support is enabled])
+else
+   AC_DEFINE(NO_SEATBELTS,1,[Define if debugging support is enabled])
 fi
+
+## Benchmarks
+AC_ARG_ENABLE(benchmarks, AC_HELP_STRING([--enable-benchmarks],[Build Benchmarks]),
+                 [ armci_build_benchmarks=$enableval ],
+                 [ armci_build_benchmarks=no ])
+AC_MSG_CHECKING(building benchmarks)
+AC_MSG_RESULT($armci_build_benchmarks)
+AM_CONDITIONAL([armci_build_benchmarks],[test "$armci_build_benchmarks" = "yes"])
+
+## Tests
+AC_ARG_ENABLE(tests, AC_HELP_STRING([--enable-tests],[Build Tests]),
+                 [ armci_build_tests=$enableval ],
+                 [ armci_build_tests=no ])
+AC_MSG_CHECKING(building tests)
+AC_MSG_RESULT($armci_build_tests)
+AM_CONDITIONAL([armci_build_tests],[test "$armci_build_tests" = "yes"])
 
 ## Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)

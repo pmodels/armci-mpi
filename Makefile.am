@@ -1,6 +1,5 @@
 #
-# Copyright (C) 2010 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
+# Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
 ACLOCAL_AMFLAGS = -I m4
@@ -20,3 +19,13 @@ libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
 
 include_HEADERS = $(top_srcdir)/include/armci.h $(top_srcdir)/include/armci_msg.h \
 	$(top_srcdir)/include/armcix.h
+
+bin_PROGRAMS =
+
+if armci_build_benchmarks
+include benchmarks/Makefile.mk
+endif
+
+# if armci_build_tests
+# include tests/Makefile.mk
+# endif
