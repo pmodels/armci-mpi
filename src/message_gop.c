@@ -32,12 +32,15 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     mpi_op = MPI_MAX;
   } else if (strcmp(op, "min") == 0) {
     mpi_op = MPI_MIN;
-  } else if (strcmp(op, "absmax") == 0) {
-    assert(0); // FIXME: Not supported
-  } else if (strcmp(op, "absmin") == 0) {
-    assert(0); // FIXME: Not supported
+  /*
+    } else if (strcmp(op, "absmax") == 0) {
+      assert(0); // FIXME: Not supported
+    } else if (strcmp(op, "absmin") == 0) {
+      assert(0); // FIXME: Not supported
+  */
   } else {
     ARMCI_Error("armci_msg_group_gop_scope: unknown operation", 10);
+    return;
   }
 
   switch(type) {
@@ -58,6 +61,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
       break;
     default:
       ARMCI_Error("armci_msg_group_gop_scope: unknown type", 10);
+      return;
   }
 
   MPI_Type_size(mpi_type, &mpi_type_size);
