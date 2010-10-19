@@ -1,5 +1,9 @@
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_DEBUG_H
+#define HAVE_DEBUG_H
 
 enum debug_cats_e {
   DEBUG_CAT_MEM_REGION = 1, // 2^0
@@ -63,4 +67,4 @@ static inline void dprint(unsigned category, const char *func, char *format, ...
 #endif /* NO_SEATBELTS */
 
 
-#endif /* _DEBUG_H_ */
+#endif /* HAVE_DEBUG_H */

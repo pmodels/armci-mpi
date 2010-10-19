@@ -1,5 +1,9 @@
-#ifndef _ARMCI_MSG_H_
-#define _ARMCI_MSG_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_ARMCI_MSG_H
+#define HAVE_ARMCI_MSG_H
 
 enum armci_scope_e { SCOPE_ALL, SCOPE_NODE, SCOPE_MASTERS}; /* TODO: Only SCOPE_ALL supported */
 enum armci_type_e  { ARMCI_INT, ARMCI_LONG, ARMCI_LONG_LONG, ARMCI_FLOAT, ARMCI_DOUBLE };
@@ -62,4 +66,4 @@ void armci_msg_group_llgop(long long *x, int n, char *op, ARMCI_Group *group);
 void armci_msg_group_fgop(float *x, int n, char *op, ARMCI_Group *group);
 void armci_msg_group_dgop(double *x, int n,char *op, ARMCI_Group *group);
 
-#endif /* _ARMCI_MSG_H_ */
+#endif /* HAVE_ARMCI_MSG_H */

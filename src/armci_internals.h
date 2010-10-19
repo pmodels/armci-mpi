@@ -1,8 +1,12 @@
-#ifndef _ARMCI_INTERNALS_H_
-#define _ARMCI_INTERNALS_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_ARMCI_INTERNALS_H
+#define HAVE_ARMCI_INTERNALS_H
 
 #include "armci.h"
 
 extern ARMCI_Group ARMCI_GROUP_WORLD;
 
-#endif /* _ARMCI_INTERNALS_H_ */
+#endif /* HAVE_ARMCI_INTERNALS_H */

@@ -1,5 +1,9 @@
-#ifndef _ARMCIX_H_
-#define _ARMCIX_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_ARMCIX_H
+#define HAVE_ARMCIX_H
 
 int ARMCIX_Group_split(ARMCI_Group *parent, int color, int key, ARMCI_Group *new_group);
 
@@ -23,4 +27,4 @@ void        ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc);
 int         ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc);
 void        ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc);
 
-#endif
+#endif /* HAVE_ARMCIX_H */

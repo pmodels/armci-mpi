@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /* These mutexes are built using only MPI-2 atomic accumulate.  The only
  * drawback is that they are vulnerable to livelock.  Here's how the lock
  * algorithm works:

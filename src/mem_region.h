@@ -1,5 +1,9 @@
-#ifndef _MEM_REGION_H_
-#define _MEM_REGION_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_MEM_REGION_H
+#define HAVE_MEM_REGION_H
 
 #include <mpi.h>
 
@@ -26,4 +30,4 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
 void          mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_comm);
 mem_region_t *mem_region_lookup(void *ptr, int proc);
 
-#endif /* _MEM_REGION_H_ */
+#endif /* HAVE_MEM_REGION_H */

@@ -1,5 +1,9 @@
-#ifndef _ARMCI_H_
-#define _ARMCI_H_
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
+#ifndef HAVE_ARMCI_H
+#define HAVE_ARMCI_H
 
 #include <mpi.h>
 
@@ -172,4 +176,4 @@ int armci_domain_count(armci_domain_t domain);
 int armci_domain_same_id(armci_domain_t domain, int proc);
 
 
-#endif /* _ARMCI_H_ */
+#endif /* HAVE_ARMCI_H */
