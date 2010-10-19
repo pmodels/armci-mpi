@@ -123,7 +123,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   * @param[in] proc     Process id to target
   * @return             0 on success, non-zero on failure
   */
-int ARMCI_Acc(int datatype, void *scale, void* src, void* dst, int bytes, int proc) {
+int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void *scaled_data = NULL;
   void *src_data;
   int   count, type_size, i, disp;

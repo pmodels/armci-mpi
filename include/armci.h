@@ -31,15 +31,15 @@ int   ARMCI_Get(void *src, void *dst, int size, int target);
 int   ARMCI_Put(void *src, void *dst, int size, int target);
 int   ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc);
 
-int   ARMCI_PutS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+int   ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                  int count[/*stride_levels+1*/], int stride_levels, int proc);
-int   ARMCI_GetS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+int   ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                  int count[/*stride_levels+1*/], int stride_levels, int proc);
 int   ARMCI_AccS(int datatype, void *scale,
-                 void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                 void* dst_ptr, int dst_stride_ar[/*stride_levels*/],
+                 void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                  int count[/*stride_levels+1*/], int stride_levels, int proc);
 
 
@@ -61,15 +61,15 @@ int   ARMCI_Wait(armci_hdl_t* hdl);
 int   ARMCI_Test(armci_hdl_t* hdl);
 int   ARMCI_WaitAll();
 
-int   ARMCI_NbPutS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+int   ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
-int   ARMCI_NbGetS(void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+int   ARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
 int   ARMCI_NbAccS(int datatype, void *scale,
-                   void* src_ptr, int src_stride_ar[/*stride_levels*/],
-                   void* dst_ptr, int dst_stride_ar[/*stride_levels*/],
+                   void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                   void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
 
 
