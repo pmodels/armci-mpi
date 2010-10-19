@@ -29,9 +29,5 @@ Progress semantics:
 
 Read-Modify-Write operations:
 
- * It's very hard to support general RMW operations under MPI without taking
-   a significant performance hit.  So, RMW operations here have slightly
-   different semantics for performance reasons:
-
-     RMW operations are atomic with respect to other RMW operations, but not
-     with respect to other one-sided operations (get, put, acc, etc).
+ * ARMCI RMW operations are atomic with respect to other RMW operations, but
+   not with respect to other one-sided operations (get, put, acc, etc).
