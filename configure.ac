@@ -89,15 +89,11 @@ AH_BOTTOM([#endif])
 ## friends. We save and reset them to avoid this behavior. We want to
 ## control what flags get set.
 PAC_PUSH_ALL_FLAGS
-AC_PROG_CC
+AC_PROG_CC([mpicc])
 PAC_POP_ALL_FLAGS
 
 PAC_ARG_STRICT
 PAC_CC_FUNCTION_NAME_SYMBOL
-
-## Check if the necessary headers are available
-AC_CHECK_HEADERS(stdio.h stdlib.h string.h strings.h unistd.h stdarg.h sys/types.h \
-		 sys/stat.h time.h errno.h types.h)
 
 ## Error checking functionality
 AC_ARG_ENABLE(error-checking,
