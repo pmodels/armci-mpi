@@ -1,8 +1,7 @@
 Things that are not yet implemented:
 
-  * armci_msg_... API
-  * Groups
-  * Topology API
+  * armci_msg_... API partially complete
+  * build with --enable-strict=c99
 
 Things that need performance tuning:
 
