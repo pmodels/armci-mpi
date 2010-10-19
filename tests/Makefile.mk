@@ -21,5 +21,5 @@ test_malloc_group_SOURCES = $(top_srcdir)/tests/test_malloc_group.c
 include tests/armci_test/Makefile.mk
 include tests/cg/Makefile.mk
 include tests/lu/Makefile.mk
-# include tests/transp1D/Makefile.mk
-# include tests/non-blocking/Makefile.mk
+include tests/transp1D/Makefile.mk
+include tests/non-blocking/Makefile.mk
