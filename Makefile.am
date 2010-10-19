@@ -30,5 +30,5 @@ if armci_build_tests
 include tests/Makefile.mk
 endif
 
-LDADD = -larmci
+LDADD = -larmci -lm
 DEPENDENCIES = libarmci.la

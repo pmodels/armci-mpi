@@ -18,8 +18,8 @@ test_groups_SOURCES = $(top_srcdir)/tests/test_groups.c
 test_group_split_SOURCES = $(top_srcdir)/tests/test_group_split.c
 test_malloc_group_SOURCES = $(top_srcdir)/tests/test_malloc_group.c
 
-# include armci_test/Makefile.mk
-# include cg/Makefile.mk
-# include lu/Makefile.mk
-# include transp1D/Makefile.mk
-# include non-blocking/Makefile.mk
+include tests/armci_test/Makefile.mk
+include tests/cg/Makefile.mk
+include tests/lu/Makefile.mk
+# include tests/transp1D/Makefile.mk
+# include tests/non-blocking/Makefile.mk
