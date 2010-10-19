@@ -7,8 +7,8 @@
 
 #include <mpi.h>
 
-#include "armci.h"
-#include "armcix.h"
+#include <armci.h>
+#include <armcix.h>
 
 typedef struct {
   void *base;
@@ -17,7 +17,7 @@ typedef struct {
 
 typedef struct mem_region_s {
   MPI_Win              window;
-  mutex_grp_t          rmw_mutex;
+  armcix_mutex_grp_t   rmw_mutex;
   struct mem_region_s *prev;
   struct mem_region_s *next;
   int                  nslices;

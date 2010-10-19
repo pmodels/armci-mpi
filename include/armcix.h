@@ -12,19 +12,19 @@ int ARMCIX_Group_split(ARMCI_Group *parent, int color, int key, ARMCI_Group *new
   * mutexes.
   */
 
-struct mutex_grp_s {
+struct armcix_mutex_grp_s {
   int      count;
   MPI_Comm comm;
   MPI_Win  window;
   long    *base;
 };
 
-typedef struct mutex_grp_s * mutex_grp_t;
+typedef struct armcix_mutex_grp_s * armcix_mutex_grp_t;
 
-mutex_grp_t ARMCI_Create_mutexes_grp(int count);
-int         ARMCI_Destroy_mutexes_grp(mutex_grp_t grp);
-void        ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc);
-int         ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc);
-void        ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc);
+armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count);
+int  ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp);
+void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc);
+int  ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc);
+void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int proc);
 
 #endif /* HAVE_ARMCIX_H */

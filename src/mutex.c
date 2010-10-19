@@ -19,7 +19,7 @@
 /** This is the handle for the "default" group of mutexes used by the
   * standard ARMCI mutex API
   */
-static mutex_grp_t armci_mutex_grp = NULL;
+static armcix_mutex_grp_t armci_mutex_grp = NULL;
 
 
 /** Create ARMCI mutexes.  Collective.
@@ -30,7 +30,7 @@ int ARMCI_Create_mutexes(int count) {
   if (armci_mutex_grp != NULL)
     ARMCI_Error("attempted to create ARMCI mutexes multiple times", 10);
 
-  armci_mutex_grp = ARMCI_Create_mutexes_grp(count);
+  armci_mutex_grp = ARMCIX_Create_mutexes_grp(count);
 
   if (armci_mutex_grp != NULL)
     return 0;
@@ -47,7 +47,7 @@ int ARMCI_Destroy_mutexes(void) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to free unallocated ARMCI mutexes", 10);
   
-  err = ARMCI_Destroy_mutexes_grp(armci_mutex_grp);
+  err = ARMCIX_Destroy_mutexes_grp(armci_mutex_grp);
   armci_mutex_grp = NULL;
 
   return err;
@@ -63,7 +63,7 @@ void ARMCI_Lock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to lock on unallocated ARMCI mutexes", 10);
   
-  ARMCI_Lock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Lock_grp(armci_mutex_grp, mutex, proc);
 }
 
 /** Unlock a mutex.
@@ -75,5 +75,5 @@ void ARMCI_Unlock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to unlock on unallocated ARMCI mutexes", 10);
   
-  ARMCI_Unlock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Unlock_grp(armci_mutex_grp, mutex, proc);
 }

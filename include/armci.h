@@ -11,11 +11,11 @@ enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG  /*           lon
                     ARMCI_ACC_FLT /*   float */, ARMCI_ACC_DBL  /*         double */,
                     ARMCI_ACC_CPL /* complex */, ARMCI_ACC_DCPL /* double complex */ };
 
-int   ARMCI_Init();
+int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);
    
-int   ARMCI_Finalize();
-void  ARMCI_Cleanup();
+int   ARMCI_Finalize(void);
+void  ARMCI_Cleanup(void);
 void  ARMCI_Error(char *msg, int code);
 
 int   ARMCI_Malloc(void **base_ptrs, int size);
@@ -24,9 +24,9 @@ int   ARMCI_Free(void *ptr);
 void *ARMCI_Malloc_local(int size);
 int   ARMCI_Free_local(void *ptr);
 
-void  ARMCI_Barrier();
+void  ARMCI_Barrier(void);
 void  ARMCI_Fence(int proc);
-void  ARMCI_AllFence();
+void  ARMCI_AllFence(void);
 
 void  ARMCI_Access_start(void *ptr); // NEW
 void  ARMCI_Access_end(void *ptr);   // NEW
@@ -63,7 +63,7 @@ int   ARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, in
 
 int   ARMCI_Wait(armci_hdl_t* hdl);
 int   ARMCI_Test(armci_hdl_t* hdl);
-int   ARMCI_WaitAll();
+int   ARMCI_WaitAll(void);
 
 int   ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                    void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -79,7 +80,7 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
   MPI_Group_free(&alloc_group);
 
   // Create the RMW mutex: Keeps RMW operations atomic wrt each other
-  mreg->rmw_mutex = ARMCI_Create_mutexes_grp(1);
+  mreg->rmw_mutex = ARMCIX_Create_mutexes_grp(1);
 
   // Append the new region onto the region list
   if (mreg_list == NULL) {
@@ -173,7 +174,7 @@ void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_
   free(mreg->slices);
   free(mreg);
 
-  ARMCI_Destroy_mutexes_grp(mreg->rmw_mutex);
+  ARMCIX_Destroy_mutexes_grp(mreg->rmw_mutex);
 }
 
 

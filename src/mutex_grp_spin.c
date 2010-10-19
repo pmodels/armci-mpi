@@ -42,7 +42,7 @@
 /** This is the handle for the "default" group of mutexes used by the
   * standard ARMCI mutex API
   */
-static mutex_grp_t armci_mutex_grp = NULL;
+static armcix_mutex_grp_t armci_mutex_grp = NULL;
 
 
 /** Create ARMCI mutexes.  Collective.
@@ -53,7 +53,7 @@ int ARMCI_Create_mutexes(int count) {
   if (armci_mutex_grp != NULL)
     ARMCI_Error("attempted to create ARMCI mutexes multiple times", 10);
 
-  armci_mutex_grp = ARMCI_Create_mutexes_grp(count);
+  armci_mutex_grp = ARMCIX_Create_mutexes_grp(count);
 
   if (armci_mutex_grp != NULL)
     return 0;
@@ -70,7 +70,7 @@ int ARMCI_Destroy_mutexes(void) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to free unallocated ARMCI mutexes", 10);
   
-  err = ARMCI_Destroy_mutexes_grp(armci_mutex_grp);
+  err = ARMCIX_Destroy_mutexes_grp(armci_mutex_grp);
   armci_mutex_grp = NULL;
 
   return err;
@@ -86,7 +86,7 @@ void ARMCI_Lock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to lock on unallocated ARMCI mutexes", 10);
   
-  ARMCI_Lock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Lock_grp(armci_mutex_grp, mutex, proc);
 }
 
 /** Unlock a mutex.
@@ -98,7 +98,7 @@ void ARMCI_Unlock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
     ARMCI_Error("attempted to unlock on unallocated ARMCI mutexes", 10);
   
-  ARMCI_Unlock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Unlock_grp(armci_mutex_grp, mutex, proc);
 }
 
 
@@ -110,9 +110,9 @@ void ARMCI_Unlock(int mutex, int proc) {
   * @param[in] count Number of mutexes to create on the calling process
   * @return          Handle to the mutex group
   */
-mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
+armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
   int         ierr, i;
-  mutex_grp_t grp;
+  armcix_mutex_grp_t grp;
 
   grp = malloc(sizeof(struct mutex_grp_s));
   assert(grp != NULL);
@@ -140,7 +140,7 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   * 
   * @param[in] grp Group to destroy
   */
-int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
+int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
   MPI_Win_free(&grp->window);
   MPI_Free_mem(grp->base);
   free(grp);
@@ -154,7 +154,7 @@ int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
   * @param[in] mutex Desired mutex number [0..count-1]
   * @param[in] proc  Process where the mutex lives
   */
-void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
+void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   MPI_Group mpi_grp;
   int       rank, nproc;
   long      lock_val, unlock_val, lock_out;
@@ -212,7 +212,7 @@ void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
   * @param[in] proc  Process where the mutex lives
   * @return          0 on success, non-zero on failure
   */
-int ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc) {
+int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   MPI_Group mpi_grp;
   int       rank, nproc;
   long      lock_val, unlock_val, lock_out;
@@ -257,7 +257,7 @@ int ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc) {
   * @param[in] mutex Desired mutex number [0..count-1]
   * @param[in] proc  Process where the mutex lives
   */
-void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
+void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   MPI_Group mpi_grp;
   int       rank;
   long      unlock_val;

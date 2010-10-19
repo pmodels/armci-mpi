@@ -10,11 +10,11 @@ enum armci_type_e  { ARMCI_INT, ARMCI_LONG, ARMCI_LONG_LONG, ARMCI_FLOAT, ARMCI_
 
 /* Utility routines */
 
-int  armci_msg_me();
-int  armci_msg_nproc();
+int  armci_msg_me(void);
+int  armci_msg_nproc(void);
 
 void armci_msg_abort(int code);
-double armci_timer();
+double armci_timer(void);
 
 /* Send/Recv */
 
@@ -24,7 +24,7 @@ int  armci_msg_rcvany(int tag, void *buffer, int buflen, int *msglen);
 
 /* Assorted Collectives */
 
-void armci_msg_barrier();
+void armci_msg_barrier(void);
 void armci_msg_group_barrier(ARMCI_Group *group);
 void armci_msg_bintree(int scope, int *Root, int *Up, int *Left, int *Right);
 

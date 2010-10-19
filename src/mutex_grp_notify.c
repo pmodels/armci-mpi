@@ -18,11 +18,11 @@
   * @param[in] count Number of mutexes on the local process.
   * @return          Handle to the mutex group.
   */
-mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
+armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
   int rank, nproc;
-  mutex_grp_t grp;
+  armcix_mutex_grp_t grp;
 
-  grp = malloc(sizeof(struct mutex_grp_s));
+  grp = malloc(sizeof(struct armcix_mutex_grp_s));
   assert(grp != NULL);
 
   MPI_Comm_dup(ARMCI_GROUP_WORLD.comm, &grp->comm);
@@ -51,7 +51,7 @@ mutex_grp_t ARMCI_Create_mutexes_grp(int count) {
   * @param[in] grp Handle to the group that should be destroyed.
   * @return        Zero on success, non-zero otherwise.
   */
-int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
+int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
   int ret;
 
   ret = MPI_Win_free(&grp->window);
@@ -73,7 +73,7 @@ int ARMCI_Destroy_mutexes_grp(mutex_grp_t grp) {
   * @param[in] mutex Desired mutex number [0..count-1]
   * @param[in] proc  Process where the mutex lives
   */
-void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
+void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, already_locked, i;
   u_int8_t *buf;
 
@@ -128,8 +128,8 @@ void ARMCI_Lock_grp(mutex_grp_t grp, int mutex, int proc) {
   * @param[in] proc  Process where the mutex lives
   * @return          0 on success, non-zero on failure
   */
-int ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc) {
-  ARMCI_Lock_grp(grp, mutex, proc);
+int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
+  ARMCIX_Lock_grp(grp, mutex, proc);
   return 0;
 }
 
@@ -140,7 +140,7 @@ int ARMCI_Trylock_grp(mutex_grp_t grp, int mutex, int proc) {
   * @param[in] mutex Desired mutex number [0..count-1]
   * @param[in] proc  Process where the mutex lives
   */
-void ARMCI_Unlock_grp(mutex_grp_t grp, int mutex, int proc) {
+void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, i;
   u_int8_t *buf;
 
