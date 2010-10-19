@@ -4,6 +4,9 @@
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src
+LDFLAGS = -L$(top_builddir)
+LDADD = -larmci -lm
+DEPENDENCIES = libarmci.la
 
 lib_LTLIBRARIES = libarmci.la
 libarmci_la_SOURCES = $(top_srcdir)/src/debug.c $(top_srcdir)/src/groups.c \
@@ -29,6 +32,3 @@ endif
 if armci_build_tests
 include tests/Makefile.mk
 endif
-
-LDADD = -larmci -lm
-DEPENDENCIES = libarmci.la
