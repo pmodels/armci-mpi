@@ -3,9 +3,9 @@
 #include <string.h>
 #include <mpi.h>
 
-#include "debug.h"
-#include "armci.h"
-#include "armci_internals.h"
+#include <debug.h>
+#include <armci.h>
+#include <armci_internals.h>
 
 
 /** ARMCI double precision global operation.  Collective.

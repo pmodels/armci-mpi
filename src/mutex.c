@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <mpi.h>
 
-#include "debug.h"
-#include "armci.h"
-#include "armcix.h"
+#include <debug.h>
+#include <armci.h>
+#include <armcix.h>
 
 #define MAX_TIMEOUT 1000
 #define TIMEOUT_MUL 2

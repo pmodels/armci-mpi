@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "armci.h"
-#include "mem_region.h"
-#include "debug.h"
+#include <armci.h>
+#include <mem_region.h>
+#include <debug.h>
 
 
 /** Perform atomic read-modify-write on the given integer or long location and

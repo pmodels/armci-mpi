@@ -1,0 +1,37 @@
+               ARMCI Over MPI RMW Implementation Notes
+               =======================================
+
+Direct access to local buffers:
+
+ * Because of MPI's semantics, you are not allowed to access shared memory
+   directly, it must be through put/get.  Alternatively you can use the 
+   new ARMCI_Access_begin/end() functions.
+   
+ * Both buffers in a communication operation should not be in shared space.
+   Communication within an ARMCI_Access region might deadlock due to internal
+   MPI Lock/Unlock use.
+
+
+ARMCI groups:
+
+ * ARMCI-style groups are not currently supported.  Groups formation is
+   currently collective across the parent group.  In ARMCI-style it is
+   collective across the new group only.
+
+
+Progress semantics:
+
+ * Most MPI implementations will require you to do something in order to enable
+   implicit the progress needed by ARMCI.  You'll need to set an environment
+   variable in most cases. MPICH_ASYNC_PROGRESS for MPICH2, something else for
+   MVAPICH2, DCMF_INTERRUPTS=1 for MPICH2-BG, etc.
+
+
+Read-Modify-Write operations:
+
+ * It's very hard to support general RMW operations under MPI without taking
+   a significant performance hit.  So, RMW operations here have slightly
+   different semantics for performance reasons:
+
+     RMW operations are atomic with respect to other RMW operations, but not
+     with respect to other one-sided operations (get, put, acc, etc).

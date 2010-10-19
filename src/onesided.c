@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "debug.h"
+#include <debug.h>
 
-#include "armci.h"
-#include "mem_region.h"
+#include <armci.h>
+#include <mem_region.h>
 
 
 /** Declare the start of a local access epoch.  This allows direct access to

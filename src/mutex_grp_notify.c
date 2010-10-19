@@ -3,9 +3,9 @@
 #include <string.h>
 #include <mpi.h>
 
-#include "armci.h"
-#include "armcix.h"
-#include "debug.h"
+#include <armci.h>
+#include <armcix.h>
+#include <debug.h>
 
 #define ARMCI_MUTEX_TAG 100
 

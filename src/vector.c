@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "armci.h"
-#include "debug.h"
+#include <armci.h>
+#include <debug.h>
 
 
 /** Generalized I/O vector one-sided put.

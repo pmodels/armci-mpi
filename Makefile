@@ -1,5 +1,5 @@
 CC      = mpicc
-CFLAGS  = -g -O0 -I.
+CFLAGS  = -g -O0 -Iinclude
 CFLAGS += -Wall
 
 ### For timing runs when you don't care about safety:
@@ -24,10 +24,13 @@ OBJ    =  debug.o               \
          #mutex_grp_spin.o      \
          # end
 
-libarmci.a: $(OBJ)
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) -c -o $@ $+
+
+lib/libarmci.a: $(OBJ:%=src/%)
 	ar rcs $@ $+
 	ranlib $@
 
 .PHONY: clean
 clean:
-	rm -f *.o test libarmci.a
+	rm -f src/*.o lib/libarmci.a

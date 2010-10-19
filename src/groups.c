@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "armci.h"
-#include "armci_internals.h"
-#include "debug.h"
+#include <armci.h>
+#include <armci_internals.h>
+#include <debug.h>
 
 
 /** The ARMCI world group.  This is accessed from outside via

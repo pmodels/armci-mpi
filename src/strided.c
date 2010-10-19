@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "armci.h"
-#include "debug.h"
+#include <armci.h>
+#include <debug.h>
 
 enum strided_ops_e { STRIDED_PUT, STRIDED_GET, STRIDED_ACC };
 

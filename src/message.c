@@ -3,9 +3,9 @@
 #include <string.h>
 #include <mpi.h>
 
-#include "debug.h"
-#include "armci.h"
-#include "armci_internals.h"
+#include <debug.h>
+#include <armci.h>
+#include <armci_internals.h>
 
 /** Query process rank from messaging (MPI) layer.
   */

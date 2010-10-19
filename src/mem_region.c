@@ -3,9 +3,9 @@
 #include <string.h>
 #include <mpi.h>
 
-#include "armci.h"
-#include "debug.h"
-#include "mem_region.h"
+#include <armci.h>
+#include <debug.h>
+#include <mem_region.h>
 
 
 /** Linked list of shared memory regions.

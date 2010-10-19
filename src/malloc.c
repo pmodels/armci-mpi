@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "debug.h"
+#include <debug.h>
 
-#include "armci.h"
-#include "armci_internals.h"
-#include "mem_region.h"
+#include <armci.h>
+#include <armci_internals.h>
+#include <mem_region.h>
 
 
 /** Allocate a shared memory segment.  Collective.

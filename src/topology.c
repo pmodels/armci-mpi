@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "armci.h"
-#include "armci_internals.h"
+#include <armci.h>
+#include <armci_internals.h>
 
 /** WARNING: Domains are not implemented.  These dummy wrappers assume that all
   * domains are of size 1. */
