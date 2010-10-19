@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdint.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -193,10 +193,10 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
     assert(proc < mreg->nslices); // FIXME: Remove when we have groups
 
     if (proc < mreg->nslices) {
-      const u_int8_t *base = mreg->slices[proc].base;
+      const uint8_t *base = mreg->slices[proc].base;
       const int       size = mreg->slices[proc].size;
 
-      if ((u_int8_t*) ptr >= base && (u_int8_t*) ptr < base + size)
+      if ((uint8_t*) ptr >= base && (uint8_t*) ptr < base + size)
         break;
     }
 

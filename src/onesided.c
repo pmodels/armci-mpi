@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <mpi.h>
 #include <debug.h>
 
@@ -72,11 +73,11 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((u_int8_t*)src - (u_int8_t*)mreg->slices[target].base);
+  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[target].base);
 
   assert(disp >= 0 && disp < mreg->slices[target].size);
   assert(src >= mreg->slices[target].base);
-  assert((u_int8_t*)src + size <= (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -102,11 +103,11 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   assert(mreg != NULL);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((u_int8_t*)dst - (u_int8_t*)mreg->slices[target].base);
+  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[target].base);
 
   assert(disp >= 0 && disp < mreg->slices[target].size);
   assert(dst >= mreg->slices[target].base);
-  assert((u_int8_t*)dst + size <= (u_int8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
   MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
@@ -218,11 +219,11 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   assert(bytes % type_size == 0);
 
-  disp = (int) ((u_int8_t*)dst - (u_int8_t*)mreg->slices[proc].base);
+  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
-  assert((u_int8_t*)dst + bytes <= (u_int8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+  assert((uint8_t*)dst + bytes <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
   MPI_Accumulate(src_data, count, type, proc, disp, count, type, MPI_SUM, mreg->window);

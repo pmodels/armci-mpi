@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <stdint.h>
 
 #include <armci.h>
 #include <debug.h>
@@ -226,19 +226,19 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     // Perform communication.  TODO: Optimize for lock/unlock here
     switch (strided_op) {
       case STRIDED_PUT:
-        ARMCI_Put(((u_int8_t*)src_ptr) + disp_src,
-                  ((u_int8_t*)dst_ptr) + disp_dst,
+        ARMCI_Put(((uint8_t*)src_ptr) + disp_src,
+                  ((uint8_t*)dst_ptr) + disp_dst,
                   count[0], proc);
         break;
       case STRIDED_GET:
-        ARMCI_Get(((u_int8_t*)src_ptr) + disp_src,
-                  ((u_int8_t*)dst_ptr) + disp_dst,
+        ARMCI_Get(((uint8_t*)src_ptr) + disp_src,
+                  ((uint8_t*)dst_ptr) + disp_dst,
                   count[0], proc);
         break;
       case STRIDED_ACC:
         ARMCI_Acc(datatype, scale,
-                  ((u_int8_t*)src_ptr) + disp_src,
-                  ((u_int8_t*)dst_ptr) + disp_dst,
+                  ((uint8_t*)src_ptr) + disp_src,
+                  ((uint8_t*)dst_ptr) + disp_dst,
                   count[0], proc);
         break;
       default:

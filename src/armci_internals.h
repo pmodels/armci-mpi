@@ -23,10 +23,6 @@
 #include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
-#if defined HAVE_UNISTD_H
-#include <unistd.h>
-#endif /* HAVE_UNISTD_H */
-
 #if defined HAVE_STDARG_H
 #include <stdarg.h>
 #endif /* HAVE_STDARG_H */

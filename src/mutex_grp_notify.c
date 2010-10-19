@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -75,12 +76,12 @@ int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
   */
 void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, already_locked, i;
-  u_int8_t *buf;
+  uint8_t *buf;
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
 
-  buf = malloc(nproc*sizeof(u_int8_t));
+  buf = malloc(nproc*sizeof(uint8_t));
   assert(buf != NULL);
 
   buf[rank] = 1;
@@ -142,12 +143,12 @@ int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   */
 void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   int       rank, nproc, i;
-  u_int8_t *buf;
+  uint8_t *buf;
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
 
-  buf = malloc(nproc*sizeof(u_int8_t));
+  buf = malloc(nproc*sizeof(uint8_t));
 
   buf[rank] = 0;
 
