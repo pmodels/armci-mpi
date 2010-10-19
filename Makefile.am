@@ -26,6 +26,9 @@ if armci_build_benchmarks
 include benchmarks/Makefile.mk
 endif
 
-# if armci_build_tests
-# include tests/Makefile.mk
-# endif
+if armci_build_tests
+include tests/Makefile.mk
+endif
+
+LDADD = -larmci
+DEPENDENCIES = libarmci.la
