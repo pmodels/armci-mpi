@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include <armci.h>
+#include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
 

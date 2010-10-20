@@ -206,6 +206,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
     default:
       ARMCI_Error("ARMCI_Acc() unsupported operation", 100);
+      return 1;
   }
 
   if (scaled_data)
