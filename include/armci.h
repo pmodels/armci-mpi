@@ -7,9 +7,11 @@
 
 #include <mpi.h>
 
-enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG  /*           long */,
-                    ARMCI_ACC_FLT /*   float */, ARMCI_ACC_DBL  /*         double */,
-                    ARMCI_ACC_CPL /* complex */, ARMCI_ACC_DCPL /* double complex */ };
+enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG /*           long */,
+                    ARMCI_ACC_FLT /*   float */, ARMCI_ACC_DBL /*         double */,
+                    ARMCI_ACC_CPL /* complex */, ARMCI_ACC_DCP /* double complex */ };
+
+typedef long armci_size_t;
 
 int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);
