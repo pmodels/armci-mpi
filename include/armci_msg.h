@@ -5,6 +5,8 @@
 #ifndef HAVE_ARMCI_MSG_H
 #define HAVE_ARMCI_MSG_H
 
+#include <armci.h>
+
 enum armci_scope_e { SCOPE_ALL, SCOPE_NODE, SCOPE_MASTERS}; /* TODO: Only SCOPE_ALL supported */
 enum armci_type_e  { ARMCI_INT, ARMCI_LONG, ARMCI_LONG_LONG, ARMCI_FLOAT, ARMCI_DOUBLE };
 

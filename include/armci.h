@@ -33,6 +33,8 @@ void  ARMCI_AllFence(void);
 void  ARMCI_Access_start(void *ptr); // NEW
 void  ARMCI_Access_end(void *ptr);   // NEW
 
+void  ARMCI_Copy(void *src, void *dst, int size);
+
 int   ARMCI_Get(void *src, void *dst, int size, int target);
 int   ARMCI_Put(void *src, void *dst, int size, int target);
 int   ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc);
@@ -47,6 +49,12 @@ int   ARMCI_AccS(int datatype, void *scale,
                  void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                  int count[/*stride_levels+1*/], int stride_levels, int proc);
+
+int   ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc);
+int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                 int count[/*stride_levels+1*/], int stride_levels, 
+                 int *flag, int value, int proc);
 
 
 /** Non-blocking ops.  MPI-2 forces remote completion on everything so these all
@@ -77,6 +85,9 @@ int   ARMCI_NbAccS(int datatype, void *scale,
                    void *src_ptr, int src_stride_ar[/*stride_levels*/],
                    void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
+
+/* TODO */ void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
+/* TODO */ void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
 
 
 /** Generalized I/O Vector operations.
@@ -177,5 +188,13 @@ int armci_domain_my_id(armci_domain_t domain);
 int armci_domain_count(armci_domain_t domain);
 int armci_domain_same_id(armci_domain_t domain, int proc);
 
+int ARMCI_Same_node(int proc);
+
+/** Odds and ends
+  */
+
+int  ARMCI_Uses_shm();
+void ARMCI_Set_shm_limit(unsigned long shmemlimit);
+int  ARMCI_Uses_shm_grp(ARMCI_Group *group);
 
 #endif /* HAVE_ARMCI_H */

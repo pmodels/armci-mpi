@@ -235,3 +235,21 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   return 0;
 }
+
+/** One-sided copy of data from the source to the destination.  Set a flag on
+ * the remote process when the transfer is complete.
+ *
+ * @param[in] src   Source buffer
+ * @param[in] dst   Destination buffer on proc
+ * @param[in] size  Number of bytes to transfer
+ * @param[in] flag  Address of the flag buffer on proc
+ * @param[in] value Value to set the flag to
+ * @param[in] proc  Process id of the target
+ * @return          0 on success, non-zero on failure
+ */
+int ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc) {
+  ARMCI_Put(src, dst, size, proc);
+  ARMCI_Put(&value, flag, sizeof(int), proc);
+
+  return 0;
+}

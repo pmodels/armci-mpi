@@ -34,3 +34,12 @@ int armci_domain_count(armci_domain_t domain) {
 int armci_domain_same_id(armci_domain_t domain, int proc) {
   return proc == ARMCI_GROUP_WORLD.rank;
 }
+
+
+/** Query if a process is on the same node as the caller.
+  *
+  * @param[in] proc Process id in question
+  */
+int ARMCI_Same_node(int proc) {
+  return 0;
+}

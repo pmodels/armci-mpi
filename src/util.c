@@ -4,11 +4,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
-#include <debug.h>
 
 #include <armci.h>
 #include <armci_internals.h>
+#include <debug.h>
 
 int ARMCI_Init(void) {
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
@@ -61,3 +62,24 @@ void ARMCI_AllFence(void) {
   return;
 }
 
+int ARMCI_Uses_shm() {
+  return 0;
+}
+
+void ARMCI_Set_shm_limit(unsigned long shmemlimit) {
+  return;
+}
+
+int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
+  return 0;
+}
+
+/** Copy local data.
+  *
+  * @param[in]  src  Source buffer
+  * @param[out] dst  Destination buffer
+  * @param[in]  size Number of bytes to copy
+  */
+void ARMCI_Copy(void *src, void *dst, int size) {
+  memcpy(dst, src, size);
+}

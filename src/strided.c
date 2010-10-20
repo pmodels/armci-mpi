@@ -261,3 +261,36 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   return 0;
 }
 
+/** Blocking operation that transfers data from the calling process to the
+  * memory of the remote process.  The data transfer is strided and blocking.
+  * After the transfer completes, the given flag is set on the remote process.
+  *
+  * @param[in] src_ptr         Source starting address of the data block to put.
+  * @param[in] src_stride_arr  Source array of stride distances in bytes.
+  * @param[in] dst_ptr         Destination starting address to put data.
+  * @param[in] dst_stride_ar   Destination array of stride distances in bytes.
+  * @param[in] count           Block size in each dimension. count[0] should be the
+  *                            number of bytes of contiguous data in leading dimension.
+  * @param[in] stride_levels   The level of strides.
+  * @param[in] flag            Location of the flag buffer
+  * @param[in] value           Value to set the flag to
+  * @param[in] proc            Remote process ID (destination).
+  *
+  * @return                    Zero on success, error code otherwise.
+  */
+int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+                 void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                 int count[/*stride_levels+1*/], int stride_levels, 
+                 int *flag, int value, int proc) {
+
+  ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  ARMCI_Put(&value, flag, sizeof(int), proc);
+}
+
+void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
+  ARMCI_Error("armci_write_strided: unimplemented", 10);
+}
+
+void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
+  ARMCI_Error("armci_read_strided: unimplemented", 10);
+}
