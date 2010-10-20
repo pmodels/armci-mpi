@@ -7,15 +7,20 @@ AC_PREREQ(2.62)
 AC_INIT([armci],[0])
 AC_CONFIG_AUX_DIR(m4)
 AC_CONFIG_MACRO_DIR(m4)
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.11 silent-rules])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.10])
 
 LT_PREREQ([2.2.6])
 
-# Bug in libtool adds -O2 and -g by default
+## Bug in libtool adds -O2 and -g by default
 PAC_PUSH_FLAG(CFLAGS)
+AC_PROG_CC(mpicc)
 LT_INIT(disable-shared)
 PAC_POP_FLAG(CFLAGS)
 
+## Non-verbose make
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+## Version checks
 if test -s "$srcdir/VERSION" ; then
     . $srcdir/VERSION
     export ARMCI_VERSION
@@ -84,13 +89,6 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 #define ARMCICONF_H_INCLUDED
 ])
 AH_BOTTOM([#endif])
-
-## Some of the autoconf macros automatically edit the CFLAGS and
-## friends. We save and reset them to avoid this behavior. We want to
-## control what flags get set.
-PAC_PUSH_ALL_FLAGS
-AC_PROG_CC([mpicc])
-PAC_POP_ALL_FLAGS
 
 PAC_ARG_STRICT
 PAC_CC_FUNCTION_NAME_SYMBOL
