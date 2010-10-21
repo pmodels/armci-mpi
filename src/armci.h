@@ -172,7 +172,7 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group);
 /** ARMCI Message API is in another file:
   */
 
-#include <armci_msg.h>
+#include <message.h>
 
 /** Topology API
   */

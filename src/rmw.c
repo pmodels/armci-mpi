@@ -44,8 +44,16 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
     if (is_long)
       *(long*) ploc = swap_val;
-    else
-      *(int*) ploc = * ((int*) (&swap_val)); // This is different than just casting to int
+    else {
+
+      /* This is different than just casting to int.  Long is larger than or
+       * the same size as an int, so if we cast long to int we might get just
+       * the higer address bytes, but what we want actually want are the lower
+       * address bytes since we are treating this long buffer as an int buffer.
+       */
+
+      *(int*) ploc = * ((int*) (&swap_val));
+    }
   }
 
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG) {
@@ -56,16 +64,22 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     
     if (is_long)
       new_val = fetch_val + value;
-    else
+    else {
+      /* This is different than just casting to int.  See comment above. */
+
       *((int*) (&new_val)) = *((int*)(&fetch_val)) + value;
+    }
 
     ARMCI_Put(&new_val, prem, is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_grp(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
       *(long*) ploc = fetch_val;
-    else
-      *(int*) ploc = * ((int*) (&fetch_val)); // This is different than just casting to int, we want the lower address bytes.
+    else {
+      /* This is different than just casting to int.  See comment above. */
+
+      *(int*) ploc = * ((int*) (&fetch_val));
+    }
   }
 
   else {

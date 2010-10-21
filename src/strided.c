@@ -285,6 +285,8 @@ int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
   ARMCI_Put(&value, flag, sizeof(int), proc);
+
+  return 1;
 }
 
 void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {

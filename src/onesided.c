@@ -204,8 +204,18 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       }
       break;
 
+    case ARMCI_ACC_CPL:
+      ARMCI_Error("ARMCI_Acc() complex data type not supported", 100);
+      return 1;
+      break;
+
+    case ARMCI_ACC_DCP:
+      ARMCI_Error("ARMCI_Acc() double complex data type not supported", 100);
+      return 1;
+      break;
+
     default:
-      ARMCI_Error("ARMCI_Acc() unsupported operation", 100);
+      ARMCI_Error("ARMCI_Acc() unknown data type", 100);
       return 1;
   }
 

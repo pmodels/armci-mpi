@@ -79,7 +79,7 @@ ARMCI_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
 AC_SUBST(ARMCI_NUMVERSION)
 AC_SUBST(ARMCI_VERSION)
 
-AC_CONFIG_HEADER(include/armciconf.h)
+AC_CONFIG_HEADER(src/armciconf.h)
 AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
