@@ -36,50 +36,42 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     is_long = 0;
 
   if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG) {
-    long swap_val;
+    long swap_val_l;
+    int  swap_val_i;
+
     ARMCIX_Lock_grp(mreg->rmw_mutex, 0, proc);
-    ARMCI_Get(prem, &swap_val, is_long ? sizeof(long) : sizeof(int), proc);
-    ARMCI_Put(ploc, prem,      is_long ? sizeof(long) : sizeof(int), proc);
+    ARMCI_Get(prem, is_long ? (void*) &swap_val_l : (void*) &swap_val_i, 
+              is_long ? sizeof(long) : sizeof(int), proc);
+    ARMCI_Put(ploc, prem, is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_grp(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
-      *(long*) ploc = swap_val;
-    else {
-
-      /* This is different than just casting to int.  Long is larger than or
-       * the same size as an int, so if we cast long to int we might get just
-       * the higer address bytes, but what we want actually want are the lower
-       * address bytes since we are treating this long buffer as an int buffer.
-       */
-
-      *(int*) ploc = * ((int*) (&swap_val));
-    }
+      *(long*) ploc = swap_val_l;
+    else
+      *(int*) ploc = swap_val_i;
   }
 
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG) {
-    long fetch_val, new_val;
+    long fetch_val_l, new_val_l;
+    int  fetch_val_i, new_val_i;
     
     ARMCIX_Lock_grp(mreg->rmw_mutex, 0, proc);
-    ARMCI_Get(prem, &fetch_val, is_long ? sizeof(long) : sizeof(int), proc);
+    ARMCI_Get(prem, is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i,
+              is_long ? sizeof(long) : sizeof(int), proc);
     
     if (is_long)
-      new_val = fetch_val + value;
-    else {
-      /* This is different than just casting to int.  See comment above. */
+      new_val_l = fetch_val_l + value;
+    else
+      new_val_i = fetch_val_i + value;
 
-      *((int*) (&new_val)) = *((int*)(&fetch_val)) + value;
-    }
-
-    ARMCI_Put(&new_val, prem, is_long ? sizeof(long) : sizeof(int), proc);
+    ARMCI_Put(is_long ? (void*) &new_val_l : (void*) &new_val_i, prem, 
+              is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_grp(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
-      *(long*) ploc = fetch_val;
-    else {
-      /* This is different than just casting to int.  See comment above. */
-
-      *(int*) ploc = * ((int*) (&fetch_val));
-    }
+      *(long*) ploc = fetch_val_l;
+    else
+      *(int*) ploc = fetch_val_i;
   }
 
   else {
