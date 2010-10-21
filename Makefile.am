@@ -8,7 +8,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 lib_LTLIBRARIES = libarmci.la
 noinst_LTLIBRARIES = libarmcii.la
 
-libarmci_la_SOURCES = $(top_srcdir)/src/debug.c         \
+libarmci_la_SOURCES = $(top_srcdir)/src/copypaste.c     \
+                      $(top_srcdir)/src/debug.c         \
                       $(top_srcdir)/src/groups.c        \
 	              $(top_srcdir)/src/malloc.c        \
                       $(top_srcdir)/src/mem_region.c    \

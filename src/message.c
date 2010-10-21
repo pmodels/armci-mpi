@@ -69,6 +69,18 @@ void armci_msg_brdcst(void *buffer, int len, int root) {
 }
 
 
+/** Broadcast a message on the given scope.  Collective.
+  *
+  * @param[in] scope  Scope for the broadcast
+  * @param[in] buffer Source buffer on root, destination elsewhere.
+  * @param[in] len    Length of the message in bytes.
+  * @param[in] root   Rank of the root process.
+  */
+void armci_msg_bcast_scope(int scope, void *buffer, int len, int root) {
+  armci_msg_group_bcast_scope(scope, buffer, len, root, &ARMCI_GROUP_WORLD);
+}
+
+
 /** Barrier from the messaging layer.
   */
 void armci_msg_barrier(void) {
@@ -94,9 +106,10 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
   * @param[in]    group ARMCI group on which to perform communication
   */
 void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_Group *group) {
-  assert(scope == SCOPE_ALL); // TODO: Only support SCOPE_ALL
-
-  MPI_Bcast(buf, len, MPI_BYTE, root, group->comm);
+  if (scope == SCOPE_ALL || scope == SCOPE_MASTERS)
+    MPI_Bcast(buf, len, MPI_BYTE, root, group->comm);
+  else
+    MPI_Bcast(buf, len, MPI_BYTE, root, MPI_COMM_SELF);
 }
 
 
@@ -154,7 +167,7 @@ void armci_msg_reduce(void *x, int n, char *op, int type) {
 
 
 void armci_msg_reduce_scope(int scope, void *x, int n, char *op, int type) {
-  ARMCI_Error("armci_msg_reduce_scope: unimplemented", 10);
+  ARMCI_Error("armci_msg_reduce_scope: unimplemented", 10); // TODO
 }
 
 
@@ -169,7 +182,13 @@ void armci_msg_reduce_scope(int scope, void *x, int n, char *op, int type) {
 void armci_msg_bintree(int scope, int *root, int *up, int *left, int *right) {
   int me, nproc;
 
-  assert(scope == SCOPE_ALL); // TODO: Other scopes are not currently supported
+  if (scope == SCOPE_NODE) {
+    *root  = 0;
+    *left  = -1;
+    *right = -1;
+   
+    return;
+  }
 
   me    = armci_msg_me();
   nproc = armci_msg_nproc();
@@ -185,15 +204,8 @@ void armci_msg_bintree(int scope, int *root, int *up, int *left, int *right) {
 }
 
 
-/** FIXME: Unimpemented.
+/** I have no idea what this does.  It's needed by GA.  FIXME.
   */
 void armci_msg_sel(void *x, int n, char *op, int type, int contribute) {
-  ARMCI_Error("armci_msg_sel: unimplemented", 10);
-}
-
-
-/** FIXME: Unimpemented.
-  */
-void armci_msg_sel_scope(int scope, void *x, int n, char *op, int type, int contribute) {
-  ARMCI_Error("armci_msg_sel_scope: unimplemented", 10);
+  armci_msg_sel_scope(SCOPE_ALL, x, n, op, type, contribute);
 }

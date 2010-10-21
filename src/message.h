@@ -7,7 +7,16 @@
 
 #include <armci.h>
 
-enum armci_scope_e { SCOPE_ALL, SCOPE_NODE, SCOPE_MASTERS}; /* TODO: Only SCOPE_ALL supported */
+/** Note on scopes:
+  *
+  * SCOPE_NODE    - Include all processes on the current node.  In the current
+  *                 implementation we use MPI_COMM_SELF for this.
+  * SCOPE_MASTERS - Includes one rank from every node.  Currently the same as
+                    SCOPE_ALL.
+  * SCOPE_ALL     - Includes all processes.
+  */
+enum armci_scope_e { SCOPE_ALL, SCOPE_NODE, SCOPE_MASTERS}; 
+
 enum armci_type_e  { ARMCI_INT, ARMCI_LONG, ARMCI_LONG_LONG, ARMCI_FLOAT, ARMCI_DOUBLE };
 
 /* Utility routines */
@@ -31,6 +40,7 @@ void armci_msg_group_barrier(ARMCI_Group *group);
 void armci_msg_bintree(int scope, int *Root, int *Up, int *Left, int *Right);
 
 void armci_msg_bcast(void *buffer, int len, int root);
+void armci_msg_bcast_scope(int scope, void *buffer, int len, int root);
 void armci_msg_brdcst(void *buffer, int len, int root);
 void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_Group *group);
 

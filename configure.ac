@@ -123,8 +123,16 @@ AC_MSG_CHECKING(debugging support)
 AC_MSG_RESULT($debug)
 if test "$debug" = "yes"; then
    CFLAGS="$CFLAGS -g"
-else
-   AC_DEFINE(NO_SEATBELTS,1,[Define if debugging support is enabled])
+fi
+
+## Safety checks
+AC_ARG_ENABLE(no-safety, AC_HELP_STRING([--enable-no-safety],[Turn off safety checks for better performance]),
+                 [ no_safety=$enableval ],
+                 [ no_safety=no ])
+AC_MSG_CHECKING(safety checks disabled)
+AC_MSG_RESULT($no_safety)
+if test "$no_safety" = "yes"; then
+   AC_DEFINE(NO_SEATBELTS,1,[Defined when safety checks are disabled])
 fi
 
 ## Benchmarks

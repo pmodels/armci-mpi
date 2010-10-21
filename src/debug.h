@@ -5,6 +5,8 @@
 #ifndef HAVE_DEBUG_H
 #define HAVE_DEBUG_H
 
+#include <armciconf.h>
+
 enum debug_cats_e {
   DEBUG_CAT_MEM_REGION = 1, // 2^0
   DEBUG_CAT_ALLOC      = 2, // 2^1
