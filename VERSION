@@ -16,4 +16,4 @@ ARMCI_VERSION=0.1
 #     4. If any interfaces have been removed since the last public
 #     release, then set age to 0.
 
-libarmci_abi_version=0:0:0
+libarmci_abi_version=1:0:0
