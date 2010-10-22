@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <mpi.h>
-#include <debug.h>
 
 #include <armci.h>
+#include <debug.h>
 #include <mem_region.h>
 
 
@@ -205,13 +205,69 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       break;
 
     case ARMCI_ACC_CPL:
-      ARMCI_Error("ARMCI_Acc() complex data type not supported", 100);
-      return 1;
+      MPI_Type_size(MPI_C_FLOAT_COMPLEX, &type_size);
+      type = MPI_C_FLOAT_COMPLEX;
+      count= bytes/type_size;
+
+      if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 1.0)
+        break;
+      else {
+        float *src_fc = (float*) src;
+        float *scl_fc = malloc(bytes);
+        const float s_r = ((float*)scale)[0];
+        const float s_c = ((float*)scale)[1];
+        scaled_data = scl_fc;
+        for (i = 0; i < count; i++) {
+          scl_fc[i*2] = src_fc[i*2]*s_r;
+          scl_fc[i*2+1] = src_fc[i*2+1]*s_c;
+        }
+      }
+      // ARMCI_Error("ARMCI_Acc() complex data type not supported", 100);
+      // return 1;
       break;
 
     case ARMCI_ACC_DCP:
-      ARMCI_Error("ARMCI_Acc() double complex data type not supported", 100);
-      return 1;
+      // FIXME: This doesn't work yet.
+      MPI_Type_size(MPI_C_DOUBLE_COMPLEX, &type_size);
+      type = MPI_C_DOUBLE_COMPLEX;
+      count= bytes/type_size;
+
+      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 1.0)
+        break;
+      else {
+        double *src_dc = (double*) src;
+        double *scl_dc = malloc(bytes);
+        const double s_r = ((double*)scale)[0];
+        const double s_c = ((double*)scale)[1];
+        scaled_data = scl_dc;
+        for (i = 0; i < count; i++) {
+          scl_dc[i*2] = src_dc[i*2]*s_r;
+          scl_dc[i*2+1] = src_dc[i*2+1]*s_c;
+        }
+      }
+#if 0
+      MPI_Type_size(MPI_DOUBLE, &type_size);
+      type = MPI_DOUBLE;
+      count= bytes/type_size;
+
+      assert(count % 2 == 0);
+
+      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 1.0)
+        break;
+      else {
+        double *src_dc = (double*) src;
+        double *scl_dc = malloc(bytes);
+        const double s_r = ((double*)scale)[0];
+        const double s_c = ((double*)scale)[1];
+        scaled_data = scl_dc;
+        for (i = 0; i < count/2; i++) {
+          scl_dc[i*2] = src_dc[i*2]*s_r;
+          scl_dc[i*2+1] = src_dc[i*2+1]*s_c;
+        }
+      }
+#endif
+      // ARMCI_Error("ARMCI_Acc() double complex data type not supported", 100);
+      // return 1;
       break;
 
     default:

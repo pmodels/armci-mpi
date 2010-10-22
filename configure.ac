@@ -122,7 +122,7 @@ AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
 AC_MSG_CHECKING(debugging support)
 AC_MSG_RESULT($debug)
 if test "$debug" = "yes"; then
-   CFLAGS="$CFLAGS -g"
+   CFLAGS="$CFLAGS -g -O0"
 fi
 
 ## Safety checks
