@@ -94,13 +94,13 @@ PAC_ARG_STRICT
 PAC_CC_FUNCTION_NAME_SYMBOL
 
 ## Error checking functionality
-AC_ARG_ENABLE(error-checking,
-	AC_HELP_STRING([--enable-error-checking],[Enable error checking functionality]),
-	enable_error_checking=$enableval,
-	enable_error_checking=yes)
-if test "$enable_error_checking" = "yes" ; then
-   AC_DEFINE(ERROR_CHECKING,1,[Define if error checking is enabled])
-fi
+#AC_ARG_ENABLE(error-checking,
+	#AC_HELP_STRING([--enable-error-checking],[Enable error checking functionality]),
+	#enable_error_checking=$enableval,
+	#enable_error_checking=yes)
+#if test "$enable_error_checking" = "yes" ; then
+   #AC_DEFINE(ERROR_CHECKING,1,[Define if error checking is enabled])
+#fi
 
 ## Check if __VA_ARGS__ is defined by the compiler
 PAC_C_MACRO_VA_ARGS
@@ -126,12 +126,12 @@ if test "$debug" = "yes"; then
 fi
 
 ## Safety checks
-AC_ARG_ENABLE(no-safety, AC_HELP_STRING([--enable-no-safety],[Turn off safety checks for better performance]),
-                 [ no_safety=$enableval ],
-                 [ no_safety=no ])
-AC_MSG_CHECKING(safety checks disabled)
-AC_MSG_RESULT($no_safety)
-if test "$no_safety" = "yes"; then
+AC_ARG_ENABLE(safety-checks, AC_HELP_STRING([--disable-safety-checks],[Disable safety checks for better performance]),
+                 [ safety_enabled=$enableval ],
+                 [ safety_enabled=yes ])
+AC_MSG_CHECKING(whether safety checks are enabled)
+AC_MSG_RESULT($safety_enabled)
+if test "$safety_enabled" = "no"; then
    AC_DEFINE(NO_SEATBELTS,1,[Defined when safety checks are disabled])
 fi
 
