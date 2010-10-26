@@ -172,9 +172,9 @@ void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_
     MPI_Free_mem(mreg->slices[world_me].base);
 
   free(mreg->slices);
-  free(mreg);
-
   ARMCIX_Destroy_mutexes_grp(mreg->rmw_mutex);
+
+  free(mreg);
 }
 
 
