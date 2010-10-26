@@ -8,15 +8,18 @@ Direct access to local buffers:
    new ARMCI_Access_begin/end() functions.
    
  * Both buffers in a communication operation should not be in shared space.
-   Communication within an ARMCI_Access region might deadlock due to internal
-   MPI Lock/Unlock use.
+   MPI allows locking only one window at a time so this cannot be supported
+   except for special cases.
 
 
 ARMCI groups:
 
  * ARMCI-style groups are not currently supported.  Groups formation is
-   currently collective across the parent group.  In ARMCI-style it is
-   collective across the new group only.
+   currently collective across the parent group (MPI-style).  In ARMCI-style it
+   is collective across only the processes in the new group.
+
+ * Note: ARMCI-style groups are not ARMCI's default behavior, they must be
+   explicitly enabled.  ARMCI's default behavior is to use MPI-style groups.
 
 
 Progress semantics:
@@ -25,9 +28,3 @@ Progress semantics:
    implicit the progress needed by ARMCI.  You'll need to set an environment
    variable in most cases. MPICH_ASYNC_PROGRESS for MPICH2, something else for
    MVAPICH2, DCMF_INTERRUPTS=1 for MPICH2-BG, etc.
-
-
-Read-Modify-Write operations:
-
- * ARMCI RMW operations are atomic with respect to other RMW operations, but
-   not with respect to other one-sided operations (get, put, acc, etc).

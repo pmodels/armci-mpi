@@ -13,6 +13,9 @@
 /** Perform atomic read-modify-write on the given integer or long location and
   * return the location's original value.
   *
+  * \note ARMCI RMW operations are atomic with respect to other RMW operations,
+  * but not with respect to other one-sided operations (get, put, acc, etc).
+  *
   * @param[in]  op    Operation to be performed:
   *                     ARMCI_FETCH_AND_ADD (int)
   *                     ARMCI_FETCH_AND_ADD_LONG
