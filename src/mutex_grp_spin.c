@@ -50,7 +50,7 @@ static armcix_mutex_grp_t armci_mutex_grp = NULL;
   */
 int ARMCI_Create_mutexes(int count) {
   if (armci_mutex_grp != NULL)
-    ARMCI_Error("attempted to create ARMCI mutexes multiple times", 10);
+    ARMCI_Error_internal(__FILE__, __LINE__, __func__, "attempted to create ARMCI mutexes multiple times", 100);
 
   armci_mutex_grp = ARMCIX_Create_mutexes_grp(count);
 
@@ -67,7 +67,7 @@ int ARMCI_Destroy_mutexes(void) {
   int err;
 
   if (armci_mutex_grp == NULL)
-    ARMCI_Error("attempted to free unallocated ARMCI mutexes", 10);
+    ARMCI_Error_internal(__FILE__, __LINE__, __func__, "attempted to free unallocated ARMCI mutexes", 100);
   
   err = ARMCIX_Destroy_mutexes_grp(armci_mutex_grp);
   armci_mutex_grp = NULL;
@@ -83,7 +83,7 @@ int ARMCI_Destroy_mutexes(void) {
   */
 void ARMCI_Lock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
-    ARMCI_Error("attempted to lock on unallocated ARMCI mutexes", 10);
+    ARMCI_Error_internal(__FILE__, __LINE__, __func__, "attempted to lock on unallocated ARMCI mutexes", 100);
   
   ARMCIX_Lock_grp(armci_mutex_grp, mutex, proc);
 }
@@ -95,7 +95,7 @@ void ARMCI_Lock(int mutex, int proc) {
   */
 void ARMCI_Unlock(int mutex, int proc) {
   if (armci_mutex_grp == NULL)
-    ARMCI_Error("attempted to unlock on unallocated ARMCI mutexes", 10);
+    ARMCI_Error_internal(__FILE__, __LINE__, __func__, "attempted to unlock on unallocated ARMCI mutexes", 100);
   
   ARMCIX_Unlock_grp(armci_mutex_grp, mutex, proc);
 }

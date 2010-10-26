@@ -9,4 +9,6 @@
 
 extern ARMCI_Group ARMCI_GROUP_WORLD;
 
+void ARMCI_Error_internal(const char *file, const int line, const char *func, char *msg, int code);
+
 #endif /* HAVE_ARMCI_INTERNALS_H */

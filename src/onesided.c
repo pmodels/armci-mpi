@@ -205,6 +205,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       break;
 
     case ARMCI_ACC_CPL:
+      // FIXME: Untested code
       MPI_Type_size(MPI_C_FLOAT_COMPLEX, &type_size);
       type = MPI_C_FLOAT_COMPLEX;
       count= bytes/type_size;
@@ -222,8 +223,6 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
           scl_fc[i*2+1] = src_fc[i*2+1]*s_c;
         }
       }
-      // ARMCI_Error("ARMCI_Acc() complex data type not supported", 100);
-      // return 1;
       break;
 
     case ARMCI_ACC_DCP:
@@ -266,12 +265,10 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         }
       }
 #endif
-      // ARMCI_Error("ARMCI_Acc() double complex data type not supported", 100);
-      // return 1;
       break;
 
     default:
-      ARMCI_Error("ARMCI_Acc() unknown data type", 100);
+      ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unknown data type", 100);
       return 1;
   }
 
