@@ -35,19 +35,19 @@ int ARMCI_Free(void *ptr) {
 
 /** Allocate a shared memory segment.  Collective.
   *
-  * @param[out] base_ptrs Array of length nproc that will contain pointers to
-  *                       the base address of each process' patch of the
-  *                       segment.
+  * @param[out] base_ptrs Array that will contain pointers to the base address of
+  *                       each process' patch of the segment.  Array is of length
+  *                       equal to the number of processes in the group.
   * @param[in]       size Number of bytes to allocate on the local process.
   */
 int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
   mem_region_t *mreg;
  
-  mreg = mem_region_create(size, group->comm, ARMCI_GROUP_WORLD.comm);
+  mreg = mem_region_create(size, base_ptrs, group->comm, ARMCI_GROUP_WORLD.comm);
 
-  for (i = 0; i < mreg->nslices; i++)
-    base_ptrs[i] = mreg->slices[i].base;
+  // for (i = 0; i < mreg->nslices; i++)
+  //   base_ptrs[i] = mreg->slices[i].base;
 
   if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000

@@ -1,7 +1,6 @@
 FAIL: testmult.x        - ARMCI_Error: GA_Zgemm, NGA_Matmul_patch Failed
 FAIL: g2test.x          - armci_write_strided
 FAIL: g3test.x          - armci_write_strided
-FAIL: mmatrix.x         - Time out
 FAIL: patch.x           - ARMCI_Error: exiting ...
 FAIL: pg2test.x         - Time out
 FAIL: pgtest.x          - Time out

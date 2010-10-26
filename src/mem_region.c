@@ -20,10 +20,15 @@ mem_region_t *mreg_list = NULL;
 
 /** Create a distributed shared memory region. Collective on alloc_comm.
   *
-  * @param[in] local_size Size of the local slice of the memory region.
-  * @return               Pointer to the memory region object.
+  * @param[in]  local_size Size of the local slice of the memory region.
+  * @param[out] base_ptrs  Array of base pointers for each process in alloc_comm
+  * @param[in]  alloc_comm Communicator on which to perform allocation.
+  * @param[in]  world_comm World communicator (ARMCI does communication on global
+  *                        ranks so we need to translate between alloc_comm and
+  *                        world_comm to perform lookup).
+  * @return                Pointer to the memory region object.
   */
-mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm world_comm) {
+mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc_comm, MPI_Comm world_comm) {
   int           i;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
@@ -62,6 +67,10 @@ mem_region_t *mem_region_create(int local_size, MPI_Comm alloc_comm, MPI_Comm wo
   mreg_slice = alloc_slices[alloc_me];
   MPI_Allgather(  &mreg_slice, sizeof(mem_region_slice_t), MPI_BYTE,
                  alloc_slices, sizeof(mem_region_slice_t), MPI_BYTE, alloc_comm);
+
+  // Populate the base pointers array
+  for (i = 0; i < alloc_nproc; i++)
+    base_ptrs[i] = alloc_slices[i].base;
 
   // We have to do lookup on global ranks, so shovel the contents of
   // alloc_slices into the mreg->slices array which is indexed by global rank.
