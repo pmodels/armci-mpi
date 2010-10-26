@@ -5,10 +5,6 @@ FAIL: mmatrix.x         - Time out
 FAIL: patch.x           - ARMCI_Error: exiting ...
 FAIL: pg2test.x         - Time out
 FAIL: pgtest.x          - Time out
-FAIL: simple_groups.x   - Fatal error in PMPI_Barrier: Invalid communicator, error stack:
-                          PMPI_Barrier(476): MPI_Barrier(MPI_COMM_NULL) failed
-                          PMPI_Barrier(381): Null communicator
-                          Fatal error in PMPI_Bsrrier: Invalid communicator, error stack:
 FAIL: testsolve.x       - ARMCI_Error: 0:ga_lu_solve_seq: ga_lu_solve: LP_dgefa failed :
 FAIL: test.x            - ARMCI_Error: 0:overlapping accumulate failed:
 FAIL: ga-mpi.x          - error:4 max=54.000000 should be:104

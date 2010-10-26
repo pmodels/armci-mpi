@@ -19,8 +19,8 @@ int armci_domain_id(armci_domain_t domain, int glob_proc_id) {
   return glob_proc_id;
 }
 
-int armci_domain_glob_proc_id(armci_domain_t domain, int id, int loc_proc_id) {
-  return id;
+int armci_domain_glob_proc_id(armci_domain_t domain, int nodeid, int loc_proc_id) {
+  return ARMCI_GROUP_WORLD.rank;
 }
 
 int armci_domain_my_id(armci_domain_t domain) {
@@ -41,5 +41,5 @@ int armci_domain_same_id(armci_domain_t domain, int proc) {
   * @param[in] proc Process id in question
   */
 int ARMCI_Same_node(int proc) {
-  return 0;
+  return proc == ARMCI_GROUP_WORLD.rank;
 }
