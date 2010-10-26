@@ -1,0 +1,23 @@
+FAIL: testmult.x        - ARMCI_Error: GA_Zgemm, NGA_Matmul_patch Failed
+FAIL: g2test.x          - armci_write_strided
+FAIL: g3test.x          - armci_write_strided
+FAIL: mmatrix.x         - Time out
+FAIL: patch.x           - ARMCI_Error: exiting ...
+FAIL: pg2test.x         - Time out
+FAIL: pgtest.x          - Time out
+FAIL: simple_groups.x   - Fatal error in PMPI_Barrier: Invalid communicator, error stack:
+                          PMPI_Barrier(476): MPI_Barrier(MPI_COMM_NULL) failed
+                          PMPI_Barrier(381): Null communicator
+                          Fatal error in PMPI_Bsrrier: Invalid communicator, error stack:
+FAIL: testsolve.x       - ARMCI_Error: 0:ga_lu_solve_seq: ga_lu_solve: LP_dgefa failed :
+FAIL: test.x            - ARMCI_Error: 0:overlapping accumulate failed:
+FAIL: ga-mpi.x          - error:4 max=54.000000 should be:104
+FAIL: nga-onesided.x    - ARMCI_Error: 3:bye: Error: Comparison failed!
+FAIL: nga-periodic.x    - ARMCI_Error: 1:bye: Error: Comparison failed!
+FAIL: nga-scatter.x     - ARMCI_Error: 2:bye: Bad result?
+FAIL: ngatest.x         - ARMCI_Error: 2:bye: Bad result?
+FAIL: boltz.x           - armci_write_strided
+FAIL: bign.x            - ARMCI_Error: 3:ndai_put failed:
+FAIL: ntestc.x          - ARMCI_Error: 0:NDRA_Read comparison failed:
+FAIL: perfn.x           - ARMCI_Error: 3:ndai_put failed:
+FAIL: rate.x            - ARMCI_Error: 0:dai_write_param: fclose failed:
