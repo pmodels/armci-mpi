@@ -7,7 +7,6 @@ FAIL: pg2test.x         - Time out
 FAIL: pgtest.x          - Time out
 FAIL: testsolve.x       - ARMCI_Error: 0:ga_lu_solve_seq: ga_lu_solve: LP_dgefa failed :
 FAIL: test.x            - ARMCI_Error: 0:overlapping accumulate failed:
-FAIL: ga-mpi.x          - error:4 max=54.000000 should be:104
 FAIL: nga-onesided.x    - ARMCI_Error: 3:bye: Error: Comparison failed!
 FAIL: nga-periodic.x    - ARMCI_Error: 1:bye: Error: Comparison failed!
 FAIL: nga-scatter.x     - ARMCI_Error: 2:bye: Bad result?
