@@ -37,6 +37,7 @@ armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count, ARMCI_Group *pgroup) {
 
   if (count > 0) {
     MPI_Alloc_mem(nproc*count, MPI_INFO_NULL, &grp->base);
+    assert(grp->base != NULL);
     memset(grp->base, 0, nproc*count);
 
   } else {
@@ -79,8 +80,6 @@ int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
 void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   int       rank, nproc, already_locked, i, proc;
   uint8_t *buf;
-
-  assert(mutex >= 0 && mutex < grp->count);
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
@@ -138,8 +137,6 @@ void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   * @return          0 on success, non-zero on failure
   */
 int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
-  int proc;
-  
   assert(mutex >= 0 && mutex < grp->count);
 
   ARMCIX_Lock_grp(grp, mutex, world_proc);
@@ -156,8 +153,6 @@ int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
 void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   int      rank, nproc, i, proc;
   uint8_t *buf;
-
-  assert(mutex >= 0 && mutex < grp->count);
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
