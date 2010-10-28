@@ -102,14 +102,24 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
   * @param[in]    scope ARMCI scope
   * @param[inout] buf   Input on the root, output on all other processes
   * @param[in]    len   Number of bytes in the message
-  * @param[in]    root  Rank of the process at the root of the broadcast
+  * @param[in]    abs_root Absolute rank of the process at the root of the broadcast
   * @param[in]    group ARMCI group on which to perform communication
   */
-void armci_msg_group_bcast_scope(int scope, void *buf, int len, int root, ARMCI_Group *group) {
-  if (scope == SCOPE_ALL || scope == SCOPE_MASTERS)
-    MPI_Bcast(buf, len, MPI_BYTE, root, group->comm);
-  else
-    MPI_Bcast(buf, len, MPI_BYTE, root, MPI_COMM_SELF);
+void armci_msg_group_bcast_scope(int scope, void *buf, int len, int abs_root, ARMCI_Group *group) {
+  int grp_root;
+
+  if (scope == SCOPE_ALL || scope == SCOPE_MASTERS) {
+    grp_root = ARMCII_Translate_absolute_to_group(group->comm, abs_root);
+    assert(grp_root >= 0 && grp_root < group->size);
+
+    MPI_Bcast(buf, len, MPI_BYTE, grp_root, group->comm);
+
+  } else {
+    grp_root = ARMCII_Translate_absolute_to_group(MPI_COMM_SELF, abs_root);
+    assert(grp_root >= 0 && grp_root < group->size);
+
+    MPI_Bcast(buf, len, MPI_BYTE, grp_root, MPI_COMM_SELF);
+  }
 }
 
 
@@ -167,7 +177,7 @@ void armci_msg_reduce(void *x, int n, char *op, int type) {
 
 
 void armci_msg_reduce_scope(int scope, void *x, int n, char *op, int type) {
-  ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unimplemented", 10); // TODO
+  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10); // TODO
 }
 
 

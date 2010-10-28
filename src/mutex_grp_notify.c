@@ -9,24 +9,26 @@
 #include <mpi.h>
 
 #include <armci.h>
+#include <armci_internals.h>
 #include <armcix.h>
 #include <debug.h>
 
 #define ARMCI_MUTEX_TAG 100
 
-/** Create a group of ARMCI mutexes.  Collective.
+/** Create a group of ARMCI mutexes.  Collective onthe ARMCI group.
   *
-  * @param[in] count Number of mutexes on the local process.
-  * @return          Handle to the mutex group.
+  * @param[in] count  Number of mutexes on the local process.
+  * @param[in] pgroup ARMCI group on which to create mutexes
+  * @return           Handle to the mutex group.
   */
-armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
+armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count, ARMCI_Group *pgroup) {
   int rank, nproc;
   armcix_mutex_grp_t grp;
 
   grp = malloc(sizeof(struct armcix_mutex_grp_s));
   assert(grp != NULL);
 
-  MPI_Comm_dup(ARMCI_GROUP_WORLD.comm, &grp->comm);
+  MPI_Comm_dup(pgroup->comm, &grp->comm);
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
@@ -34,7 +36,7 @@ armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
   grp->count = count;
 
   if (count > 0) {
-    grp->base = malloc(nproc*count); // FIXME: These can be unaligned
+    MPI_Alloc_mem(nproc*count, MPI_INFO_NULL, &grp->base);
     memset(grp->base, 0, nproc*count);
 
   } else {
@@ -58,7 +60,7 @@ int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
   ret = MPI_Win_free(&grp->window);
 
   if (grp->base != NULL)
-    free(grp->base);
+    MPI_Free_mem(grp->base);
 
   MPI_Comm_free(&grp->comm);
 
@@ -70,16 +72,20 @@ int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
 
 /** Lock a mutex.
   * 
-  * @param[in] grp   Mutex group that the mutex belongs to.
-  * @param[in] mutex Desired mutex number [0..count-1]
-  * @param[in] proc  Process where the mutex lives
+  * @param[in] grp        Mutex group that the mutex belongs to.
+  * @param[in] mutex      Desired mutex number [0..count-1]
+  * @param[in] world_proc Absolute ID of process where the mutex lives
   */
-void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
-  int       rank, nproc, already_locked, i;
+void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
+  int       rank, nproc, already_locked, i, proc;
   uint8_t *buf;
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
+
+  /* User gives us the absolute ID.  Translate to the rank in the mutex's group. */
+  proc = ARMCII_Translate_absolute_to_group(grp->comm, world_proc);
+  assert(proc >= 0);
 
   buf = malloc(nproc*sizeof(uint8_t));
   assert(buf != NULL);
@@ -126,10 +132,15 @@ void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   * 
   * @param[in] grp   Mutex group that the mutex belongs to.
   * @param[in] mutex Desired mutex number [0..count-1]
-  * @param[in] proc  Process where the mutex lives
+  * @param[in] world_proc Absolute ID of process where the mutex lives
   * @return          0 on success, non-zero on failure
   */
-int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
+int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
+  int proc;
+  
+  proc = ARMCII_Translate_absolute_to_group(grp->comm, world_proc);
+  assert(proc >= 0);
+
   ARMCIX_Lock_grp(grp, mutex, proc);
   return 0;
 }
@@ -139,14 +150,17 @@ int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   * 
   * @param[in] grp   Mutex group that the mutex belongs to.
   * @param[in] mutex Desired mutex number [0..count-1]
-  * @param[in] proc  Process where the mutex lives
+  * @param[in] world_proc Absolute ID of process where the mutex lives
   */
-void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
-  int       rank, nproc, i;
+void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
+  int      rank, nproc, i, proc;
   uint8_t *buf;
 
   MPI_Comm_rank(grp->comm, &rank);
   MPI_Comm_size(grp->comm, &nproc);
+
+  proc = ARMCII_Translate_absolute_to_group(grp->comm, world_proc);
+  assert(proc >= 0);
 
   buf = malloc(nproc*sizeof(uint8_t));
 

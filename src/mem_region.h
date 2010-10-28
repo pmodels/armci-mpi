@@ -17,6 +17,7 @@ typedef struct {
 
 typedef struct mem_region_s {
   MPI_Win              window;
+  MPI_Comm             comm;
   armcix_mutex_grp_t   rmw_mutex;
   struct mem_region_s *prev;
   struct mem_region_s *next;
@@ -26,8 +27,8 @@ typedef struct mem_region_s {
 
 extern mem_region_t *mreg_list;
 
-mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc_comm, MPI_Comm world_comm);
-void          mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_comm);
+mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *group);
+void          mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group);
 mem_region_t *mem_region_lookup(void *ptr, int proc);
 
 #endif /* HAVE_MEM_REGION_H */

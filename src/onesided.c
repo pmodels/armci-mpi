@@ -8,12 +8,13 @@
 #include <mpi.h>
 
 #include <armci.h>
+#include <armci_internals.h>
 #include <debug.h>
 #include <mem_region.h>
 
 
 /** Declare the start of a local access epoch.  This allows direct access to
-  * data in local memory.  (TODO: Does MPI-2 actually allow this?)
+  * data in local memory.
   *
   * @param[in] ptr Pointer to the allocation that will be accessed directly 
   */
@@ -36,7 +37,9 @@ void ARMCI_Access_start(void *ptr) {
 
 /** Declare the end of a local access epoch.
   *
-  * TODO: Should we allow multiple accesses at once?
+  * \note MPI-2 does not allow multiple locks at once, so you can have only one
+  * access epoch open at a time and cannot do put/get/acc while in an access
+  * region.
   *
   * @param[in] ptr Pointer to the allocation that was accessed directly 
   */
@@ -66,11 +69,14 @@ void ARMCI_Access_end(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  int disp;
+  int disp, grp_target;
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(src, target);
   assert(mreg != NULL);
+
+  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
+  assert(grp_target >= 0);
 
   // Calculate displacement from beginning of the window
   disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[target].base);
@@ -79,9 +85,9 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   assert(src >= mreg->slices[target].base);
   assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
-  MPI_Get(dst, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
-  MPI_Win_unlock(target, mreg->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
+  MPI_Get(dst, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(grp_target, mreg->window);
 
   return 0;
 }
@@ -96,11 +102,14 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  int disp;
+  int disp, grp_target;
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(dst, target);
   assert(mreg != NULL);
+
+  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
+  assert(grp_target >= 0);
 
   // Calculate displacement from beginning of the window
   disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[target].base);
@@ -109,9 +118,9 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   assert(dst >= mreg->slices[target].base);
   assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, mreg->window);
-  MPI_Put(src, size, MPI_BYTE, target, disp, size, MPI_BYTE, mreg->window);
-  MPI_Win_unlock(target, mreg->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
+  MPI_Put(src, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(grp_target, mreg->window);
 
   return 0;
 }
@@ -131,7 +140,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void *scaled_data = NULL;
   void *src_data;
-  int   count, type_size, i, disp;
+  int   count, type_size, i, disp, grp_proc;
   MPI_Datatype type;
   mem_region_t *mreg;
 
@@ -247,7 +256,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       break;
 
     default:
-      ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unknown data type", 100);
+      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
       return 1;
   }
 
@@ -262,15 +271,18 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  assert(grp_proc >= 0);
+
   disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
 
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
   assert((uint8_t*)dst + bytes <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, mreg->window);
-  MPI_Accumulate(src_data, count, type, proc, disp, count, type, MPI_SUM, mreg->window);
-  MPI_Win_unlock(proc, mreg->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
+  MPI_Accumulate(src_data, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
+  MPI_Win_unlock(grp_proc, mreg->window);
 
   if (scaled_data != NULL) 
     free(scaled_data);

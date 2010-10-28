@@ -83,14 +83,3 @@ int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
 void ARMCI_Copy(void *src, void *dst, int size) {
   memcpy(dst, src, size);
 }
-
-
-/** Internal API
-  */
-
-
-void ARMCI_Error_internal(const char *file, const int line, const char *func, char *msg, int code) {
-  fprintf(stderr, "ARMCI Error: %s: %s (%s:%d)\n", func, msg, file, line);
-  MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
-}
-

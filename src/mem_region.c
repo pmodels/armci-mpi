@@ -18,17 +18,14 @@
 mem_region_t *mreg_list = NULL;
 
 
-/** Create a distributed shared memory region. Collective on alloc_comm.
+/** Create a distributed shared memory region. Collective on ARMCI group.
   *
   * @param[in]  local_size Size of the local slice of the memory region.
-  * @param[out] base_ptrs  Array of base pointers for each process in alloc_comm
-  * @param[in]  alloc_comm Communicator on which to perform allocation.
-  * @param[in]  world_comm World communicator (ARMCI does communication on global
-  *                        ranks so we need to translate between alloc_comm and
-  *                        world_comm to perform lookup).
+  * @param[out] base_ptrs  Array of base pointers for each process in group.
+  * @param[in]  group      Group on which to perform allocation.
   * @return                Pointer to the memory region object.
   */
-mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc_comm, MPI_Comm world_comm) {
+mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
   int           i;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
@@ -36,10 +33,10 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
   mem_region_t *mreg;
   mem_region_slice_t *alloc_slices, mreg_slice;
 
-  MPI_Comm_rank(alloc_comm, &alloc_me);
-  MPI_Comm_size(alloc_comm, &alloc_nproc);
-  MPI_Comm_rank(world_comm, &world_me);
-  MPI_Comm_size(world_comm, &world_nproc);
+  MPI_Comm_rank(group->comm, &alloc_me);
+  MPI_Comm_size(group->comm, &alloc_nproc);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &world_me);
+  MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
   mreg = malloc(sizeof(mem_region_t));
   assert(mreg != NULL);
@@ -49,6 +46,7 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
   alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
   assert(alloc_slices != NULL);
 
+  mreg->comm    = group->comm;
   mreg->nslices = world_nproc;
   mreg->prev    = NULL;
   mreg->next    = NULL;
@@ -61,12 +59,12 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
   else
     MPI_Alloc_mem(local_size, MPI_INFO_NULL, &(alloc_slices[alloc_me].base));
 
-  MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, alloc_comm, &mreg->window);
+  MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
 
   // All-to-all on <base, size> to build up slices vector
   mreg_slice = alloc_slices[alloc_me];
   MPI_Allgather(  &mreg_slice, sizeof(mem_region_slice_t), MPI_BYTE,
-                 alloc_slices, sizeof(mem_region_slice_t), MPI_BYTE, alloc_comm);
+                 alloc_slices, sizeof(mem_region_slice_t), MPI_BYTE, group->comm);
 
   // Populate the base pointers array
   for (i = 0; i < alloc_nproc; i++)
@@ -76,8 +74,8 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
   // alloc_slices into the mreg->slices array which is indexed by global rank.
   memset(mreg->slices, 0, sizeof(mem_region_slice_t)*world_nproc);
 
-  MPI_Comm_group(world_comm, &world_group);
-  MPI_Comm_group(alloc_comm, &alloc_group);
+  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
+  MPI_Comm_group(group->comm, &alloc_group);
 
   for (i = 0; i < alloc_nproc; i++) {
     int world_rank;
@@ -89,7 +87,7 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
   MPI_Group_free(&alloc_group);
 
   // Create the RMW mutex: Keeps RMW operations atomic wrt each other
-  mreg->rmw_mutex = ARMCIX_Create_mutexes_grp(1);
+  mreg->rmw_mutex = ARMCIX_Create_mutexes_grp(1, group);
 
   // Append the new region onto the region list
   if (mreg_list == NULL) {
@@ -111,19 +109,20 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, MPI_Comm alloc
 
 /** Destroy/free a shared memory region.
   *
-  * @param[in] ptr Pointer within range of the segment (e.g. base pointer).
+  * @param[in] ptr   Pointer within range of the segment (e.g. base pointer).
+  * @param[in] group Group on which to perform the free.
   */
-void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_comm) {
+void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   int   search_proc_in, search_proc_out, search_proc_out_grp;
   void *search_base;
   int   alloc_me, alloc_nproc;
   int   world_me, world_nproc;
   MPI_Group world_group, alloc_group;
 
-  MPI_Comm_rank(alloc_comm, &alloc_me);
-  MPI_Comm_size(alloc_comm, &alloc_nproc);
-  MPI_Comm_rank(world_comm, &world_me);
-  MPI_Comm_size(world_comm, &world_nproc);
+  MPI_Comm_rank(group->comm, &alloc_me);
+  MPI_Comm_size(group->comm, &alloc_nproc);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &world_me);
+  MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
   // All-to-all exchange of a <base address, proc> pair.  This is so that we
   // can support passing NULL into ARMCI_Free() which is permitted when a
@@ -138,12 +137,12 @@ void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_
   }
 
   // Collectively decide on who will provide the base address
-  MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, alloc_comm);
+  MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, group->comm);
   assert(search_proc_out != -1); // Somebody must pass in non-NULL
 
   // Translate world rank to group rank
-  MPI_Comm_group(world_comm, &world_group);
-  MPI_Comm_group(alloc_comm, &alloc_group);
+  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
+  MPI_Comm_group(group->comm, &alloc_group);
 
   MPI_Group_translate_ranks(world_group, 1, &search_proc_out, alloc_group, &search_proc_out_grp);
 
@@ -151,7 +150,7 @@ void mem_region_destroy(mem_region_t *mreg, MPI_Comm alloc_comm, MPI_Comm world_
   MPI_Group_free(&alloc_group);
 
   // Broadcast the base address
-  MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out_grp, alloc_comm);
+  MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out_grp, group->comm);
 
   // If we were passed NULL, look up the mem region using the <base, proc> pair
   if (mreg == NULL)

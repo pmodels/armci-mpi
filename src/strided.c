@@ -208,7 +208,7 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
         ARMCI_Acc(datatype, scale, src_ptr, dst_ptr, count[0], proc);
         break;
       default:
-        ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unsupported operation", 100);
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
         return 1;
     }
     return 0;
@@ -243,7 +243,7 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                   count[0], proc);
         break;
       default:
-        ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unsupported operation", 100);
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
         return 1;
     }
 
@@ -292,9 +292,9 @@ int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 }
 
 void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
-  ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unimplemented", 10);
+  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10);
 }
 
 void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
-  ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unimplemented", 10);
+  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10);
 }
