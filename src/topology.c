@@ -13,6 +13,9 @@
   * domains are of size 1. */
 
 /** Query the size of a given domain.
+  *
+  * @param[in] domain    Desired domain.
+  * @param[in] domain_id Domain id or -1 for my domain.
   */
 int armci_domain_nprocs(armci_domain_t domain, int domain_id) {
   return 1;
