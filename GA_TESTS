@@ -1,17 +1,19 @@
-FAIL: testmult.x        - ARMCI_Error: GA_Zgemm, NGA_Matmul_patch Failed
-FAIL: g2test.x          - armci_write_strided
-FAIL: g3test.x          - armci_write_strided
-FAIL: patch.x           - ARMCI_Error: exiting ...
+UNKNOWN:
+~~~~~~~
+
 FAIL: pg2test.x         - Time out
 FAIL: pgtest.x          - Time out
 FAIL: testsolve.x       - ARMCI_Error: 0:ga_lu_solve_seq: ga_lu_solve: LP_dgefa failed :
-FAIL: test.x            - ARMCI_Error: 0:overlapping accumulate failed:
-FAIL: nga-onesided.x    - ARMCI_Error: 3:bye: Error: Comparison failed!
-FAIL: nga-periodic.x    - ARMCI_Error: 1:bye: Error: Comparison failed!
-FAIL: nga-scatter.x     - ARMCI_Error: 2:bye: Bad result?
-FAIL: ngatest.x         - ARMCI_Error: 2:bye: Bad result?
+
+
+WRITE STRIDED:
+~~~~~~~~~~~~~
+
+FAIL: g2test.x          - armci_write_strided
+FAIL: g3test.x          - armci_write_strided
 FAIL: boltz.x           - armci_write_strided
-FAIL: bign.x            - ARMCI_Error: 3:ndai_put failed:
+
+DRA:
+~~~
+
 FAIL: ntestc.x          - ARMCI_Error: 0:NDRA_Read comparison failed:
-FAIL: perfn.x           - ARMCI_Error: 3:ndai_put failed:
-FAIL: rate.x            - ARMCI_Error: 0:dai_write_param: fclose failed:

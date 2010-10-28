@@ -205,12 +205,11 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       break;
 
     case ARMCI_ACC_CPL:
-      // FIXME: Untested code
-      MPI_Type_size(MPI_C_FLOAT_COMPLEX, &type_size);
-      type = MPI_C_FLOAT_COMPLEX;
+      MPI_Type_size(MPI_FLOAT, &type_size);
+      type = MPI_FLOAT;
       count= bytes/type_size;
 
-      if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 1.0)
+      if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 0.0)
         break;
       else {
         float *src_fc = (float*) src;
@@ -218,40 +217,20 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         const float s_r = ((float*)scale)[0];
         const float s_c = ((float*)scale)[1];
         scaled_data = scl_fc;
-        for (i = 0; i < count; i++) {
-          scl_fc[i*2] = src_fc[i*2]*s_r;
-          scl_fc[i*2+1] = src_fc[i*2+1]*s_c;
+        for (i = 0; i < count; i += 2) {
+          // Complex multiplication: (a + bi)*(c + di)
+          scl_fc[i]   = src_fc[i]*s_r   - src_fc[i+1]*s_c;
+          scl_fc[i+1] = src_fc[i+1]*s_r + src_fc[i]*s_c;
         }
       }
       break;
 
     case ARMCI_ACC_DCP:
-      // FIXME: This doesn't work yet.
-      MPI_Type_size(MPI_C_DOUBLE_COMPLEX, &type_size);
-      type = MPI_C_DOUBLE_COMPLEX;
-      count= bytes/type_size;
-
-      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 1.0)
-        break;
-      else {
-        double *src_dc = (double*) src;
-        double *scl_dc = malloc(bytes);
-        const double s_r = ((double*)scale)[0];
-        const double s_c = ((double*)scale)[1];
-        scaled_data = scl_dc;
-        for (i = 0; i < count; i++) {
-          scl_dc[i*2] = src_dc[i*2]*s_r;
-          scl_dc[i*2+1] = src_dc[i*2+1]*s_c;
-        }
-      }
-#if 0
       MPI_Type_size(MPI_DOUBLE, &type_size);
       type = MPI_DOUBLE;
       count= bytes/type_size;
 
-      assert(count % 2 == 0);
-
-      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 1.0)
+      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 0.0)
         break;
       else {
         double *src_dc = (double*) src;
@@ -259,18 +238,20 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         const double s_r = ((double*)scale)[0];
         const double s_c = ((double*)scale)[1];
         scaled_data = scl_dc;
-        for (i = 0; i < count/2; i++) {
-          scl_dc[i*2] = src_dc[i*2]*s_r;
-          scl_dc[i*2+1] = src_dc[i*2+1]*s_c;
+        for (i = 0; i < count; i += 2) {
+          // Complex multiplication: (a + bi)*(c + di)
+          scl_dc[i]   = src_dc[i]*s_r   - src_dc[i+1]*s_c;
+          scl_dc[i+1] = src_dc[i+1]*s_r + src_dc[i]*s_c;
         }
       }
-#endif
       break;
 
     default:
       ARMCI_Error_internal(__FILE__, __LINE__, __func__, "unknown data type", 100);
       return 1;
   }
+
+  assert(bytes % type_size == 0);
 
   if (scaled_data)
     src_data = scaled_data;
@@ -281,9 +262,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
-  assert(bytes % type_size == 0);
-
-  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
 
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
