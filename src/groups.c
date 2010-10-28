@@ -152,7 +152,7 @@ int ARMCI_Absolute_id(ARMCI_Group *group, int group_rank) {
   MPI_Group world_group, sub_group;
 
   MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
-  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &sub_group);
+  MPI_Comm_group(group->comm, &sub_group);
 
   MPI_Group_translate_ranks(sub_group, 1, &group_rank, world_group, &world_rank);
 
