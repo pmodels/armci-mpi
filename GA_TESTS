@@ -1,7 +1,7 @@
 UNKNOWN:
 ~~~~~~~
 
-FAIL: pg2test.x         - Time out
+FAIL: pg2test.x         - ARMCI_Create_mutexes_grp() should take a group.  Causing deadlock from within ARMCI_Malloc_group.
 FAIL: pgtest.x          - Time out
 FAIL: blktest.x         - ./src/mem_region.c:202: mem_region_lookup: Assertion `proc < mreg->nslices' failed.
 
