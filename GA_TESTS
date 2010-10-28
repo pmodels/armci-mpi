@@ -3,7 +3,7 @@ UNKNOWN:
 
 FAIL: pg2test.x         - Time out
 FAIL: pgtest.x          - Time out
-FAIL: testsolve.x       - ARMCI_Error: 0:ga_lu_solve_seq: ga_lu_solve: LP_dgefa failed :
+FAIL: blktest.x         - ./src/mem_region.c:202: mem_region_lookup: Assertion `proc < mreg->nslices' failed.
 
 
 WRITE STRIDED:
