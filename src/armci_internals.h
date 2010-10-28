@@ -9,6 +9,9 @@
 
 extern ARMCI_Group ARMCI_GROUP_WORLD;
 
-void ARMCI_Error_internal(const char *file, const int line, const char *func, char *msg, int code);
+
+void ARMCII_Error(const char *file, const int line, const char *func, char *msg, int code);
+
+int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
 #endif /* HAVE_ARMCI_INTERNALS_H */
