@@ -11,6 +11,7 @@ noinst_LTLIBRARIES = libarmcii.la
 libarmci_la_SOURCES = $(top_srcdir)/src/copypaste.c     \
                       $(top_srcdir)/src/debug.c         \
                       $(top_srcdir)/src/groups.c        \
+                      $(top_srcdir)/src/internals.c     \
 	              $(top_srcdir)/src/malloc.c        \
                       $(top_srcdir)/src/mem_region.c    \
                       $(top_srcdir)/src/message.c       \

@@ -18,6 +18,7 @@
 int main(int argc, char ** argv) {
   int rank, nproc, i, j;
   armcix_mutex_grp_t mgrp;
+  ARMCI_Group world_group;
 
   MPI_Init(&argc, &argv);
   ARMCI_Init();
@@ -27,7 +28,8 @@ int main(int argc, char ** argv) {
 
   if (rank == 0) printf("Starting ARMCIX mutex test with %d processes\n", nproc);
 
-  mgrp = ARMCIX_Create_mutexes_grp(NUM_MUTEXES);
+  ARMCI_Group_get_world(&world_group);
+  mgrp = ARMCIX_Create_mutexes_grp(NUM_MUTEXES, &world_group);
 
   for (i = 0; i < nproc; i++)
     for (j = 0; j < NUM_MUTEXES; j++) {
