@@ -21,31 +21,26 @@ extern unsigned DEBUG_CATS_ENABLED;
 
 
 #ifdef NO_SEATBELTS
-#define assert(X) while(0)
+#define assert(X) ((void)0)
 #else
 #include <assert.h>
-#endif
+#endif /* NO_SEATBELTS */
 
 
 #ifdef NO_SEATBELTS
 #define DEBUG_CAT_ENABLED(X) 0
 #else
 #define DEBUG_CAT_ENABLED(X) (DEBUG_CATS_ENABLED & (X))
-#endif
+#endif /* NO_SEATBELTS */
 
 
 #ifdef NO_SEATBELTS
-static inline void dprint(unsigned category, const char *func, const char *format, ...) {
-  return;
-}
+#define dprint(CAT,FUNC,FMT,...) ((void)0)
 
 #else
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <mpi.h>
-
-#include <armci_internals.h>
 
 static inline void dprint(unsigned category, const char *func, const char *format, ...) {
   va_list ap;

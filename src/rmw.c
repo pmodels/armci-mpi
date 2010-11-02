@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include <armci.h>
+#include <armci_internals.h>
 #include <mem_region.h>
 #include <debug.h>
 

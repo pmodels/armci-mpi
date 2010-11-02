@@ -9,6 +9,7 @@
 #include <mpi.h>
 
 #include <armci.h>
+#include <armci_internals.h>
 #include <debug.h>
 #include <mem_region.h>
 

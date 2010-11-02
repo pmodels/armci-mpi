@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <armci.h>
+#include <armci_internals.h>
 #include <debug.h>
 
 enum strided_ops_e { STRIDED_PUT, STRIDED_GET, STRIDED_ACC };

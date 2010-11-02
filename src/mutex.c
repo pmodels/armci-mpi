@@ -8,6 +8,7 @@
 
 #include <debug.h>
 #include <armci.h>
+#include <armci_internals.h>
 #include <armcix.h>
 
 #define MAX_TIMEOUT 1000

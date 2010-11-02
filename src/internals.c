@@ -5,6 +5,7 @@
 
 #include <armci.h>
 #include <armcix.h>
+#include <armci_internals.h>
 #include <debug.h>
 
 
@@ -20,6 +21,7 @@ void ARMCII_Error(const char *file, const int line, const char *func, const char
   fprintf(stderr, "ARMCI Error: %s: %s (%s:%d)\n", func, msg, file, line);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }
+
 
 /** Translate a world process rank to the corresponding process rank in the
   * ARMCI group.
