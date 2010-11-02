@@ -1,7 +1,7 @@
 Things that are not yet implemented:
 
-  * armci_msg_... API partially complete
   * build with --enable-strict=c99
+  * check local buffers on put/get/acc and perform copy if they are in a shared segment.
 
 Things that need performance tuning:
 
