@@ -36,14 +36,14 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     mpi_op = MPI_SUM;
   } else if (op[0] == '*') {
     mpi_op = MPI_PROD;
-  } else if (strcmp(op, "max") == 0) {
+  } else if (strncmp(op, "max", 3) == 0) {
     mpi_op = MPI_MAX;
-  } else if (strcmp(op, "min") == 0) {
+  } else if (strncmp(op, "min", 3) == 0) {
     mpi_op = MPI_MIN;
-  } else if (strcmp(op, "absmax") == 0) {
+  } else if (strncmp(op, "absmax", 6) == 0) {
     ARMCII_Error(__FILE__, __LINE__, __func__, "absmax operation not supported", 10); // FIXME: Not supported
     return;
-  } else if (strcmp(op, "absmin") == 0) {
+  } else if (strncmp(op, "absmin", 6) == 0) {
     ARMCII_Error(__FILE__, __LINE__, __func__, "absmin operation not supported", 10); // FIXME: Not supported
     return;
   } else {
