@@ -2,6 +2,8 @@ Things that are not yet implemented:
 
   * build with --enable-strict=c99
   * check local buffers on put/get/acc and perform copy if they are in a shared segment.
+  * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
+  * implement armci_read/write_strided?
 
 Things that need performance tuning:
 
