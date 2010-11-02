@@ -36,11 +36,7 @@ include_HEADERS = $(top_srcdir)/src/armci.h $(top_srcdir)/src/message.h \
 	$(top_srcdir)/src/armcix.h
 
 bin_PROGRAMS =
+check_PROGRAMS = 
 
-if armci_build_benchmarks
 include benchmarks/Makefile.mk
-endif
-
-if armci_build_tests
 include tests/Makefile.mk
-endif

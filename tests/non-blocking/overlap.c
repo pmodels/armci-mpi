@@ -107,12 +107,12 @@ FILE *log_file = NULL;
 
 void start_logging(const char *fname)
 {
+#ifdef  LOG2FILE
     char exe_name[255];
     char log_path[255];
     size_t i;
     char k;
 
-#ifdef  LOG2FILE
     strcpy(exe_name, fname);
     if (exe_name[strlen(exe_name) - 2] == '.') /* remove .x */
         exe_name[strlen(exe_name) - 2] = 0;

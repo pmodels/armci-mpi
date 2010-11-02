@@ -2,7 +2,7 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
-bin_PROGRAMS += test_onesided test_mutex test_mutex_rmw test_mutex_trylock test_malloc \
+check_PROGRAMS += test_onesided test_mutex test_mutex_rmw test_mutex_trylock test_malloc \
 	test_malloc_irreg ARMCI_PutS_latency ARMCI_PutAccS_latency test_groups test_group_split \
 	test_malloc_group
 

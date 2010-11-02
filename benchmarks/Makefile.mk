@@ -2,7 +2,7 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
-bin_PROGRAMS += ping-pong ping-pong-mpi ring-flood
+check_PROGRAMS += ping-pong ping-pong-mpi ring-flood
 
 ping_pong_SOURCES = $(top_srcdir)/benchmarks/ping-pong.c
 ping_pong_LDADD = -larmci

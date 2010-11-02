@@ -2,7 +2,7 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
-bin_PROGRAMS += overlap simple
+check_PROGRAMS += overlap simple
 
 overlap_SOURCES = $(top_srcdir)/tests/non-blocking/overlap.c
 overlap_LDADD = -larmci -lm
