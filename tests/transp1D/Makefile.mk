@@ -2,8 +2,8 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
-check_PROGRAMS += transp1D-c
+check_PROGRAMS += tests/transp1D/transp1D-c
 
-transp1D_c_SOURCES = $(top_srcdir)/tests/transp1D/transp1D-c.c
-transp1D_c_LDADD = -larmci
-transp1D_c_DEPENDENCIES = libarmci.la
+tests_transp1D_transp1D_c_SOURCES = $(top_srcdir)/tests/transp1D/transp1D-c.c
+tests_transp1D_transp1D_c_LDADD = -larmci
+tests_transp1D_transp1D_c_DEPENDENCIES = libarmci.la

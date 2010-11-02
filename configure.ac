@@ -135,22 +135,6 @@ if test "$safety_enabled" = "no"; then
    AC_DEFINE(NO_SEATBELTS,1,[Defined when safety checks are disabled])
 fi
 
-## Benchmarks
-AC_ARG_ENABLE(benchmarks, AC_HELP_STRING([--enable-benchmarks],[Build Benchmarks]),
-                 [ armci_build_benchmarks=$enableval ],
-                 [ armci_build_benchmarks=no ])
-AC_MSG_CHECKING(building benchmarks)
-AC_MSG_RESULT($armci_build_benchmarks)
-AM_CONDITIONAL([armci_build_benchmarks],[test "$armci_build_benchmarks" = "yes"])
-
-## Tests
-AC_ARG_ENABLE(tests, AC_HELP_STRING([--enable-tests],[Build Tests]),
-                 [ armci_build_tests=$enableval ],
-                 [ armci_build_tests=no ])
-AC_MSG_CHECKING(building tests)
-AC_MSG_RESULT($armci_build_tests)
-AM_CONDITIONAL([armci_build_tests],[test "$armci_build_tests" = "yes"])
-
 ## Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)
 AC_SUBST(DOXYGEN)
