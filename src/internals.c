@@ -16,7 +16,7 @@
   * @param[in] msg  Message to be printed
   * @param[in] code Exit error code
   */
-void ARMCII_Error(const char *file, const int line, const char *func, char *msg, int code) {
+void ARMCII_Error(const char *file, const int line, const char *func, const char *msg, int code) {
   fprintf(stderr, "ARMCI Error: %s: %s (%s:%d)\n", func, msg, file, line);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }

@@ -193,7 +193,7 @@ int ARMCI_Same_node(int proc);
 /** Odds and ends
   */
 
-int  ARMCI_Uses_shm();
+int  ARMCI_Uses_shm(void);
 void ARMCI_Set_shm_limit(unsigned long shmemlimit);
 int  ARMCI_Uses_shm_grp(ARMCI_Group *group);
 

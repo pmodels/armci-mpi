@@ -62,7 +62,7 @@ void ARMCI_AllFence(void) {
   return;
 }
 
-int ARMCI_Uses_shm() {
+int ARMCI_Uses_shm(void) {
   return 0;
 }
 
