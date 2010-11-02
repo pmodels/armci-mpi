@@ -41,6 +41,7 @@ extern unsigned DEBUG_CATS_ENABLED;
 #include <stdio.h>
 #include <stdarg.h>
 #include <mpi.h>
+#include <armci_internals.h>
 
 static inline void dprint(unsigned category, const char *func, const char *format, ...) {
   va_list ap;
