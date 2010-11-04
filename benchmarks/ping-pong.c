@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include <mpi.h>
 #include <armci.h>
@@ -12,8 +13,8 @@ int main(int argc, char **argv) {
   int        me, nproc, zero, target;
   int        msg_length, round, i;
   double     t_start, t_stop;
-  u_int8_t  *snd_buf;  // Send buffer (byte array)
-  u_int8_t **rcv_buf;  // Receive buffer (byte array)
+  uint8_t  *snd_buf;  // Send buffer (byte array)
+  uint8_t **rcv_buf;  // Receive buffer (byte array)
 
   MPI_Init(&argc, &argv);
   ARMCI_Init();
@@ -56,11 +57,11 @@ int main(int argc, char **argv) {
             if ((round % 2 == 0 && me == 0) || (round % 2 != 0 && me != 0)) {
               // Clear start and end markers for next round
 #ifdef DIRECT_ACCESS
-              ((u_int8_t*)rcv_buf[me])[0] = 0;
-              ((u_int8_t*)rcv_buf[me])[msg_length-1] = 0;
+              ((uint8_t*)rcv_buf[me])[0] = 0;
+              ((uint8_t*)rcv_buf[me])[msg_length-1] = 0;
 #else
-              ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[0]),            1, me);
-              ARMCI_Put(&zero, &(((u_int8_t*)rcv_buf[me])[msg_length-1]), 1, me);
+              ARMCI_Put(&zero, &(((uint8_t*)rcv_buf[me])[0]),            1, me);
+              ARMCI_Put(&zero, &(((uint8_t*)rcv_buf[me])[msg_length-1]), 1, me);
 #endif
 
               ARMCI_Put(snd_buf, rcv_buf[my_target], msg_length, my_target);
@@ -70,17 +71,17 @@ int main(int argc, char **argv) {
             // I am the receiver
             else {
 #ifdef DIRECT_ACCESS
-              while (((volatile u_int8_t*)rcv_buf[me])[0] == 0) ;
-              while (((volatile u_int8_t*)rcv_buf[me])[msg_length-1] == 0) ;
+              while (((volatile uint8_t*)rcv_buf[me])[0] == 0) ;
+              while (((volatile uint8_t*)rcv_buf[me])[msg_length-1] == 0) ;
 #else
-              u_int8_t val;
+              uint8_t val;
 
               do {
-                ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[0]), &val, 1, me);
+                ARMCI_Get(&(((uint8_t*)rcv_buf[me])[0]), &val, 1, me);
               } while (val == 0);
 
               do {
-                ARMCI_Get(&(((u_int8_t*)rcv_buf[me])[msg_length-1]), &val, 1, me);
+                ARMCI_Get(&(((uint8_t*)rcv_buf[me])[msg_length-1]), &val, 1, me);
               } while (val == 0);
 #endif
             }

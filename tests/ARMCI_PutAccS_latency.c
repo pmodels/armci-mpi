@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
     ARMCI_Init_args(&argc, &argv);
 
-    buffer = (double **) malloc(sizeof(int32_t *) * nranks);
+    buffer = (double **) malloc(sizeof(double *) * nranks);
 
     bufsize = MAX_XDIM * MAX_YDIM * sizeof(double);
     ARMCI_Malloc((void **) buffer, bufsize);

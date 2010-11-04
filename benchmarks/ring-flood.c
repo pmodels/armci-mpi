@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include <mpi.h>
 #include <armci.h>
@@ -13,8 +14,8 @@ int main(int argc, char **argv) {
   int          msg_length, i;
   double       t_start, t_stop;
   armci_hdl_t *handles;  // Non-blocking handles (NUM_XFERS)
-  u_int8_t    *snd_buf;  // Send buffer    (MAX_XFER_SIZE)
-  u_int8_t   **rcv_buf;  // Receive buffer (MAX_XFER_SIZE * NUM_XFERS)
+  uint8_t    *snd_buf;  // Send buffer    (MAX_XFER_SIZE)
+  uint8_t   **rcv_buf;  // Receive buffer (MAX_XFER_SIZE * NUM_XFERS)
 
   MPI_Init(&argc, &argv);
   ARMCI_Init();
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
   snd_buf = ARMCI_Malloc_local(MAX_XFER_SIZE);
 
   for (i = 0; i < MAX_XFER_SIZE; i++) {
-    snd_buf[i] = (u_int8_t) me;
+    snd_buf[i] = (uint8_t) me;
   }
 
   for (msg_length = 1; msg_length <= MAX_XFER_SIZE; msg_length *= 2) {
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
 
     // Initiate puts, perform NUM_XFERS NB puts to my right neighbor
     for (xfer = 0; xfer < NUM_XFERS; xfer++) {
-       ARMCI_NbPut(snd_buf, ((u_int8_t*)rcv_buf[(me+1)%nproc])+msg_length*xfer,
+       ARMCI_NbPut(snd_buf, ((uint8_t*)rcv_buf[(me+1)%nproc])+msg_length*xfer,
            msg_length, (me+1)%nproc, &handles[xfer]);
     }
 
