@@ -31,4 +31,8 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *g
 void          mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group);
 mem_region_t *mem_region_lookup(void *ptr, int proc);
 
+int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
+int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target);
+int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc);
+
 #endif /* HAVE_MEM_REGION_H */

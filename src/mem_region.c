@@ -214,3 +214,94 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
 
   return mreg;
 }
+
+
+/** One-sided put operation.
+  *
+  * @param[in] mreg   Memory region
+  * @param[in] src    Source address (local)
+  * @param[in] dst    Destination address (remote)
+  * @param[in] size   Number of bytes to transfer
+  * @param[in] target Absolute process id of target
+  * @return           0 on success, non-zero on failure
+  */
+int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
+  int disp, grp_target;
+
+  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
+  assert(grp_target >= 0);
+
+  // Calculate displacement from beginning of the window
+  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[target].base);
+
+  assert(disp >= 0 && disp < mreg->slices[target].size);
+  assert(dst >= mreg->slices[target].base);
+  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
+
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
+  MPI_Put(src, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(grp_target, mreg->window);
+
+  return 0;
+}
+
+
+/** One-sided get operation.
+  *
+  * @param[in] mreg   Memory region
+  * @param[in] src    Source address (remote)
+  * @param[in] dst    Destination address (local)
+  * @param[in] size   Number of bytes to transfer
+  * @param[in] target Absolute process id of target
+  * @return           0 on success, non-zero on failure
+  */
+int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target) {
+  int disp, grp_target;
+
+  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
+  assert(grp_target >= 0);
+
+  // Calculate displacement from beginning of the window
+  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[target].base);
+
+  assert(disp >= 0 && disp < mreg->slices[target].size);
+  assert(src >= mreg->slices[target].base);
+  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
+
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
+  MPI_Get(dst, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
+  MPI_Win_unlock(grp_target, mreg->window);
+
+  return 0;
+}
+
+
+/** One-sided accumulate operation.
+  *
+  * @param[in] mreg     Memory region
+  * @param[in] src      Source address (local)
+  * @param[in] dst      Destination address (remote)
+  * @param[in] type     MPI type of the given buffers
+  * @param[in] count    Number of elements of the given type to transfer
+  * @param[in] proc     Absolute process id of the target
+  * @return             0 on success, non-zero on failure
+  */
+int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc) {
+  int disp, grp_proc, type_size;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  assert(grp_proc >= 0);
+
+  disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
+
+  MPI_Type_size(type, &type_size);
+  assert(disp >= 0 && disp < mreg->slices[proc].size);
+  assert(dst >= mreg->slices[proc].base);
+  assert((uint8_t*)dst + (type_size*count) <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
+  MPI_Accumulate(src, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
+  MPI_Win_unlock(grp_proc, mreg->window);
+
+  return 0;
+}

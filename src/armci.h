@@ -30,7 +30,7 @@ void  ARMCI_Barrier(void);
 void  ARMCI_Fence(int proc);
 void  ARMCI_AllFence(void);
 
-void  ARMCI_Access_start(void *ptr); // NEW
+void  ARMCI_Access_begin(void *ptr); // NEW
 void  ARMCI_Access_end(void *ptr);   // NEW
 
 void  ARMCI_Copy(void *src, void *dst, int size);

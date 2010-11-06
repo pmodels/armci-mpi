@@ -45,7 +45,7 @@ int main(int argc, char ** argv) {
   // Initialize data to my rank
   for (test_iter = 0; test_iter < NUM_ITERATIONS; test_iter++) {
     if (test_iter % nproc == rank) {
-      ARMCI_Access_start(base_ptrs[test_iter][rank]);
+      ARMCI_Access_begin(base_ptrs[test_iter][rank]);
       for (i = 0; i < DATA_NELTS; i++)
         ((int*)base_ptrs[test_iter][rank])[i] = rank;
       ARMCI_Access_end(base_ptrs[test_iter][rank]);

@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
     my_data = base_ptrs[rank];
 
     /*** Get from our right neighbor and verify correct data ***/
-    ARMCI_Access_start(my_data);
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank*test_iter;
     ARMCI_Access_end(my_data);
 
@@ -56,7 +56,7 @@ int main(int argc, char ** argv) {
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
 
-    ARMCI_Access_start(my_data);
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != ((rank+1) % nproc)*test_iter) {
         printf("%d: PUT expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
@@ -70,7 +70,7 @@ int main(int argc, char ** argv) {
     /*** Accumulate to our left neighbor and verify correct data ***/
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank;
     
-    ARMCI_Access_start(my_data);
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank;
     ARMCI_Access_end(my_data);
     ARMCI_Barrier();
@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
 
-    ARMCI_Access_start(my_data);
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != rank + ((rank+1) % nproc)*test_iter) {
         printf("%d: ACC expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);

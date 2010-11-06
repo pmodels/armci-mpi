@@ -18,7 +18,7 @@
   *
   * @param[in] ptr Pointer to the allocation that will be accessed directly 
   */
-void ARMCI_Access_start(void *ptr) {
+void ARMCI_Access_begin(void *ptr) {
   int           me, grp_rank;
   mem_region_t *mreg;
   MPI_Group     grp;
@@ -69,27 +69,12 @@ void ARMCI_Access_end(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  int disp, grp_target;
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(src, target);
   assert(mreg != NULL);
 
-  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
-  assert(grp_target >= 0);
-
-  // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[target].base);
-
-  assert(disp >= 0 && disp < mreg->slices[target].size);
-  assert(src >= mreg->slices[target].base);
-  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
-  MPI_Get(dst, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
-  MPI_Win_unlock(grp_target, mreg->window);
-
-  return 0;
+  return mreg_get(mreg, src, dst, size, target);
 }
 
 
@@ -102,27 +87,12 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  int disp, grp_target;
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(dst, target);
   assert(mreg != NULL);
 
-  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
-  assert(grp_target >= 0);
-
-  // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[target].base);
-
-  assert(disp >= 0 && disp < mreg->slices[target].size);
-  assert(dst >= mreg->slices[target].base);
-  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
-  MPI_Put(src, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
-  MPI_Win_unlock(grp_target, mreg->window);
-
-  return 0;
+  return mreg_put(mreg, src, dst, size, target);
 }
 
 
@@ -271,18 +241,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
-  assert(grp_proc >= 0);
-
-  disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
-
-  assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(dst >= mreg->slices[proc].base);
-  assert((uint8_t*)dst + bytes <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
-  MPI_Accumulate(src_data, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
-  MPI_Win_unlock(grp_proc, mreg->window);
+  mreg_accumulate(mreg, src_data, dst, type, count, proc);
 
   if (scaled_data != NULL) 
     free(scaled_data);
