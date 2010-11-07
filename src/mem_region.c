@@ -9,6 +9,7 @@
 #include <mpi.h>
 
 #include <armci.h>
+#include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
 #include <mem_region.h>
@@ -49,6 +50,7 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *g
 
   mreg->comm    = group->comm;
   mreg->nslices = world_nproc;
+  mreg->access_mode = ARMCIX_MODE_ALL;
   mreg->prev    = NULL;
   mreg->next    = NULL;
 

@@ -8,6 +8,7 @@
 #include <mpi.h>
 
 #include <armci.h>
+#include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
 #include <mem_region.h>
@@ -57,6 +58,47 @@ void ARMCI_Access_end(void *ptr) {
   MPI_Group_rank(grp, &grp_rank);
   MPI_Win_unlock(grp_rank, mreg->window);
   MPI_Group_free(&grp);
+}
+
+
+/** Set the acess mode for the given allocation.  Collective across the
+  * allocation's group.
+  *
+  * @param[in] new_mode The new access mode.
+  * @param[in] ptr      Pointer within the allocation.
+  * @return             Zero upon success, error code otherwise.
+  */
+int ARMCIX_Mode_set(int new_mode, void *ptr) {
+  mem_region_t *mreg;
+
+  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  assert(mreg != NULL); // TODO: Return failure or bail?
+
+  // Wait for all processes to complete any outstanding communication before we
+  // do the mode switch
+  MPI_Barrier(mreg->comm);
+
+  if (new_mode != ARMCIX_MODE_ALL && new_mode != ARMCIX_MODE_RMA)
+    ARMCII_Error(__FILE__, __LINE__, __func__, "Unknown access mode", 100);
+
+  mreg->access_mode = new_mode;
+
+  return 0;
+}
+
+
+/** Query the acess mode for the given allocation.  Non-collective.
+  *
+  * @param[in] ptr      Pointer within the allocation.
+  * @return             Current access mode.
+  */
+int ARMCIX_Mode_query(void *ptr) {
+  mem_region_t *mreg;
+
+  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  assert(mreg != NULL); // TODO: Return failure or bail?
+
+  return mreg->access_mode;
 }
 
 

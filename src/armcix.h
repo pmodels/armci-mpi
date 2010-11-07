@@ -7,6 +7,17 @@
 
 #include <armci.h>
 
+/** Access mode extensions.
+  */
+
+enum armcix_mode_e { ARMCIX_MODE_ALL, ARMCIX_MODE_RMA };
+
+int ARMCIX_Mode_set(int mode, void *ptr);
+int ARMCIX_Mode_query(void *ptr);
+
+/** Processor group extensions.
+  */
+
 int ARMCIX_Group_split(ARMCI_Group *parent, int color, int key, ARMCI_Group *new_group);
 
 /** Mutex groups: These improve on basic ARMCI mutexes by allowing you to

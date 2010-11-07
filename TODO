@@ -1,5 +1,6 @@
 Things that are not yet implemented:
 
+  * Implement locking changes corresponding to ARMCI access modes.
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
   * implement armci_read/write_strided?
 

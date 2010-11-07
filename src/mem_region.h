@@ -18,6 +18,7 @@ typedef struct {
 typedef struct mem_region_s {
   MPI_Win              window;
   MPI_Comm             comm;
+  int                  access_mode;
   armcix_mutex_grp_t   rmw_mutex;
   struct mem_region_s *prev;
   struct mem_region_s *next;
