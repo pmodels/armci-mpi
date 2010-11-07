@@ -9,6 +9,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <assert.h>
+#include <sys/types.h>
 
 #include "mp3.h"
 #include "armci.h"

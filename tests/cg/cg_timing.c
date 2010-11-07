@@ -16,19 +16,18 @@
 #include <sys/time.h>
 
 /* Timing routines that use standard Unix gettingofday() */
-static struct timezone tz;
 static struct timeval start_time, finish_time;
 
 /* Start measuring a time delay */
 void start_timer(void)
 {
-    gettimeofday( &start_time, &tz);
+    gettimeofday( &start_time, NULL);
 }
 
 /* Retunrn elapsed time in milliseconds */
 double elapsed_time(void)
 {
-    gettimeofday( &finish_time, &tz);
+    gettimeofday( &finish_time, NULL);
     return(1000.0*(finish_time.tv_sec - start_time.tv_sec) +
            (finish_time.tv_usec - start_time.tv_usec)/1000.0 );
 }
@@ -36,6 +35,6 @@ double elapsed_time(void)
 /* Return the stopping time in milliseconds */
 double stop_time(void)
 {
-    gettimeofday( &finish_time, &tz);
+    gettimeofday( &finish_time, NULL);
     return(1000.0*finish_time.tv_sec + finish_time.tv_usec/1000.0);
 }
