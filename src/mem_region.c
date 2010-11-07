@@ -292,6 +292,7 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type,
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
 
+  // Calculate displacement from window's base address
   disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
 
   MPI_Type_size(type, &type_size);

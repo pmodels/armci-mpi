@@ -69,12 +69,31 @@ void ARMCI_Access_end(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg;
+  mem_region_t *mreg, *mreg_dst;
+  void *dst_buf;
+
+  // Check if the destination buffer is within a shared region.  If so, we'll
+  // need to work on a private buffer and put back the result later.
+  mreg_dst = mem_region_lookup(dst, ARMCI_GROUP_WORLD.rank);
+
+  if (mreg_dst != NULL) {
+    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
+    assert(ierr == MPI_SUCCESS);
+  } else {
+    dst_buf = dst;
+  }
 
   mreg = mem_region_lookup(src, target);
   assert(mreg != NULL);
 
-  return mreg_get(mreg, src, dst, size, target);
+  mreg_get(mreg, src, dst_buf, size, target);
+
+  if (mreg_dst != NULL) {
+    mreg_put(mreg_dst, dst_buf, dst, size, ARMCI_GROUP_WORLD.rank);
+    MPI_Free_mem(dst_buf);
+  }
+
+  return 0;
 }
 
 
@@ -87,12 +106,31 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg;
+  mem_region_t *mreg, *mreg_src;
+  void *src_buf;
+
+  // Check if the source buffer is within a shared region.  If so, we'll
+  // need to get the data into a private buffer before we can put it.
+  mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
+
+  if (mreg_src != NULL) {
+    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
+    assert(ierr == MPI_SUCCESS);
+    mreg_get(mreg_src, src, src_buf, size, ARMCI_GROUP_WORLD.rank);
+  } else {
+    src_buf = src;
+  }
 
   mreg = mem_region_lookup(dst, target);
   assert(mreg != NULL);
 
-  return mreg_put(mreg, src, dst, size, target);
+  mreg_put(mreg, src, dst, size, target);
+
+  if (mreg_src != NULL) {
+    MPI_Free_mem(src_buf);
+  }
+
+  return 0;
 }
 
 
@@ -109,10 +147,22 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   */
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void *scaled_data = NULL;
-  void *src_data;
+  void *src_data, *src_buf;
   int   count, type_size, i, disp, grp_proc;
   MPI_Datatype type;
-  mem_region_t *mreg;
+  mem_region_t *mreg, *mreg_src;
+
+  // Check if the source buffer is within a shared region.  If so, we'll
+  // need to get the data into a private buffer before we can put it.
+  mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
+
+  if (mreg_src != NULL) {
+    int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
+    assert(ierr == MPI_SUCCESS);
+    mreg_get(mreg_src, src, src_buf, bytes, ARMCI_GROUP_WORLD.rank);
+  } else {
+    src_buf = src;
+  }
 
   switch (datatype) {
     case ARMCI_ACC_INT:
@@ -123,7 +173,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (*((int*)scale) == 1)
         break;
       else {
-        int *src_i = (int*) src;
+        int *src_i = (int*) src_buf;
         int *scl_i = malloc(bytes);
         const int s = *((int*) scale);
         scaled_data = scl_i;
@@ -140,7 +190,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (*((long*)scale) == 1)
         break;
       else {
-        long *src_l = (long*) src;
+        long *src_l = (long*) src_buf;
         long *scl_l = malloc(bytes);
         const long s = *((long*) scale);
         scaled_data = scl_l;
@@ -157,7 +207,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (*((float*)scale) == 1.0)
         break;
       else {
-        float *src_f = (float*) src;
+        float *src_f = (float*) src_buf;
         float *scl_f = malloc(bytes);
         const float s = *((float*) scale);
         scaled_data = scl_f;
@@ -174,7 +224,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (*((double*)scale) == 1.0)
         break;
       else {
-        double *src_d = (double*) src;
+        double *src_d = (double*) src_buf;
         double *scl_d = malloc(bytes);
         const double s = *((double*) scale);
         scaled_data = scl_d;
@@ -191,7 +241,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 0.0)
         break;
       else {
-        float *src_fc = (float*) src;
+        float *src_fc = (float*) src_buf;
         float *scl_fc = malloc(bytes);
         const float s_r = ((float*)scale)[0];
         const float s_c = ((float*)scale)[1];
@@ -212,7 +262,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 0.0)
         break;
       else {
-        double *src_dc = (double*) src;
+        double *src_dc = (double*) src_buf;
         double *scl_dc = malloc(bytes);
         const double s_r = ((double*)scale)[0];
         const double s_c = ((double*)scale)[1];
@@ -235,9 +285,8 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   if (scaled_data)
     src_data = scaled_data;
   else
-    src_data = src;
+    src_data = src_buf;
 
-  // Calculate displacement from window's base address
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
@@ -245,6 +294,9 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   if (scaled_data != NULL) 
     free(scaled_data);
+
+  if (mreg_src != NULL)
+    MPI_Free_mem(src_buf);
 
   return 0;
 }

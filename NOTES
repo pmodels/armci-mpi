@@ -7,10 +7,6 @@ Direct access to local buffers:
    directly, it must be through put/get.  Alternatively you can use the 
    new ARMCI_Access_begin/end() functions.
    
- * Both buffers in a communication operation should not be in shared space.
-   MPI allows locking only one window at a time so this cannot be supported
-   except for special cases.
-
 
 ARMCI groups:
 
