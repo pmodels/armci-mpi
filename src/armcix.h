@@ -13,7 +13,7 @@
 enum armcix_mode_e { ARMCIX_MODE_ALL, ARMCIX_MODE_RMA };
 
 int ARMCIX_Mode_set(int mode, void *ptr);
-int ARMCIX_Mode_query(void *ptr);
+int ARMCIX_Mode_get(void *ptr);
 
 /** Processor group extensions.
   */

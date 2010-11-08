@@ -92,7 +92,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr) {
   * @param[in] ptr      Pointer within the allocation.
   * @return             Current access mode.
   */
-int ARMCIX_Mode_query(void *ptr) {
+int ARMCIX_Mode_get(void *ptr) {
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
