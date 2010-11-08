@@ -190,7 +190,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void *scaled_data = NULL;
   void *src_data, *src_buf;
-  int   count, type_size, i, disp, grp_proc;
+  int   count, type_size, i;
   MPI_Datatype type;
   mem_region_t *mreg, *mreg_src;
 
