@@ -14,8 +14,8 @@
 /** The ARMCI world group.  This is accessed from outside via
   * ARMCI_Group_get_world.
   */
-ARMCI_Group  ARMCI_GROUP_WORLD   = {0};
-ARMCI_Group *ARMCI_DEFAULT_GROUP = &ARMCI_GROUP_WORLD;
+ARMCI_Group ARMCI_GROUP_WORLD   = {0};
+ARMCI_Group ARMCI_GROUP_DEFAULT = {0};
 
 
 /** Create an ARMCI group that contains a subset of the nodes in the current
@@ -27,7 +27,7 @@ ARMCI_Group *ARMCI_DEFAULT_GROUP = &ARMCI_GROUP_WORLD;
   * @param[in]  armci_grp_parent The parent of the new ARMCI group.
   */
 void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out) {
-  ARMCI_Group_create_child(grp_size, pid_list, group_out, ARMCI_DEFAULT_GROUP);
+  ARMCI_Group_create_child(grp_size, pid_list, group_out, &ARMCI_GROUP_DEFAULT);
 }
 
 
@@ -119,7 +119,7 @@ void ARMCI_Group_size(ARMCI_Group *group, int *size) {
   * @param[in] group The new default group
   */
 void ARMCI_Group_set_default(ARMCI_Group *group) {
-  ARMCI_DEFAULT_GROUP = group;
+  ARMCI_GROUP_DEFAULT = *group;
 }
 
 
@@ -128,7 +128,7 @@ void ARMCI_Group_set_default(ARMCI_Group *group) {
   * @param[out] group_out Pointer to the default group.
   */
 void ARMCI_Group_get_default(ARMCI_Group *group_out) {
-  group_out = ARMCI_DEFAULT_GROUP;
+  *group_out = ARMCI_GROUP_DEFAULT;
 }
 
 
