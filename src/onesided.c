@@ -62,17 +62,20 @@ void ARMCI_Access_end(void *ptr) {
 
 
 /** Set the acess mode for the given allocation.  Collective across the
-  * allocation's group.
+  * allocation's group.  Waits for all processes, finishes all communication,
+  * and then sets the new access mode.
   *
   * @param[in] new_mode The new access mode.
   * @param[in] ptr      Pointer within the allocation.
   * @return             Zero upon success, error code otherwise.
   */
-int ARMCIX_Mode_set(int new_mode, void *ptr) {
+int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL); // TODO: Return failure or bail?
+
+  assert(group->comm == mreg->comm);
 
   // Wait for all processes to complete any outstanding communication before we
   // do the mode switch
