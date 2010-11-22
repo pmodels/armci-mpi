@@ -7,10 +7,22 @@
 
 #include <armci.h>
 
-/** Access mode extensions.
+/** Access mode extensions: set the access mode for an ARMCI allocation,
+  * enabling runtime layer optimizations.
   */
 
-enum armcix_mode_e { ARMCIX_MODE_ALL, ARMCIX_MODE_RMA };
+enum armcix_access_mode_e {
+  ARMCIX_MODE_ALL      = 1,  /* All access types permitted   */
+  ARMCIX_MODE_RMA_ONLY = 2,  /* Remote read/write/acc only   */
+  ARMCIX_MODE_READ_ONLY= 3,  /* Local/remote read only       */
+  ARMCIX_MODE_ACC_ONLY = 4   /* Local/remote accumulate only */
+};
+
+enum armcix_consistency_mode_e {
+  ARMCIX_MODE_ORDERED  = 1024, /* Operations are location consistent  */
+  ARMCIX_MODE_UNORDERD = 2048  /* Operations are ordered, consistency 
+                                * is achieved through sync and flush  */
+};
 
 int ARMCIX_Mode_set(int mode, void *ptr, ARMCI_Group *group);
 int ARMCIX_Mode_get(void *ptr);
