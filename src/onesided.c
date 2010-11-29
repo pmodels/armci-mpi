@@ -81,7 +81,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   // do the mode switch
   MPI_Barrier(mreg->comm);
 
-  if (new_mode != ARMCIX_MODE_ALL && new_mode != ARMCIX_MODE_RMA)
+  if (new_mode != ARMCIX_MODE_ALL && new_mode != ARMCIX_MODE_RMA_ONLY)
     ARMCII_Error(__FILE__, __LINE__, __func__, "Unknown access mode", 100);
 
   mreg->access_mode = new_mode;

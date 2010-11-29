@@ -10,6 +10,12 @@
 #include <armci.h>
 #include <armcix.h>
 
+enum mreg_lock_states_e { 
+  MREG_LOCK_UNLOCKED,  /* Mem region is unlocked */
+  MREG_LOCK_EXCLUSIVE, /* Mem region is locked for exclusive access */
+  MREG_LOCK_SHARED     /* Mem region is locked for shared (non-conflicting) access */
+};
+
 typedef struct {
   void *base;
   int   size;
@@ -18,8 +24,11 @@ typedef struct {
 typedef struct mem_region_s {
   MPI_Win              window;
   MPI_Comm             comm;
+
   int                  access_mode;
+  int                  lock_state;
   armcix_mutex_grp_t   rmw_mutex;
+
   struct mem_region_s *prev;
   struct mem_region_s *next;
   int                  nslices;
@@ -35,5 +44,8 @@ mem_region_t *mem_region_lookup(void *ptr, int proc);
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc);
+
+void mreg_lock(mem_region_t *mreg, int mode, int proc);
+void mreg_unlock(mem_region_t *mreg, int proc);
 
 #endif /* HAVE_MEM_REGION_H */
