@@ -232,8 +232,6 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
   int disp, grp_target, need_lock;
 
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
-
   grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
   assert(grp_target >= 0);
 
@@ -266,8 +264,6 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
   */
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target) {
   int disp, grp_target, need_lock;
-
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
 
   grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
   assert(grp_target >= 0);
