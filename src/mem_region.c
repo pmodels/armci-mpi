@@ -220,7 +220,8 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
 
 
 /** One-sided put operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.
+  * automatically locked according to the access mode.  Source buffer must
+  * be private.
   *
   * @param[in] mreg   Memory region
   * @param[in] src    Source address (local)
@@ -253,7 +254,8 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
 
 
 /** One-sided get operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.
+  * automatically locked according to the access mode.  Destination buffer
+  * must be private.
   *
   * @param[in] mreg   Memory region
   * @param[in] src    Source address (remote)
@@ -286,7 +288,8 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target) {
 
 
 /** One-sided accumulate operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.
+  * automatically locked according to the access mode.  Source buffer must be
+  * private.
   *
   * @param[in] mreg     Memory region
   * @param[in] src      Source address (local)
@@ -350,7 +353,6 @@ void mreg_lock(mem_region_t *mreg, int mode, int proc) {
 /** Unlock a memory region.
   *
   * @param[in] mreg     Memory region
-  * @param[in] mode     Lock mode (exclusive, shared, etc...)
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
