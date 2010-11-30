@@ -13,6 +13,7 @@
 #include <debug.h>
 #include <mem_region.h>
 
+#define CHECK_SHARED_LOCAL_BUFS 1
 
 /** Declare the start of a local access epoch.  This allows direct access to
   * data in local memory.
@@ -114,12 +115,14 @@ int ARMCIX_Mode_get(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg, *mreg_dst;
+  mem_region_t *mreg, *mreg_dst = NULL;
   void *dst_buf;
 
+#ifdef CHECK_SHARED_LOCAL_BUFS
   // Check if the destination buffer is within a shared region.  If so, we'll
   // need to work on a private buffer and put back the result later.
   mreg_dst = mem_region_lookup(dst, ARMCI_GROUP_WORLD.rank);
+#endif
 
   if (mreg_dst != NULL) {
     int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
@@ -151,12 +154,14 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg, *mreg_src;
+  mem_region_t *mreg, *mreg_src = NULL;
   void *src_buf;
 
+#ifdef CHECK_SHARED_LOCAL_BUFS
   // Check if the source buffer is within a shared region.  If so, we'll
   // need to get the data into a private buffer before we can put it.
   mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
+#endif
 
   if (mreg_src != NULL) {
     int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
@@ -195,11 +200,13 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   void *src_data, *src_buf;
   int   count, type_size, i;
   MPI_Datatype type;
-  mem_region_t *mreg, *mreg_src;
+  mem_region_t *mreg, *mreg_src = NULL;
 
+#ifdef CHECK_SHARED_LOCAL_BUFS
   // Check if the source buffer is within a shared region.  If so, we'll
   // need to get the data into a private buffer before we can put it.
   mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
+#endif
 
   if (mreg_src != NULL) {
     int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
@@ -359,6 +366,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
  */
 int ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc) {
   ARMCI_Put(src, dst, size, proc);
+  ARMCI_Fence(proc);
   ARMCI_Put(&value, flag, sizeof(int), proc);
 
   return 0;
