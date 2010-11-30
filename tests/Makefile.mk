@@ -9,7 +9,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_malloc           \
                   tests/test_malloc_irreg     \
                   tests/ARMCI_PutS_latency    \
-                  tests/ARMCI_PutAccS_latency \
+                  tests/ARMCI_AccS_latency \
                   tests/test_groups           \
                   tests/test_group_split      \
                   tests/test_malloc_group     \
@@ -43,9 +43,9 @@ tests_ARMCI_PutS_latency_SOURCES = $(top_srcdir)/tests/ARMCI_PutS_latency.c
 tests_ARMCI_PutS_latency_LDADD = -larmci
 tests_ARMCI_PutS_latency_DEPENDENCIES = libarmci.la
 
-tests_ARMCI_PutAccS_latency_SOURCES = $(top_srcdir)/tests/ARMCI_PutAccS_latency.c
-tests_ARMCI_PutAccS_latency_LDADD = -larmci
-tests_ARMCI_PutAccS_latency_DEPENDENCIES = libarmci.la
+tests_ARMCI_AccS_latency_SOURCES = $(top_srcdir)/tests/ARMCI_AccS_latency.c
+tests_ARMCI_AccS_latency_LDADD = -larmci
+tests_ARMCI_AccS_latency_DEPENDENCIES = libarmci.la
 
 tests_test_groups_SOURCES = $(top_srcdir)/tests/test_groups.c
 tests_test_groups_LDADD = -larmci
