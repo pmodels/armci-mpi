@@ -25,7 +25,7 @@ void generate_random_file(int naa,int nnz){
 
 void read_and_create(int argc, char **argv)
 {
-int ri,i;
+int ri,i,nread;
 int tmp1,idealelementsperproc;
 void **amatptrs,**xvecptrs;
 
@@ -53,9 +53,9 @@ void **amatptrs,**xvecptrs;
     }
     if(me==0){
        if(na==0)
-         fread(&na, sizeof(na), 1, fd);
+         nread = fread(&na, sizeof(na), 1, fd);
        if(nz==0)
-         fread(&nz, sizeof(nz), 1, fd);
+         nread = fread(&nz, sizeof(nz), 1, fd);
        printf("\nReading CG input\n");
        printf("Number of rows: %d\n", na);
        printf("Number of non-zeros: %d\n", nz);
@@ -92,11 +92,11 @@ void **amatptrs,**xvecptrs;
       for (i = 0; i < na + 1; i++)
         xvec[i] = 0.0;
 
-      fread(amat, sizeof(double), nz, fd);
-      fread(ridx, sizeof(int), (na+1), fd);
+      nread = fread(amat, sizeof(double), nz, fd);
+      nread = fread(ridx, sizeof(int), (na+1), fd);
       ridx[na]=nz;
-      fread(cidx, sizeof(int), (nz+1), fd);
-      fread(bvec, sizeof(double), (na+1), fd);
+      nread = fread(cidx, sizeof(int), (nz+1), fd);
+      nread = fread(bvec, sizeof(double), (na+1), fd);
 
       /* the c adjustment */
       for (i = 0; i < na; i++)
