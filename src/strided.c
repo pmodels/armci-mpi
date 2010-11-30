@@ -8,7 +8,10 @@
 
 #include <armci.h>
 #include <armci_internals.h>
+#include <mem_region.h>
 #include <debug.h>
+
+#define STRIDED_LOCK_OUTER 1
 
 enum strided_ops_e { STRIDED_PUT, STRIDED_GET, STRIDED_ACC };
 
@@ -196,7 +199,7 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   for (i = 0; i < stride_levels; i++)
       idx[i] = 0;
 
-  // Special case: contiguous put
+  // Special case: contiguous operation
   if (stride_levels == 0) {
     switch (strided_op) {
       case STRIDED_PUT:
@@ -215,6 +218,36 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     return 0;
   }
 
+#ifdef STRIDED_LOCK_OUTER
+  // Lock the window, calls to Put/Get/Acc will automatically not lock the
+  // window if we've already done it.  FIXME: If the local data is in a
+  // shared allocation we will attempt to lock two windows at once.  This is
+  // bad.
+
+  mem_region_t *mreg;
+
+  switch (strided_op) {
+    case STRIDED_PUT:
+      mreg = mem_region_lookup(dst_ptr, proc);
+      assert(mreg != NULL);
+      break;
+    case STRIDED_ACC:
+      mreg = NULL;
+      break;
+    case STRIDED_GET:
+      mreg = mem_region_lookup(src_ptr, proc);
+      assert(mreg != NULL);
+      break;
+    default:
+      ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
+      return 1;
+  }
+
+  if (mreg != NULL) 
+    mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
+
+#endif /* STRIDED_LOCK_OUTER */
+
   while(idx[stride_levels-1] < count[stride_levels]) {
     int disp_src = 0;
     int disp_dst = 0;
@@ -225,7 +258,7 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       disp_dst += dst_stride_ar[i]*idx[i];
     }
 
-    // Perform communication.  TODO: Optimize for lock/unlock here
+    // Perform communication.
     switch (strided_op) {
       case STRIDED_PUT:
         ARMCI_Put(((uint8_t*)src_ptr) + disp_src,
@@ -260,6 +293,11 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
   }
+
+#ifdef STRIDED_LOCK_OUTER
+  if (mreg != NULL)
+    mreg_unlock(mreg, proc);
+#endif
 
   return 0;
 }
