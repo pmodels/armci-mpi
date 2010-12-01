@@ -9,11 +9,12 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_malloc           \
                   tests/test_malloc_irreg     \
                   tests/ARMCI_PutS_latency    \
-                  tests/ARMCI_AccS_latency \
+                  tests/ARMCI_AccS_latency    \
                   tests/test_groups           \
                   tests/test_group_split      \
                   tests/test_malloc_group     \
-                  tests/test_accs
+                  tests/test_accs             \
+                  tests/test_puts             \
                   # end
 
 tests_test_onesided_SOURCES = $(top_srcdir)/tests/test_onesided.c
@@ -63,6 +64,10 @@ tests_test_malloc_group_DEPENDENCIES = libarmci.la
 tests_test_accs_SOURCES = $(top_srcdir)/tests/test_accs.c
 tests_test_accs_LDADD = -larmci
 tests_test_accs_DEPENDENCIES = libarmci.la
+
+tests_test_puts_SOURCES = $(top_srcdir)/tests/test_puts.c
+tests_test_puts_LDADD = -larmci
+tests_test_puts_DEPENDENCIES = libarmci.la
 
 include tests/armci_test/Makefile.mk
 include tests/cg/Makefile.mk
