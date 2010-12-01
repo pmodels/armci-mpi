@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     int i, j, rank, nranks, peer;
     size_t xdim, ydim;
     unsigned long bufsize;
-    double **buffer;
+    double **buffer, *src_buf;
     double t_start, t_stop;
     int count[2], src_stride, trg_stride, stride_level;
     double scaling;
@@ -86,6 +86,7 @@ int main(int argc, char **argv)
 
     bufsize = MAX_XDIM * MAX_YDIM * sizeof(double);
     ARMCI_Malloc((void **) buffer, bufsize);
+    src_buf = ARMCI_Malloc_local(bufsize);
 
     if (rank == 0)
     {
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
     for (i = 0; i < bufsize / sizeof(double); i++)
     {
         *(buffer[rank] + i) = 1.0 + rank;
+        *(src_buf + i) = 1.0 + rank;
     }
     scaling = 2.0;
 
@@ -131,7 +133,7 @@ int main(int argc, char **argv)
 
                     ARMCI_AccS(ARMCI_ACC_DBL,
                                (void *) &scaling,
-                               (void *) buffer[rank],
+                               /* (void *) buffer[rank] */ src_buf,
                                &src_stride,
                                (void *) buffer[peer],
                                &trg_stride,
@@ -160,7 +162,7 @@ int main(int argc, char **argv)
 
                     ARMCI_AccS(ARMCI_ACC_DBL,
                                (void *) &scaling,
-                               (void *) buffer[rank],
+                               /* (void *) buffer[rank] */ src_buf,
                                &src_stride,
                                (void *) buffer[peer],
                                &trg_stride,
@@ -247,6 +249,7 @@ int main(int argc, char **argv)
     ARMCI_Barrier();
 
     ARMCI_Free((void *) buffer[rank]);
+    ARMCI_Free_local(src_buf);
 
     ARMCI_Finalize();
 
