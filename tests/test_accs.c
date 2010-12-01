@@ -3,8 +3,11 @@
 #include <mpi.h>
 #include <armci.h>
 
-#define XDIM 1024 
-#define YDIM 1024
+//#define XDIM 1024 
+//#define YDIM 1024
+//#define ITERATIONS 10
+#define XDIM 8 
+#define YDIM 8
 #define ITERATIONS 10
 
 int main(int argc, char **argv) {
@@ -61,6 +64,8 @@ int main(int argc, char **argv) {
           count,
           stride_level,
           peer);
+
+      // ARMCI_Barrier();
     }
 
     ARMCI_Barrier();
@@ -68,10 +73,11 @@ int main(int argc, char **argv) {
     ARMCI_Access_begin(buffer[rank]);
     for (i = errors = 0; i < XDIM; i++) {
       for (j = 0; j < YDIM; j++) {
-        if (*(buffer[rank] + i + j*XDIM) != ((1.0 + rank) + scaling * (1.0 + ((rank+nranks-1)%nranks)) * (ITERATIONS))) {
-          printf("%d: Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
-              rank, i, j, ((1.0 + rank) + scaling * (1.0 + ((2*rank)%nranks)) * (ITERATIONS)),
-              *(buffer[rank] + i + j*XDIM));
+        const double actual   = *(buffer[rank] + i + j*XDIM);
+        const double expected = (1.0 + rank) + scaling * (1.0 + ((rank+nranks-1)%nranks)) * (ITERATIONS);
+        if (actual - expected > 1e-10) {
+          printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
+              rank, j, i, expected, actual);
           errors++;
           fflush(stdout);
         }
