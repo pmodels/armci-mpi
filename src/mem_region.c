@@ -48,12 +48,15 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *g
   alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
   assert(alloc_slices != NULL);
 
-  mreg->comm    = group->comm;
-  mreg->nslices = world_nproc;
-  mreg->access_mode = ARMCIX_MODE_ALL;
-  mreg->lock_state  = MREG_LOCK_UNLOCKED;
-  mreg->prev    = NULL;
-  mreg->next    = NULL;
+  mreg->comm           = group->comm;
+  mreg->nslices        = world_nproc;
+  mreg->access_mode    = ARMCIX_MODE_ALL;
+  mreg->lock_state     = MREG_LOCK_UNLOCKED;
+  mreg->freelist       = NULL;
+  mreg->freelist_count = 0;
+  mreg->freelist_size  = 0;
+  mreg->prev           = NULL;
+  mreg->next           = NULL;
 
   // Allocate my slice and create the window
   alloc_slices[alloc_me].size = local_size;
@@ -186,6 +189,11 @@ void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   free(mreg->slices);
   ARMCIX_Destroy_mutexes_grp(mreg->rmw_mutex);
 
+  assert(mreg->freelist_count == 0);
+
+  if (mreg->freelist != NULL)
+    free(mreg->freelist);
+
   free(mreg);
 }
 
@@ -227,27 +235,27 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
   * @param[in] src    Source address (local)
   * @param[in] dst    Destination address (remote)
   * @param[in] size   Number of bytes to transfer
-  * @param[in] target Absolute process id of target
+  * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
-  int disp, grp_target, need_lock;
+int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  int disp, grp_proc, need_lock;
 
-  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
-  assert(grp_target >= 0);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[target].base);
+  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
-  assert(disp >= 0 && disp < mreg->slices[target].size);
-  assert(dst >= mreg->slices[target].base);
-  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert(disp >= 0 && disp < mreg->slices[proc].size);
+  assert(dst >= mreg->slices[proc].base);
+  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
   need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
 
-  if (need_lock) MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
-  MPI_Put(src, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
-  if (need_lock) MPI_Win_unlock(grp_target, mreg->window);
+  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
+  MPI_Put(src, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
+  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
 }
@@ -261,27 +269,27 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target) {
   * @param[in] src    Source address (remote)
   * @param[in] dst    Destination address (local)
   * @param[in] size   Number of bytes to transfer
-  * @param[in] target Absolute process id of target
+  * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target) {
-  int disp, grp_target, need_lock;
+int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  int disp, grp_proc, need_lock;
 
-  grp_target = ARMCII_Translate_absolute_to_group(mreg->comm, target);
-  assert(grp_target >= 0);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[target].base);
+  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
 
-  assert(disp >= 0 && disp < mreg->slices[target].size);
-  assert(src >= mreg->slices[target].base);
-  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[target].base + mreg->slices[target].size);
+  assert(disp >= 0 && disp < mreg->slices[proc].size);
+  assert(src >= mreg->slices[proc].base);
+  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
   need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
 
-  if (need_lock) MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_target, 0, mreg->window);
-  MPI_Get(dst, size, MPI_BYTE, grp_target, disp, size, MPI_BYTE, mreg->window);
-  if (need_lock) MPI_Win_unlock(grp_target, mreg->window);
+  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
+  MPI_Get(dst, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
+  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
 }
@@ -315,11 +323,43 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type,
 
   need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
 
-  if (need_lock) MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
+  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
   MPI_Accumulate(src, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
-  if (need_lock) MPI_Win_unlock(grp_proc, mreg->window);
+  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
+}
+
+
+/** Attach a buffer to a memory region's to-free list.  This is for internally
+  * generated buffers that should be freed when a window is unlocked.
+  *
+  * @param[in] mreg Memory region
+  * @param[in] buf  Buffer to be freed (with MPI_Free_mem)
+  */
+void mreg_freelist_attach(mem_region_t *mreg, void *buf) {
+  if (mreg->freelist_count == mreg->freelist_size) {
+    void *new_list;
+
+    mreg->freelist_size += 100;
+    new_list = realloc(mreg->freelist, mreg->freelist_size*sizeof(void*));
+    assert(new_list != NULL);
+
+    mreg->freelist = new_list;
+  }
+
+  mreg->freelist[mreg->freelist_count] = buf;
+  mreg->freelist_count++;
+}
+
+
+/** Free all buffers attached to a memory region's to-free list.
+  *
+  * @param[in] mreg Memory region
+  */
+void mreg_freelist_free(mem_region_t *mreg) {
+  for ( ; mreg->freelist_count > 0; mreg->freelist_count--)
+    MPI_Free_mem(mreg->freelist[mreg->freelist_count-1]);
 }
 
 
@@ -333,6 +373,8 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type,
 void mreg_lock(mem_region_t *mreg, int mode, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
+
+  assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
   switch (mode) {
     case MREG_LOCK_EXCLUSIVE:
@@ -360,7 +402,12 @@ void mreg_unlock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
 
+  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+
   MPI_Win_unlock(grp_proc, mreg->window);
 
   mreg->lock_state = MREG_LOCK_UNLOCKED;
+
+  // Free everything on the to-free list
+  mreg_freelist_free(mreg);
 }

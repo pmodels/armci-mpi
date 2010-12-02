@@ -232,7 +232,8 @@ int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       assert(mreg != NULL);
       break;
     case STRIDED_ACC:
-      mreg = NULL;
+      mreg = mem_region_lookup(dst_ptr, proc);
+      assert(mreg != NULL);
       break;
     case STRIDED_GET:
       mreg = mem_region_lookup(src_ptr, proc);

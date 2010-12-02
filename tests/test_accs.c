@@ -3,15 +3,12 @@
 #include <mpi.h>
 #include <armci.h>
 
-//#define XDIM 1024 
-//#define YDIM 1024
-//#define ITERATIONS 10
-#define XDIM 8 
-#define YDIM 8
+#define XDIM 1024 
+#define YDIM 1024
 #define ITERATIONS 10
 
 int main(int argc, char **argv) {
-    int i, j, rank, nranks, peer, bufsize, errors;
+    int i, j, rank, nranks, peer, bufsize, errors, total_errors;
     double **buffer, *src_buf;
     int count[2], src_stride, trg_stride, stride_level;
     double scaling;
@@ -64,8 +61,6 @@ int main(int argc, char **argv) {
           count,
           stride_level,
           peer);
-
-      // ARMCI_Barrier();
     }
 
     ARMCI_Barrier();
@@ -85,17 +80,19 @@ int main(int argc, char **argv) {
     }
     ARMCI_Access_end(buffer[rank]);
 
+    MPI_Allreduce(&errors, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
     ARMCI_Free((void *) buffer[rank]);
     ARMCI_Free_local(src_buf);
 
     ARMCI_Finalize();
     MPI_Finalize();
 
-    if (errors == 0) {
-      printf("%d: Success\n", rank);
+    if (total_errors == 0) {
+      if (rank == 0) printf("Success.\n");
       return 0;
     } else {
-      printf("%d: Fail\n", rank);
+      if (rank == 0) printf("Fail.\n", rank);
       return 1;
     }
 }

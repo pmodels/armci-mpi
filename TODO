@@ -7,6 +7,10 @@ Things that are not yet implemented:
   * Implement locking changes corresponding to ARMCI access modes.
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
   * implement armci_read/write_strided?
+  * Wrap ARMCII_Error in a macro to do __FILE__ etc automatically
+  * Write my own assert() function
+  * Add ARMCI_PAUSE_ON_FAIL
+  * Add configure option to disable buffer checks
 
 Things that need performance tuning:
 

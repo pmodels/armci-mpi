@@ -13,7 +13,7 @@
 #include <debug.h>
 #include <mem_region.h>
 
-#define CHECK_SHARED_LOCAL_BUFS 1
+// #define CHECK_SHARED_LOCAL_BUFS 1
 
 /** Declare the start of a local access epoch.  This allows direct access to
   * data in local memory.
@@ -226,8 +226,10 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         int *src_i = (int*) src_buf;
-        int *scl_i = malloc(bytes);
+        int *scl_i;
         const int s = *((int*) scale);
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_i);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_i;
         for (i = 0; i < count; i++)
           scl_i[i] = src_i[i]*s;
@@ -243,8 +245,10 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         long *src_l = (long*) src_buf;
-        long *scl_l = malloc(bytes);
+        long *scl_l;
         const long s = *((long*) scale);
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_l);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_l;
         for (i = 0; i < count; i++)
           scl_l[i] = src_l[i]*s;
@@ -260,8 +264,10 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         float *src_f = (float*) src_buf;
-        float *scl_f = malloc(bytes);
+        float *scl_f;
         const float s = *((float*) scale);
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_f);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_f;
         for (i = 0; i < count; i++)
           scl_f[i] = src_f[i]*s;
@@ -277,8 +283,10 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         double *src_d = (double*) src_buf;
-        double *scl_d = malloc(bytes);
+        double *scl_d;
         const double s = *((double*) scale);
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_d);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_d;
         for (i = 0; i < count; i++)
           scl_d[i] = src_d[i]*s;
@@ -294,9 +302,11 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         float *src_fc = (float*) src_buf;
-        float *scl_fc = malloc(bytes);
+        float *scl_fc;
         const float s_r = ((float*)scale)[0];
         const float s_c = ((float*)scale)[1];
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_fc);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_fc;
         for (i = 0; i < count; i += 2) {
           // Complex multiplication: (a + bi)*(c + di)
@@ -315,9 +325,11 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
         break;
       else {
         double *src_dc = (double*) src_buf;
-        double *scl_dc = malloc(bytes);
+        double *scl_dc;
         const double s_r = ((double*)scale)[0];
         const double s_c = ((double*)scale)[1];
+        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_dc);
+        assert(ierr == MPI_SUCCESS);
         scaled_data = scl_dc;
         for (i = 0; i < count; i += 2) {
           // Complex multiplication: (a + bi)*(c + di)
@@ -334,18 +346,16 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   assert(bytes % type_size == 0);
 
-  if (scaled_data)
-    src_data = scaled_data;
-  else
-    src_data = src_buf;
-
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
-  mreg_accumulate(mreg, src_data, dst, type, count, proc);
+  if (scaled_data) {
+    src_data = scaled_data;
+    mreg_freelist_attach(mreg, scaled_data);
+  } else
+    src_data = src_buf;
 
-  if (scaled_data != NULL) 
-    free(scaled_data);
+  mreg_accumulate(mreg, src_data, dst, type, count, proc);
 
   if (mreg_src != NULL)
     MPI_Free_mem(src_buf);

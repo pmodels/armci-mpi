@@ -29,6 +29,10 @@ typedef struct mem_region_s {
   int                  lock_state;
   armcix_mutex_grp_t   rmw_mutex;
 
+  void               **freelist;
+  int                  freelist_count;
+  int                  freelist_size;
+
   struct mem_region_s *prev;
   struct mem_region_s *next;
   int                  nslices;
@@ -44,6 +48,9 @@ mem_region_t *mem_region_lookup(void *ptr, int proc);
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc);
+
+void mreg_freelist_attach(mem_region_t *mreg, void *buf);
+void mreg_freelist_free(mem_region_t *mreg);
 
 void mreg_lock(mem_region_t *mreg, int mode, int proc);
 void mreg_unlock(mem_region_t *mreg, int proc);
