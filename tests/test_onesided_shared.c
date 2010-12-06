@@ -5,6 +5,7 @@
 #include <mpi.h>
 #include <armci.h>
 
+#define VERBOSE        0
 #define DATA_NELTS     1000
 #define NUM_ITERATIONS 10
 #define DATA_SZ        (DATA_NELTS*sizeof(int))
@@ -29,12 +30,16 @@ int main(int argc, char ** argv) {
   for (test_iter = 0; test_iter < NUM_ITERATIONS; test_iter++) {
     if (rank == 0) printf(" + iteration %d\n", test_iter);
 
+    if (rank == 0 && VERBOSE) printf("   - Allocating shared buffers\n");
+
     /*** Allocate the shared array ***/
     ARMCI_Malloc(base_ptrs,  DATA_SZ);
     ARMCI_Malloc(buf_shared, DATA_SZ);
 
     buf     = buf_shared[rank];
     my_data = base_ptrs[rank];
+
+    if (rank == 0 && VERBOSE) printf("   - Testing one-sided get\n");
 
     /*** Get from our right neighbor and verify correct data ***/
     ARMCI_Access_begin(my_data);
@@ -45,6 +50,8 @@ int main(int argc, char ** argv) {
 
     ARMCI_Get(base_ptrs[(rank+1) % nproc], buf, DATA_SZ, (rank+1) % nproc);
 
+    ARMCI_Access_begin(buf);
+
     for (i = 0; i < DATA_NELTS; i++) {
       if (buf[i] != ((rank+1) % nproc)*test_iter) {
         printf("%d: GET expected %d, got %d\n", rank, (rank+1) % nproc, buf[i]);
@@ -52,7 +59,11 @@ int main(int argc, char ** argv) {
       }
     }
 
+    ARMCI_Access_end(buf);
+
     ARMCI_Barrier(); // Wait for all gets to complete
+
+    if (rank == 0 && VERBOSE) printf("   - Testing one-sided put\n");
 
     /*** Put to our left neighbor and verify correct data ***/
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank*test_iter;
@@ -71,8 +82,12 @@ int main(int argc, char ** argv) {
 
     ARMCI_Barrier(); // Wait for all gets to complete
 
+    if (rank == 0 && VERBOSE) printf("   - Testing one-sided accumlate\n");
+
     /*** Accumulate to our left neighbor and verify correct data ***/
+    ARMCI_Access_begin(buf);
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank;
+    ARMCI_Access_end(buf);
     
     ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank;
@@ -88,15 +103,17 @@ int main(int argc, char ** argv) {
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != rank + ((rank+1) % nproc)*test_iter) {
         printf("%d: ACC expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
-        //MPI_Abort(MPI_COMM_WORLD, 1);
+        MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
     ARMCI_Access_end(my_data);
 
+    if (rank == 0 && VERBOSE) printf("   - Freeing shared buffers\n");
+
     ARMCI_Free(my_data);
+    ARMCI_Free(buf);
   }
 
-  free(buf);
   free(base_ptrs);
 
   if (rank == 0) printf("Test complete: PASS.\n");
