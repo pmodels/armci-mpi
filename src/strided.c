@@ -13,13 +13,6 @@
 
 #define STRIDED_LOCK_OUTER 1
 
-enum strided_ops_e { STRIDED_PUT, STRIDED_GET, STRIDED_ACC };
-
-int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
-               void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc,
-               int strided_op, int datatype, void *scale);
-
 /** Blocking operation that transfers data from the calling process to the
   * memory of the remote process.  The data transfer is strided and blocking.
   *
@@ -38,9 +31,16 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc, STRIDED_PUT, 0, NULL);
+  int err;
+  armci_giov_t iov;
+
+  ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
+  err = ARMCI_PutV(&iov, 1, proc);
+
+  free(iov.src_ptr_array);
+  free(iov.dst_ptr_array);
+
+  return err;
 }
 
 
@@ -62,9 +62,16 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc, STRIDED_GET, 0, NULL);
+  int err;
+  armci_giov_t iov;
+
+  ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
+  err = ARMCI_GetV(&iov, 1, proc);
+
+  free(iov.src_ptr_array);
+  free(iov.dst_ptr_array);
+
+  return err;
 }
 
 
@@ -89,10 +96,16 @@ int ARMCI_AccS(int datatype, void *scale,
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc,
-                     STRIDED_ACC, datatype, scale);
+  int err;
+  armci_giov_t iov;
+
+  ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
+  err = ARMCI_AccV(datatype, scale, &iov, 1, proc);
+
+  free(iov.src_ptr_array);
+  free(iov.dst_ptr_array);
+
+  return err;
 }
 
 
@@ -114,9 +127,7 @@ int ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc, STRIDED_PUT, 0, NULL);
+  return ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
@@ -138,9 +149,7 @@ int ARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc, STRIDED_GET, 0, NULL);
+  return ARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
@@ -165,14 +174,11 @@ int ARMCI_NbAccS(int datatype, void *scale,
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_ImplS(src_ptr, src_stride_ar,
-                     dst_ptr, dst_stride_ar,
-                     count, stride_levels, proc,
-                     STRIDED_ACC, datatype, scale);
+  return ARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
-/** Underlying implementation of all strided functions.  Supports Put, Get, and Acc.
+/** Translate a strided operation into a more general IO Vector.
   *
   * @param[in] src_ptr         Source starting address of the data block to put.
   * @param[in] src_stride_arr  Source array of stride distances in bytes.
@@ -181,127 +187,73 @@ int ARMCI_NbAccS(int datatype, void *scale,
   * @param[in] count           Block size in each dimension. count[0] should be the
   *                            number of bytes of contiguous data in leading dimension.
   * @param[in] stride_levels   The level of strides.
-  * @param[in] proc            Remote process ID (destination).
-  * @param[in] strided_op      Desired operation (STRIDED_PUT, STRIDED_GET, STRIDED_ACC).
-  * @param[in] datatype        Type of data to be transferred.
-  * @param[in] scale           Pointer to the value that input data should be scaled by.
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_ImplS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+void ARMCII_Strided_to_iov(armci_giov_t *iov,
+               void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc,
-               int strided_op, int datatype, void *scale) {
+               int count[/*stride_levels+1*/], int stride_levels) {
 
-  int idx[stride_levels];
   int i;
 
+  iov->bytes = count[0];
+  iov->ptr_array_len = 1;
+
   for (i = 0; i < stride_levels; i++)
+    iov->ptr_array_len *= count[i+1];
+
+  iov->src_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
+  iov->dst_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
+
+  assert(iov->src_ptr_array != NULL && iov->dst_ptr_array != NULL);
+
+  // Case 1: Non-strided transfer
+  if (stride_levels == 0) {
+    iov->src_ptr_array[0] = src_ptr;
+    iov->dst_ptr_array[0] = dst_ptr;
+
+  // Case 2: Strided transfer
+  } else {
+    int idx[stride_levels];
+    int xfer;
+
+    for (i = 0; i < stride_levels; i++)
       idx[i] = 0;
 
-  // Special case: contiguous operation
-  if (stride_levels == 0) {
-    switch (strided_op) {
-      case STRIDED_PUT:
-        ARMCI_Put(src_ptr, dst_ptr, count[0], proc);
-        break;
-      case STRIDED_GET:
-        ARMCI_Get(src_ptr, dst_ptr, count[0], proc);
-        break;
-      case STRIDED_ACC:
-        ARMCI_Acc(datatype, scale, src_ptr, dst_ptr, count[0], proc);
-        break;
-      default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
-        return 1;
-    }
-    return 0;
-  }
+    for (xfer = 0; idx[stride_levels-1] < count[stride_levels]; xfer++) {
+      int disp_src = 0;
+      int disp_dst = 0;
 
-#ifdef STRIDED_LOCK_OUTER
-  // Lock the window, calls to Put/Get/Acc will automatically not lock the
-  // window if we've already done it.  FIXME: If the local data is in a
-  // shared allocation we will attempt to lock two windows at once.  This is
-  // bad.
+      assert(xfer < iov->ptr_array_len);
 
-  mem_region_t *mreg;
+      // Calculate displacements from base pointers
+      for (i = 0; i < stride_levels; i++) {
+        disp_src += src_stride_ar[i]*idx[i];
+        disp_dst += dst_stride_ar[i]*idx[i];
+      }
 
-  switch (strided_op) {
-    case STRIDED_PUT:
-      mreg = mem_region_lookup(dst_ptr, proc);
-      assert(mreg != NULL);
-      break;
-    case STRIDED_ACC:
-      mreg = mem_region_lookup(dst_ptr, proc);
-      assert(mreg != NULL);
-      break;
-    case STRIDED_GET:
-      mreg = mem_region_lookup(src_ptr, proc);
-      assert(mreg != NULL);
-      break;
-    default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
-      return 1;
-  }
+      // Add to the IO Vector
+      iov->src_ptr_array[xfer] = ((uint8_t*)src_ptr) + disp_src;
+      iov->dst_ptr_array[xfer] = ((uint8_t*)dst_ptr) + disp_dst;
 
-  if (mreg != NULL) 
-    mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
+      // Increment innermost index
+      idx[0] += 1;
 
-#endif /* STRIDED_LOCK_OUTER */
-
-  while(idx[stride_levels-1] < count[stride_levels]) {
-    int disp_src = 0;
-    int disp_dst = 0;
-
-    // Calculate displacements from base pointers
-    for (i = 0; i < stride_levels; i++) {
-      disp_src += src_stride_ar[i]*idx[i];
-      disp_dst += dst_stride_ar[i]*idx[i];
-    }
-
-    // Perform communication.
-    switch (strided_op) {
-      case STRIDED_PUT:
-        ARMCI_Put(((uint8_t*)src_ptr) + disp_src,
-                  ((uint8_t*)dst_ptr) + disp_dst,
-                  count[0], proc);
-        break;
-      case STRIDED_GET:
-        ARMCI_Get(((uint8_t*)src_ptr) + disp_src,
-                  ((uint8_t*)dst_ptr) + disp_dst,
-                  count[0], proc);
-        break;
-      case STRIDED_ACC:
-        ARMCI_Acc(datatype, scale,
-                  ((uint8_t*)src_ptr) + disp_src,
-                  ((uint8_t*)dst_ptr) + disp_dst,
-                  count[0], proc);
-        break;
-      default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unsupported operation", 100);
-        return 1;
-    }
-
-    // Increment innermost index
-    idx[0] += 1;
-
-    // Propagate "carry" overflows outward.  We're done when the outermost
-    // index is greater than the requested count.
-    for (i = 0; i < stride_levels-1; i++) {
-      if (idx[i] >= count[i+1]) {
-        idx[i]    = 0;
-        idx[i+1] += 1;
+      // Propagate "carry" overflows outward.  We're done when the outermost
+      // index is greater than the requested count.
+      for (i = 0; i < stride_levels-1; i++) {
+        if (idx[i] >= count[i+1]) {
+          idx[i]    = 0;
+          idx[i+1] += 1;
+        }
       }
     }
+
+    assert(xfer == iov->ptr_array_len);
   }
-
-#ifdef STRIDED_LOCK_OUTER
-  if (mreg != NULL)
-    mreg_unlock(mreg, proc);
-#endif
-
-  return 0;
 }
+
 
 /** Blocking operation that transfers data from the calling process to the
   * memory of the remote process.  The data transfer is strided and blocking.

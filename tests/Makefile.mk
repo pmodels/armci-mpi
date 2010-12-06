@@ -3,6 +3,7 @@
 #
 
 check_PROGRAMS += tests/test_onesided         \
+                  tests/test_onesided_shared  \
                   tests/test_mutex            \
                   tests/test_mutex_rmw        \
                   tests/test_mutex_trylock    \
@@ -20,6 +21,10 @@ check_PROGRAMS += tests/test_onesided         \
 tests_test_onesided_SOURCES = $(top_srcdir)/tests/test_onesided.c
 tests_test_onesided_LDADD = -larmci
 tests_test_onesided_DEPENDENCIES = libarmci.la
+
+tests_test_onesided_shared_SOURCES = $(top_srcdir)/tests/test_onesided_shared.c
+tests_test_onesided_shared_LDADD = -larmci
+tests_test_onesided_shared_DEPENDENCIES = libarmci.la
 
 tests_test_mutex_SOURCES = $(top_srcdir)/tests/test_mutex.c
 tests_test_mutex_LDADD = -larmci

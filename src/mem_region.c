@@ -52,9 +52,6 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *g
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
   mreg->lock_state     = MREG_LOCK_UNLOCKED;
-  mreg->freelist       = NULL;
-  mreg->freelist_count = 0;
-  mreg->freelist_size  = 0;
   mreg->prev           = NULL;
   mreg->next           = NULL;
 
@@ -189,11 +186,6 @@ void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   free(mreg->slices);
   ARMCIX_Destroy_mutexes_grp(mreg->rmw_mutex);
 
-  assert(mreg->freelist_count == 0);
-
-  if (mreg->freelist != NULL)
-    free(mreg->freelist);
-
   free(mreg);
 }
 
@@ -227,9 +219,7 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
 }
 
 
-/** One-sided put operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.  Source buffer must
-  * be private.
+/** One-sided put operation.  Source buffer must be private.
   *
   * @param[in] mreg   Memory region
   * @param[in] src    Source address (local)
@@ -239,7 +229,7 @@ mem_region_t *mem_region_lookup(void *ptr, int proc) {
   * @return           0 on success, non-zero on failure
   */
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
-  int disp, grp_proc, need_lock;
+  int disp, grp_proc;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
@@ -247,23 +237,18 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   // Calculate displacement from beginning of the window
   disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
+  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
   assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
-  need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
-
-  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
   MPI_Put(src, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
-  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
 }
 
 
-/** One-sided get operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.  Destination buffer
-  * must be private.
+/** One-sided get operation.  Destination buffer must be private.
   *
   * @param[in] mreg   Memory region
   * @param[in] src    Source address (remote)
@@ -273,7 +258,7 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @return           0 on success, non-zero on failure
   */
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
-  int disp, grp_proc, need_lock;
+  int disp, grp_proc;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
@@ -281,23 +266,18 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   // Calculate displacement from beginning of the window
   disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
 
+  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(src >= mreg->slices[proc].base);
   assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
-  need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
-
-  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
   MPI_Get(dst, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
-  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
 }
 
 
-/** One-sided accumulate operation.  If the mem region is not locked, it will be
-  * automatically locked according to the access mode.  Source buffer must be
-  * private.
+/** One-sided accumulate operation.  Source buffer must be private.
   *
   * @param[in] mreg     Memory region
   * @param[in] src      Source address (local)
@@ -317,49 +297,14 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type,
   disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
 
   MPI_Type_size(type, &type_size);
+  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
   assert(dst >= mreg->slices[proc].base);
   assert((uint8_t*)dst + (type_size*count) <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
 
-  need_lock = mreg->lock_state == MREG_LOCK_UNLOCKED;
-
-  if (need_lock) mreg_lock(mreg, MREG_LOCK_EXCLUSIVE, proc);
   MPI_Accumulate(src, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
-  if (need_lock) mreg_unlock(mreg, proc);
 
   return 0;
-}
-
-
-/** Attach a buffer to a memory region's to-free list.  This is for internally
-  * generated buffers that should be freed when a window is unlocked.
-  *
-  * @param[in] mreg Memory region
-  * @param[in] buf  Buffer to be freed (with MPI_Free_mem)
-  */
-void mreg_freelist_attach(mem_region_t *mreg, void *buf) {
-  if (mreg->freelist_count == mreg->freelist_size) {
-    void *new_list;
-
-    mreg->freelist_size += 100;
-    new_list = realloc(mreg->freelist, mreg->freelist_size*sizeof(void*));
-    assert(new_list != NULL);
-
-    mreg->freelist = new_list;
-  }
-
-  mreg->freelist[mreg->freelist_count] = buf;
-  mreg->freelist_count++;
-}
-
-
-/** Free all buffers attached to a memory region's to-free list.
-  *
-  * @param[in] mreg Memory region
-  */
-void mreg_freelist_free(mem_region_t *mreg) {
-  for ( ; mreg->freelist_count > 0; mreg->freelist_count--)
-    MPI_Free_mem(mreg->freelist[mreg->freelist_count-1]);
 }
 
 
@@ -370,25 +315,15 @@ void mreg_freelist_free(mem_region_t *mreg) {
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-void mreg_lock(mem_region_t *mreg, int mode, int proc) {
+void mreg_lock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);
 
   assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
-  switch (mode) {
-    case MREG_LOCK_EXCLUSIVE:
-      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
-      break;
-    case MREG_LOCK_SHARED:
-      MPI_Win_lock(MPI_LOCK_SHARED, grp_proc, 0, mreg->window);
-      break;
-    default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown lock mode", 10);
-      return;
-  }
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
-  mreg->lock_state = mode;
+  mreg->lock_state = MREG_LOCK_EXCLUSIVE;
 }
 
 
@@ -407,7 +342,4 @@ void mreg_unlock(mem_region_t *mreg, int proc) {
   MPI_Win_unlock(grp_proc, mreg->window);
 
   mreg->lock_state = MREG_LOCK_UNLOCKED;
-
-  // Free everything on the to-free list
-  mreg_freelist_free(mreg);
 }

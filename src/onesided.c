@@ -13,7 +13,6 @@
 #include <debug.h>
 #include <mem_region.h>
 
-// #define CHECK_SHARED_LOCAL_BUFS 1
 
 /** Declare the start of a local access epoch.  This allows direct access to
   * data in local memory.
@@ -21,19 +20,12 @@
   * @param[in] ptr Pointer to the allocation that will be accessed directly 
   */
 void ARMCI_Access_begin(void *ptr) {
-  int           me, grp_rank;
   mem_region_t *mreg;
-  MPI_Group     grp;
 
-  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
-
-  mreg = mem_region_lookup(ptr, me);
+  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
-  MPI_Win_get_group(mreg->window, &grp);
-  MPI_Group_rank(grp, &grp_rank);
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_rank, 0, mreg->window);
-  MPI_Group_free(&grp);
+  mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
 }
 
 
@@ -46,19 +38,12 @@ void ARMCI_Access_begin(void *ptr) {
   * @param[in] ptr Pointer to the allocation that was accessed directly 
   */
 void ARMCI_Access_end(void *ptr) {
-  int           me, grp_rank;
   mem_region_t *mreg;
-  MPI_Group     grp;
 
-  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
-
-  mreg = mem_region_lookup(ptr, me);
+  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
-  MPI_Win_get_group(mreg->window, &grp);
-  MPI_Group_rank(grp, &grp_rank);
-  MPI_Win_unlock(grp_rank, mreg->window);
-  MPI_Group_free(&grp);
+  mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
 }
 
 
@@ -74,7 +59,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL); // TODO: Return failure or bail?
+  assert(mreg != NULL);
 
   assert(group->comm == mreg->comm);
 
@@ -82,8 +67,14 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   // do the mode switch
   MPI_Barrier(mreg->comm);
 
-  if (new_mode != ARMCIX_MODE_ALL && new_mode != ARMCIX_MODE_RMA_ONLY)
-    ARMCII_Error(__FILE__, __LINE__, __func__, "Unknown access mode", 100);
+  switch (new_mode) {
+    case ARMCIX_MODE_ALL:
+      break;
+    case ARMCIX_MODE_RMA_ONLY:
+      break;
+    default:
+      ARMCII_Error(__FILE__, __LINE__, __func__, "Unknown access mode", 100);
+  }
 
   mreg->access_mode = new_mode;
 
@@ -91,7 +82,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
 }
 
 
-/** Query the acess mode for the given allocation.  Non-collective.
+/** Query the access mode for the given allocation.  Non-collective.
   *
   * @param[in] ptr      Pointer within the allocation.
   * @return             Current access mode.
@@ -100,7 +91,7 @@ int ARMCIX_Mode_get(void *ptr) {
   mem_region_t *mreg;
 
   mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL); // TODO: Return failure or bail?
+  assert(mreg != NULL);
 
   return mreg->access_mode;
 }
@@ -115,31 +106,19 @@ int ARMCIX_Mode_get(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg, *mreg_dst = NULL;
-  void *dst_buf;
+  mem_region_t *mreg;
+  void **dst_buf;
 
-#ifdef CHECK_SHARED_LOCAL_BUFS
-  // Check if the destination buffer is within a shared region.  If so, we'll
-  // need to work on a private buffer and put back the result later.
-  mreg_dst = mem_region_lookup(dst, ARMCI_GROUP_WORLD.rank);
-#endif
-
-  if (mreg_dst != NULL) {
-    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
-    assert(ierr == MPI_SUCCESS);
-  } else {
-    dst_buf = dst;
-  }
+  ARMCII_Buf_get_prepare(&dst, &dst_buf, 1, size);
 
   mreg = mem_region_lookup(src, target);
   assert(mreg != NULL);
 
-  mreg_get(mreg, src, dst_buf, size, target);
+  mreg_lock(mreg, target);
+  mreg_get(mreg, src, dst_buf[0], size, target);
+  mreg_unlock(mreg, target);
 
-  if (mreg_dst != NULL) {
-    mreg_put(mreg_dst, dst_buf, dst, size, ARMCI_GROUP_WORLD.rank);
-    MPI_Free_mem(dst_buf);
-  }
+  ARMCII_Buf_get_finish(&dst, dst_buf, 1, size);
 
   return 0;
 }
@@ -154,31 +133,19 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg, *mreg_src = NULL;
-  void *src_buf;
+  mem_region_t *mreg;
+  void **src_buf;
 
-#ifdef CHECK_SHARED_LOCAL_BUFS
-  // Check if the source buffer is within a shared region.  If so, we'll
-  // need to get the data into a private buffer before we can put it.
-  mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
-#endif
-
-  if (mreg_src != NULL) {
-    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
-    assert(ierr == MPI_SUCCESS);
-    mreg_get(mreg_src, src, src_buf, size, ARMCI_GROUP_WORLD.rank);
-  } else {
-    src_buf = src;
-  }
+  ARMCII_Buf_put_prepare(&src, &src_buf, 1, size);
 
   mreg = mem_region_lookup(dst, target);
   assert(mreg != NULL);
 
-  mreg_put(mreg, src, dst, size, target);
+  mreg_lock(mreg, target);
+  mreg_put(mreg, src_buf[0], dst, size, target);
+  mreg_unlock(mreg, target);
 
-  if (mreg_src != NULL) {
-    MPI_Free_mem(src_buf);
-  }
+  ARMCII_Buf_put_finish(&src, src_buf, 1, size);
 
   return 0;
 }
@@ -196,169 +163,50 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   * @return             0 on success, non-zero on failure
   */
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
-  void *scaled_data = NULL;
-  void *src_data, *src_buf;
-  int   count, type_size, i;
+  void **src_buf;
+  int    count, type_size, i;
   MPI_Datatype type;
-  mem_region_t *mreg, *mreg_src = NULL;
+  mem_region_t *mreg;
 
-#ifdef CHECK_SHARED_LOCAL_BUFS
-  // Check if the source buffer is within a shared region.  If so, we'll
-  // need to get the data into a private buffer before we can put it.
-  mreg_src = mem_region_lookup(src, ARMCI_GROUP_WORLD.rank);
-#endif
-
-  if (mreg_src != NULL) {
-    int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
-    assert(ierr == MPI_SUCCESS);
-    mreg_get(mreg_src, src, src_buf, bytes, ARMCI_GROUP_WORLD.rank);
-  } else {
-    src_buf = src;
-  }
-
-  switch (datatype) {
-    case ARMCI_ACC_INT:
-      MPI_Type_size(MPI_INT, &type_size);
-      type = MPI_INT;
-      count= bytes/type_size;
-
-      if (*((int*)scale) == 1)
-        break;
-      else {
-        int *src_i = (int*) src_buf;
-        int *scl_i;
-        const int s = *((int*) scale);
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_i);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_i;
-        for (i = 0; i < count; i++)
-          scl_i[i] = src_i[i]*s;
-      }
-      break;
-
-    case ARMCI_ACC_LNG:
-      MPI_Type_size(MPI_LONG, &type_size);
-      type = MPI_LONG;
-      count= bytes/type_size;
-
-      if (*((long*)scale) == 1)
-        break;
-      else {
-        long *src_l = (long*) src_buf;
-        long *scl_l;
-        const long s = *((long*) scale);
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_l);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_l;
-        for (i = 0; i < count; i++)
-          scl_l[i] = src_l[i]*s;
-      }
-      break;
-
-    case ARMCI_ACC_FLT:
-      MPI_Type_size(MPI_FLOAT, &type_size);
-      type = MPI_FLOAT;
-      count= bytes/type_size;
-
-      if (*((float*)scale) == 1.0)
-        break;
-      else {
-        float *src_f = (float*) src_buf;
-        float *scl_f;
-        const float s = *((float*) scale);
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_f);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_f;
-        for (i = 0; i < count; i++)
-          scl_f[i] = src_f[i]*s;
-      }
-      break;
-
-    case ARMCI_ACC_DBL:
-      MPI_Type_size(MPI_DOUBLE, &type_size);
-      type = MPI_DOUBLE;
-      count= bytes/type_size;
-
-      if (*((double*)scale) == 1.0)
-        break;
-      else {
-        double *src_d = (double*) src_buf;
-        double *scl_d;
-        const double s = *((double*) scale);
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_d);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_d;
-        for (i = 0; i < count; i++)
-          scl_d[i] = src_d[i]*s;
-      }
-      break;
-
-    case ARMCI_ACC_CPL:
-      MPI_Type_size(MPI_FLOAT, &type_size);
-      type = MPI_FLOAT;
-      count= bytes/type_size;
-
-      if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 0.0)
-        break;
-      else {
-        float *src_fc = (float*) src_buf;
-        float *scl_fc;
-        const float s_r = ((float*)scale)[0];
-        const float s_c = ((float*)scale)[1];
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_fc);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_fc;
-        for (i = 0; i < count; i += 2) {
-          // Complex multiplication: (a + bi)*(c + di)
-          scl_fc[i]   = src_fc[i]*s_r   - src_fc[i+1]*s_c;
-          scl_fc[i+1] = src_fc[i+1]*s_r + src_fc[i]*s_c;
-        }
-      }
-      break;
-
-    case ARMCI_ACC_DCP:
-      MPI_Type_size(MPI_DOUBLE, &type_size);
-      type = MPI_DOUBLE;
-      count= bytes/type_size;
-
-      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 0.0)
-        break;
-      else {
-        double *src_dc = (double*) src_buf;
-        double *scl_dc;
-        const double s_r = ((double*)scale)[0];
-        const double s_c = ((double*)scale)[1];
-        int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &scl_dc);
-        assert(ierr == MPI_SUCCESS);
-        scaled_data = scl_dc;
-        for (i = 0; i < count; i += 2) {
-          // Complex multiplication: (a + bi)*(c + di)
-          scl_dc[i]   = src_dc[i]*s_r   - src_dc[i+1]*s_c;
-          scl_dc[i+1] = src_dc[i+1]*s_r + src_dc[i]*s_c;
-        }
-      }
-      break;
-
-    default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
-      return 1;
-  }
-
-  assert(bytes % type_size == 0);
+  ARMCII_Buf_acc_prepare(&src, &src_buf, 1, bytes, datatype, scale);
 
   mreg = mem_region_lookup(dst, proc);
   assert(mreg != NULL);
 
-  if (scaled_data) {
-    src_data = scaled_data;
-    mreg_freelist_attach(mreg, scaled_data);
-  } else
-    src_data = src_buf;
+  // Determine the MPI type for the transfer
+  switch (datatype) {
+    case ARMCI_ACC_INT:
+      type = MPI_INT;
+      break;
+    case ARMCI_ACC_LNG:
+      type = MPI_LONG;
+      break;
+    case ARMCI_ACC_FLT:
+      type = MPI_FLOAT;
+      break;
+    case ARMCI_ACC_DBL:
+      type = MPI_DOUBLE;
+      break;
+    case ARMCI_ACC_CPL:
+      type = MPI_FLOAT;
+      break;
+    case ARMCI_ACC_DCP:
+      type = MPI_DOUBLE;
+      break;
+    default:
+      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
+  }
 
-  mreg_accumulate(mreg, src_data, dst, type, count, proc);
+  MPI_Type_size(type, &type_size);
+  count = bytes/type_size;
 
-  if (mreg_src != NULL)
-    MPI_Free_mem(src_buf);
+  assert(bytes % type_size == 0);
+
+  mreg_lock(mreg, proc);
+  mreg_accumulate(mreg, src_buf[0], dst, type, count, proc);
+  mreg_unlock(mreg, proc);
+
+  ARMCII_Buf_acc_finish(&src, src_buf, 1, bytes);
 
   return 0;
 }
