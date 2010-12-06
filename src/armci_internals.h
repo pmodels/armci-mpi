@@ -16,6 +16,8 @@ void ARMCII_Error(const char *file, const int line, const char *func, const char
 
 int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
+void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *type, int *type_size);
+
 /* I/O Vector data management */
 
 int  ARMCII_Iov_check_src_overlap(armci_giov_t *iov);

@@ -44,3 +44,40 @@ int ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank) {
 
   return group_rank == MPI_UNDEFINED ? -1 : group_rank;
 }
+
+
+/** Translate an ARMCI accumulate data type into an MPI type so we can pass it
+  * to mem regions.
+  *
+  * @param[in]  armci_datatype ARMCI accumulate data type
+  * @param[out] mpi_type       MPI data type
+  * @param[out] type_size      Size of the MPI data type
+  */
+void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *type_size) {
+    // Determine the MPI type for the transfer
+    switch (armci_datatype) {
+      case ARMCI_ACC_INT:
+        *mpi_type = MPI_INT;
+        break;
+      case ARMCI_ACC_LNG:
+        *mpi_type = MPI_LONG;
+        break;
+      case ARMCI_ACC_FLT:
+        *mpi_type = MPI_FLOAT;
+        break;
+      case ARMCI_ACC_DBL:
+        *mpi_type = MPI_DOUBLE;
+        break;
+      case ARMCI_ACC_CPL:
+        *mpi_type = MPI_FLOAT;
+        break;
+      case ARMCI_ACC_DCP:
+        *mpi_type = MPI_DOUBLE;
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
+        return;
+    }
+
+    MPI_Type_size(*mpi_type, type_size);
+}

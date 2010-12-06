@@ -173,32 +173,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   mreg = mreg_lookup(dst, proc);
   assert(mreg != NULL);
 
-  // Determine the MPI type for the transfer
-  switch (datatype) {
-    case ARMCI_ACC_INT:
-      type = MPI_INT;
-      break;
-    case ARMCI_ACC_LNG:
-      type = MPI_LONG;
-      break;
-    case ARMCI_ACC_FLT:
-      type = MPI_FLOAT;
-      break;
-    case ARMCI_ACC_DBL:
-      type = MPI_DOUBLE;
-      break;
-    case ARMCI_ACC_CPL:
-      type = MPI_FLOAT;
-      break;
-    case ARMCI_ACC_DCP:
-      type = MPI_DOUBLE;
-      break;
-    default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
-      return 1;
-  }
-
-  MPI_Type_size(type, &type_size);
+  ARMCII_Acc_type_translate(datatype, &type, &type_size);
   count = bytes/type_size;
 
   assert(bytes % type_size == 0);
