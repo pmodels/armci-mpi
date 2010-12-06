@@ -22,7 +22,7 @@
 void ARMCI_Access_begin(void *ptr) {
   mem_region_t *mreg;
 
-  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
   mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
@@ -40,7 +40,7 @@ void ARMCI_Access_begin(void *ptr) {
 void ARMCI_Access_end(void *ptr) {
   mem_region_t *mreg;
 
-  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
   mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
@@ -58,7 +58,7 @@ void ARMCI_Access_end(void *ptr) {
 int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   mem_region_t *mreg;
 
-  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
   assert(group->comm == mreg->comm);
@@ -90,7 +90,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
 int ARMCIX_Mode_get(void *ptr) {
   mem_region_t *mreg;
 
-  mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
   return mreg->access_mode;
@@ -111,7 +111,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
 
   ARMCII_Buf_get_prepare(&dst, &dst_buf, 1, size);
 
-  mreg = mem_region_lookup(src, target);
+  mreg = mreg_lookup(src, target);
   assert(mreg != NULL);
 
   mreg_lock(mreg, target);
@@ -138,7 +138,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 
   ARMCII_Buf_put_prepare(&src, &src_buf, 1, size);
 
-  mreg = mem_region_lookup(dst, target);
+  mreg = mreg_lookup(dst, target);
   assert(mreg != NULL);
 
   mreg_lock(mreg, target);
@@ -164,13 +164,13 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   */
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void **src_buf;
-  int    count, type_size, i;
+  int    count, type_size;
   MPI_Datatype type;
   mem_region_t *mreg;
 
   ARMCII_Buf_acc_prepare(&src, &src_buf, 1, bytes, datatype, scale);
 
-  mreg = mem_region_lookup(dst, proc);
+  mreg = mreg_lookup(dst, proc);
   assert(mreg != NULL);
 
   // Determine the MPI type for the transfer
@@ -195,6 +195,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
       break;
     default:
       ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
+      return 1;
   }
 
   MPI_Type_size(type, &type_size);

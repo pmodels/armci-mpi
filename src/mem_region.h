@@ -37,9 +37,9 @@ typedef struct mem_region_s {
 
 extern mem_region_t *mreg_list;
 
-mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *group);
-void          mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group);
-mem_region_t *mem_region_lookup(void *ptr, int proc);
+mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group);
+void          mreg_destroy(mem_region_t *mreg, ARMCI_Group *group);
+mem_region_t *mreg_lookup(void *ptr, int proc);
 
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target);

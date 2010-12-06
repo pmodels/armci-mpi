@@ -27,7 +27,7 @@ mem_region_t *mreg_list = NULL;
   * @param[in]  group      Group on which to perform allocation.
   * @return                Pointer to the memory region object.
   */
-mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
+mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
   int           i;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
@@ -116,7 +116,7 @@ mem_region_t *mem_region_create(int local_size, void **base_ptrs, ARMCI_Group *g
   * @param[in] ptr   Pointer within range of the segment (e.g. base pointer).
   * @param[in] group Group on which to perform the free.
   */
-void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
+void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   int   search_proc_in, search_proc_out, search_proc_out_grp;
   void *search_base;
   int   alloc_me, alloc_nproc;
@@ -158,7 +158,7 @@ void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
 
   // If we were passed NULL, look up the mem region using the <base, proc> pair
   if (mreg == NULL)
-    mreg = mem_region_lookup(search_base, search_proc_out);
+    mreg = mreg_lookup(search_base, search_proc_out);
 
   if (mreg == NULL) printf("Err: mreg == NULL.  base=%p proc=%d\n", search_base, search_proc_out);
   assert(mreg != NULL);
@@ -196,7 +196,7 @@ void mem_region_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   * @param[in] proc Process on which the data lives.
   * @return         Pointer to the mem region object.
   */
-mem_region_t *mem_region_lookup(void *ptr, int proc) {
+mem_region_t *mreg_lookup(void *ptr, int proc) {
   mem_region_t *mreg;
 
   mreg = mreg_list;
@@ -288,7 +288,7 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @return             0 on success, non-zero on failure
   */
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc) {
-  int disp, grp_proc, type_size, need_lock;
+  int disp, grp_proc, type_size;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
   assert(grp_proc >= 0);

@@ -30,7 +30,7 @@ void ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
   for (i = 0; i < count; i++) {
     // Check if the source buffer is within a shared region.  If so, copy it
     // into a private buffer.
-    mem_region_t *mreg = mem_region_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
     if (mreg != NULL) {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
@@ -98,7 +98,7 @@ void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
 
     // Check if the source buffer is within a shared region.  If so, copy it
     // into a private buffer.
-    mreg = mem_region_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
     // Lock if needed so we can directly access the buffer
     if (mreg != NULL)
@@ -243,7 +243,9 @@ void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
       
     // Buffer is in shared space, make a private copy
     } else {
-        mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
+      int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+      assert(ierr == MPI_SUCCESS);
+      mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
     }
 
     if (mreg != NULL)
@@ -287,7 +289,7 @@ void ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
   for (i = 0; i < count; i++) {
     // Check if the destination buffer is within a shared region.  If not, create
     // a temporary private buffer to hold the result.
-    mem_region_t *mreg = mem_region_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
     if (mreg != NULL) {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
@@ -315,7 +317,7 @@ void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int siz
 
   for (i = 0; i < count; i++) {
     if (orig_bufs[i] != new_bufs[i]) {
-      mem_region_t *mreg = mem_region_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
       assert(mreg != NULL);
 
       mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);

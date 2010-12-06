@@ -44,7 +44,7 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
   mem_region_t *mreg;
  
-  mreg = mem_region_create(size, base_ptrs, group);
+  mreg = mreg_create(size, base_ptrs, group);
 
   if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000
@@ -70,14 +70,14 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
   mem_region_t *mreg;
 
   if (ptr != NULL) {
-    mreg = mem_region_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+    mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
     assert(mreg != NULL);
   } else {
     dprint(DEBUG_CAT_ALLOC, __func__, "given NULL\n");
     mreg = NULL;
   }
 
-  mem_region_destroy(mreg, group);
+  mreg_destroy(mreg, group);
 
   return 0;
 }

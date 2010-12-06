@@ -31,7 +31,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   int           is_long;
   mem_region_t *mreg;
 
-  mreg = mem_region_lookup(prem, proc);
+  mreg = mreg_lookup(prem, proc);
   assert(mreg != NULL);
 
   if (op == ARMCI_SWAP_LONG || op == ARMCI_FETCH_AND_ADD_LONG)
