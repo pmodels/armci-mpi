@@ -19,10 +19,11 @@
   * @param[out] new_bufs  Pointer to the set of private buffers.
   * @param[in]  count     Number of entries in the buffer list.
   * @param[in]  size      The size of the buffers (all are of the same size).
+  * @return               Number of buffers that were moved.
   */
-void ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
+int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
   void **new_bufs = malloc(count*sizeof(void*));
-  int i;
+  int i, num_moved = 0;
 
   for (i = 0; i < count; i++)
     new_bufs[i] = NULL;
@@ -39,12 +40,16 @@ void ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
       mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
       mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
       mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+
+      num_moved++;
     } else {
       new_bufs[i] = orig_bufs[i];
     }
   }
 
   *new_bufs_ptr = new_bufs;
+  
+  return num_moved;
 }
 
 
@@ -80,12 +85,13 @@ void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int siz
   * @param[in]  size      The size of the buffers (all are of the same size).
   * @param[in]  datatype  The type of the buffer.
   * @param[in]  scale     Scaling constant to apply to each buffer.
+  * @return               Number of buffers that were moved.
   */
-void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
+int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
                             int datatype, void *scale) {
 
   void **new_bufs = malloc(count*sizeof(void*));
-  int i, j, nelem;
+  int i, j, nelem, num_moved = 0;
 
   for (i = 0; i < count; i++)
     new_bufs[i] = NULL;
@@ -236,6 +242,7 @@ void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
     // Scaling was applied, we have a private buffer
     if (scaled_data != NULL) {
       new_bufs[i] = scaled_data;
+      num_moved++;
 
     // Buffer is alread private and not scaled.  Use the original buffer.
     } else if (mreg == NULL) {
@@ -246,6 +253,7 @@ void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
       assert(ierr == MPI_SUCCESS);
       mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
+      num_moved++;
     }
 
     if (mreg != NULL)
@@ -253,6 +261,8 @@ void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
   }
 
   *new_bufs_ptr = new_bufs;
+  
+  return num_moved;
 }
 
 
@@ -278,10 +288,11 @@ void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int siz
   * @param[out] new_bufs  Pointer to the set of private buffers.
   * @param[in]  count     Number of entries in the buffer list.
   * @param[in]  size      The size of the buffers (all are of the same size).
+  * @return               Number of buffers that were moved.
   */
-void ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
+int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
   void **new_bufs = malloc(count*sizeof(void*));
-  int i;
+  int i, num_moved = 0;
 
   for (i = 0; i < count; i++)
     new_bufs[i] = NULL;
@@ -294,12 +305,15 @@ void ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, i
     if (mreg != NULL) {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
       assert(ierr == MPI_SUCCESS);
+      num_moved++;
     } else {
       new_bufs[i] = orig_bufs[i];
     }
   }
 
   *new_bufs_ptr = new_bufs;
+  
+  return num_moved;
 }
 
 

@@ -33,12 +33,12 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
 
 /* Shared to private buffer management routines */
 
-void ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+int  ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
 void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int size);
-void ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
+int  ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
                             int datatype, void *scale);
 void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int size);
-void ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+int  ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
 void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int size);
 
 #endif /* HAVE_ARMCI_INTERNALS_H */
