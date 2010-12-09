@@ -48,7 +48,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
   assert(alloc_slices != NULL);
 
-  mreg->comm           = group->comm;
+  mreg->group          = group;
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
   mreg->lock_state     = MREG_LOCK_UNLOCKED;
@@ -190,6 +190,21 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
 }
 
 
+/** Destroy all memory regions (called by finalize).
+  *
+  * @return Number of mem regions destroyed.
+  */
+int mreg_destroy_all(void) {
+  int count = 0;
+
+  while (mreg_list != NULL) {
+    mreg_destroy(mreg_list, mreg_list->group);
+    count++;
+  }
+
+  return count;
+}
+
 /** Lookup a shared memory region using an address and process id.
   *
   * @param[in] ptr  Pointer within range of the segment (e.g. base pointer).
@@ -206,7 +221,7 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
 
     if (proc < mreg->nslices) {
       const uint8_t *base = mreg->slices[proc].base;
-      const int       size = mreg->slices[proc].size;
+      const int      size = mreg->slices[proc].size;
 
       if ((uint8_t*) ptr >= base && (uint8_t*) ptr < base + size)
         break;
@@ -231,7 +246,7 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   int disp, grp_proc;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
@@ -260,7 +275,7 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   int disp, grp_proc;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
@@ -290,7 +305,7 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc) {
   int disp, grp_proc, type_size;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from window's base address
@@ -316,7 +331,7 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type,
   * @return             0 on success, non-zero on failure
   */
 void mreg_lock(mem_region_t *mreg, int proc) {
-  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
@@ -334,7 +349,7 @@ void mreg_lock(mem_region_t *mreg, int proc) {
   * @return             0 on success, non-zero on failure
   */
 void mreg_unlock(mem_region_t *mreg, int proc) {
-  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->comm, proc);
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   assert(mreg->lock_state != MREG_LOCK_UNLOCKED);

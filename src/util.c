@@ -10,6 +10,7 @@
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
+#include <mem_region.h>
 
 int ARMCI_Init(void) {
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
@@ -25,7 +26,15 @@ int ARMCI_Init_args(int *argc, char ***argv) {
 }
 
 int ARMCI_Finalize(void) {
+  int nfreed = mreg_destroy_all();
+
+  if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
+    printf("Warning: Freed %d leaked allocations\n", nfreed);
+
   ARMCI_Cleanup();
+
+  MPI_Comm_free(&ARMCI_GROUP_WORLD.comm);
+
   return 0;
 }
 

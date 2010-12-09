@@ -24,6 +24,7 @@ typedef struct {
 typedef struct mem_region_s {
   MPI_Win              window;
   MPI_Comm             comm;
+  ARMCI_Group         *group;
 
   int                  access_mode;
   int                  lock_state;
@@ -39,6 +40,7 @@ extern mem_region_t *mreg_list;
 
 mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group);
 void          mreg_destroy(mem_region_t *mreg, ARMCI_Group *group);
+int           mreg_destroy_all(void);
 mem_region_t *mreg_lookup(void *ptr, int proc);
 
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
