@@ -244,20 +244,45 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
   * @return           0 on success, non-zero on failure
   */
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  return mreg_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+}
+
+
+/** One-sided put operation with type arguments.  Source buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
+
   int disp, grp_proc;
+  MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  if (dst == MPI_BOTTOM) 
+    disp = 0;
+  else
+    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
+  // Perform checks
+  MPI_Type_get_extent(dst_type, &lb, &extent);
   assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(dst >= mreg->slices[proc].base);
-  assert((uint8_t*)dst + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+  assert(disp + dst_count*extent <= mreg->slices[proc].size);
 
-  MPI_Put(src, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
+  MPI_Put(src, src_count, src_type, grp_proc, disp, dst_count, dst_type, mreg->window);
 
   return 0;
 }
@@ -273,20 +298,45 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @return           0 on success, non-zero on failure
   */
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  return mreg_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+}
+
+
+/** One-sided get operation with type arguments.  Destination buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
+
   int disp, grp_proc;
+  MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
-  disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
+  if (src == MPI_BOTTOM) 
+    disp = 0;
+  else
+    disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
 
+  // Perform checks
+  MPI_Type_get_extent(src_type, &lb, &extent);
   assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(src >= mreg->slices[proc].base);
-  assert((uint8_t*)src + size <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+  assert(disp + src_count*extent <= mreg->slices[proc].size);
 
-  MPI_Get(dst, size, MPI_BYTE, grp_proc, disp, size, MPI_BYTE, mreg->window);
+  MPI_Get(dst, dst_count, dst_type, grp_proc, disp, src_count, src_type, mreg->window);
 
   return 0;
 }
@@ -302,26 +352,51 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc) {
+int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
   int disp, grp_proc, type_size;
+
+  return mreg_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
+}
+
+
+/** One-sided accumulate operation with typed arguments.  Source buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
+
+  int disp, grp_proc;
+  MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
   assert(grp_proc >= 0);
 
-  // Calculate displacement from window's base address
-  disp = (int) ((uint8_t*)dst - (uint8_t*)(mreg->slices[proc].base));
+  // Calculate displacement from beginning of the window
+  if (dst == MPI_BOTTOM) 
+    disp = 0;
+  else
+    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
-  MPI_Type_size(type, &type_size);
+  // Perform checks
+  MPI_Type_get_extent(dst_type, &lb, &extent);
   assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(dst >= mreg->slices[proc].base);
-  assert((uint8_t*)dst + (type_size*count) <= (uint8_t*)mreg->slices[proc].base + mreg->slices[proc].size);
+  assert(disp + dst_count*extent <= mreg->slices[proc].size);
 
-  MPI_Accumulate(src, count, type, grp_proc, disp, count, type, MPI_SUM, mreg->window);
+  MPI_Accumulate(src, src_count, src_type, grp_proc, disp, dst_count, dst_type, MPI_SUM, mreg->window);
 
   return 0;
 }
-
 
 /** Lock a memory region so that one-sided operations can be performed.
   *

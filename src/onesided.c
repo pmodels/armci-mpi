@@ -179,7 +179,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   assert(bytes % type_size == 0);
 
   mreg_lock(mreg, proc);
-  mreg_accumulate(mreg, src_buf[0], dst, type, count, proc);
+  mreg_accumulate(mreg, src_buf[0], dst, count, type, proc);
   mreg_unlock(mreg, proc);
 
   ARMCII_Buf_acc_finish(&src, src_buf, 1, bytes);

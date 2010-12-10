@@ -45,7 +45,14 @@ mem_region_t *mreg_lookup(void *ptr, int proc);
 
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int target);
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int target);
-int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, MPI_Datatype type, int count, int proc);
+int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
+
+int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
+int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
+int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 
 void mreg_lock(mem_region_t *mreg, int proc);
 void mreg_unlock(mem_region_t *mreg, int proc);

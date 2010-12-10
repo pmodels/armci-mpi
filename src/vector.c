@@ -79,12 +79,18 @@ int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
 int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int proc) {
 
-  int i, acc_count, type_size;
+  int i;
   MPI_Datatype type;
+  int type_count, type_size;
 
   if (op == ARMCII_OP_ACC) {
     ARMCII_Acc_type_translate(datatype, &type, &type_size);
-    acc_count = size/type_size;
+    type_count = size/type_size;
+    assert(size % type_size == 0);
+  } else {
+    type = MPI_BYTE;
+    MPI_Type_size(type, &type_size);
+    type_count = size/type_size;
     assert(size % type_size == 0);
   }
 
@@ -94,7 +100,6 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
 
   if (overlapping) {
     for (i = 0; i < count; i++) {
-      // TODO: Is it safe to assume that all remote pointers are from the same allocation?
       mem_region_t *mreg;
       void *shr_ptr;
 
@@ -113,6 +118,8 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
           return 1;
       }
 
+      // TODO: Is it safe to assume that all remote pointers are from the same
+      // allocation?
       mreg = mreg_lookup(shr_ptr, proc);
       assert(mreg != NULL);
 
@@ -120,13 +127,13 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
 
       switch(op) {
         case ARMCII_OP_PUT:
-          mreg_put(mreg, src[i], dst[i], size, proc);
+          mreg_put(mreg, src[i], dst[i], type_count, proc);
           break;
         case ARMCII_OP_GET:
-          mreg_get(mreg, src[i], dst[i], size, proc);
+          mreg_get(mreg, src[i], dst[i], type_count, proc);
           break;
         case ARMCII_OP_ACC:
-          mreg_accumulate(mreg, src[i], dst[i], type, size, proc);
+          mreg_accumulate(mreg, src[i], dst[i], type_count, type, proc);
           break;
         default:
           ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
@@ -141,6 +148,74 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
   // single lock.
 
   } else {
+#define IOV_USES_MPI_TYPE
+#ifdef IOV_USES_MPI_TYPE
+    mem_region_t *mreg;
+    MPI_Datatype  type_loc, type_rem;
+    MPI_Aint      disp_loc[count];
+    int           disp_rem[count];
+    int           block_len[count], i;
+    void        **buf_rem, **buf_loc;
+    MPI_Aint      base_rem;
+
+    switch(op) {
+      case ARMCII_OP_ACC:
+      case ARMCII_OP_PUT:
+        buf_rem = dst;
+        buf_loc = src;
+        break;
+      case ARMCII_OP_GET:
+        buf_rem = src;
+        buf_loc = dst;
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        return 1;
+    }
+
+    // TODO: Is it safe to assume that all remote pointers are from the same
+    // allocation?
+    mreg = mreg_lookup(buf_rem[0], proc);
+    assert(mreg != NULL);
+    MPI_Get_address(mreg->slices[proc].base, &base_rem);
+
+    for (i = 0; i < count; i++) {
+      MPI_Aint target_rem;
+      MPI_Get_address(buf_loc[i], &disp_loc[i]);
+      MPI_Get_address(buf_rem[i], &target_rem);
+      disp_rem[i]  = (target_rem - base_rem)/type_size;
+      block_len[i] = type_count;
+
+      assert(disp_rem[i] >= 0);
+    }
+
+    MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);
+    MPI_Type_create_indexed_block(count, type_count, disp_rem, type, &type_rem);
+
+    MPI_Type_commit(&type_loc);
+    MPI_Type_commit(&type_rem);
+
+    mreg_lock(mreg, proc);
+
+    switch(op) {
+      case ARMCII_OP_ACC:
+        // Broken due to MPI type
+        mreg_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        break;
+      case ARMCII_OP_PUT:
+        mreg_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        break;
+      case ARMCII_OP_GET:
+        mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        return 1;
+    }
+
+    mreg_unlock(mreg, proc);
+
+#else
     // TODO: Is it safe to assume that all remote pointers are from the same allocation?
     mem_region_t *mreg;
     void *shr_ptr;
@@ -168,13 +243,13 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
     for (i = 0; i < count; i++) {
       switch(op) {
         case ARMCII_OP_PUT:
-          mreg_put(mreg, src[i], dst[i], size, proc);
+          mreg_put(mreg, src[i], dst[i], type_count, proc);
           break;
         case ARMCII_OP_GET:
-          mreg_get(mreg, src[i], dst[i], size, proc);
+          mreg_get(mreg, src[i], dst[i], type_count, proc);
           break;
         case ARMCII_OP_ACC:
-          mreg_accumulate(mreg, src[i], dst[i], type, acc_count, proc);
+          mreg_accumulate(mreg, src[i], dst[i], type_count, type, proc);
           break;
       default:
         ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
@@ -183,10 +258,12 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
     }
 
     mreg_unlock(mreg, proc);
+#endif /* IOV_USES_MPI_TYPE */
   }
 
   return 0;
 }
+
 
 /** Generalized I/O vector one-sided put.
   *
