@@ -1,3 +1,14 @@
+/* One-Sided MPI 2-D Strided Accumulate Test
+ *
+ * Author: James Dinan <dinan@mcs.anl.gov> 
+ * Date  : December, 2010
+ *
+ * This code performs N accumulates into a 2d patch of a shared array.  The
+ * array has dimensions [X, Y] and the subarray has dimensions [SUB_X, SUB_Y]
+ * and begins at index [0, 0].  The input and output buffers are specified
+ * using an MPI indexed type.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
