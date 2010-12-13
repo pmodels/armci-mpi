@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#define XDIM 1024 
-#define YDIM 1024
-#define SUB_XDIM 512
-#define SUB_YDIM 512
-#define ITERATIONS 10
+#define XDIM 16
+#define YDIM 16
+#define SUB_XDIM 8
+#define SUB_YDIM 8
+#define ITERATIONS 1
 
 int main(int argc, char **argv) {
     int i, j, rank, nranks, peer, bufsize, errors;
