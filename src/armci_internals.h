@@ -7,18 +7,30 @@
 
 #include <armci.h>
 
-extern ARMCI_Group ARMCI_GROUP_WORLD;
-extern ARMCI_Group ARMCI_GROUP_DEFAULT;
+typedef struct {
+  int iov_method;
+} global_state_t;
 
 enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
+enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
+                            ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
+
+/* Global data */
+
+extern ARMCI_Group    ARMCI_GROUP_WORLD;
+extern ARMCI_Group    ARMCI_GROUP_DEFAULT;
+extern global_state_t ARMCII_GLOBAL_STATE;
+
+
+/* Assorted utility functions */
 
 void ARMCII_Error(const char *file, const int line, const char *func, const char *msg, int code);
-
 int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
-void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *type, int *type_size);
 
 /* I/O Vector data management and implementation */
+
+void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *type, int *type_size);
 
 int  ARMCII_Iov_check_src_overlap(armci_giov_t *iov);
 int  ARMCII_Iov_check_dst_overlap(armci_giov_t *iov);
@@ -38,6 +50,7 @@ int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_co
     MPI_Datatype type, int proc);
 int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
+
 
 /* Shared to private buffer management routines */
 

@@ -69,7 +69,7 @@ int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
   * @param[in] ptrs  An array of count shared pointers valid on proc.
   * @param[in] count Size of the ptrs array.
   * @param[in] proc  Process on which the pointers are valid.
-  * @return          Zero on success, non-zero otherwise.
+  * @return          Non-zero (true) on success, zero (false) otherwise.
   */
 int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   int i;
@@ -79,14 +79,14 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   mreg = mreg_lookup(ptrs[0], proc);
   assert(mreg != NULL);
 
-  base   = mreg->slices[ARMCI_GROUP_WORLD.rank].base;
-  extent = ((uint8_t*) base) + mreg->slices[ARMCI_GROUP_WORLD.rank].size;
+  base   = mreg->slices[proc].base;
+  extent = ((uint8_t*) base) + mreg->slices[proc].size;
 
   for (i = 1; i < count; i++)
     if ( !(ptrs[i] >= base && ptrs[i] < extent) )
-      return 1;
+      return 0;
 
-  return 0;
+  return 1;
 }
 
 
@@ -125,22 +125,19 @@ int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
   // multiple allocations, use the safe implementation to avoid invalid MPI
   // use.
 
-  if (overlapping || same_alloc) {
+  if (overlapping || !same_alloc || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_SAFE) {
     if (overlapping) printf("Warning: IOV remote buffers overlap\n");
-    if (same_alloc)  printf("Warning: IOV remote buffers are not within the same allocation\n");
+    if (!same_alloc) printf("Warning: IOV remote buffers are not within the same allocation\n");
     return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
   }
 
   // OPTIMIZED CASE: It's safe for us to issue all the operations under a
   // single lock.
 
-  else
-#define IOV_USES_MPI_TYPE
-#ifdef IOV_USES_MPI_TYPE
+  else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DTYPE)
     return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
-#else
+  else
     return ARMCII_Iov_op_onelock(op, src, dst, count, type_count, type, proc);
-#endif
 }
 
 

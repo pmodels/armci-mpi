@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     int i, j, rank, nranks, peer, bufsize, errors, total_errors;
     double **buffer, *src_buf;
     int count[2], src_stride, trg_stride, stride_level;
-    double scaling;
+    double scaling, time;
 
     MPI_Init(&argc, &argv);
     ARMCI_Init();
@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     count[0] = XDIM * sizeof(double);
 
     ARMCI_Barrier();
+    time = MPI_Wtime();
 
     peer = (rank+1) % nranks;
 
@@ -64,6 +65,9 @@ int main(int argc, char **argv) {
     }
 
     ARMCI_Barrier();
+    time = MPI_Wtime() - time;
+
+    if (rank == 0) printf("Time: %f sec\n", time);
 
     ARMCI_Access_begin(buffer[rank]);
     for (i = errors = 0; i < XDIM; i++) {
