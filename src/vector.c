@@ -64,6 +64,32 @@ int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
 }
 
 
+/** Check if a set of pointers all corresponds to the same allocation.
+  *
+  * @param[in] ptrs  An array of count shared pointers valid on proc.
+  * @param[in] count Size of the ptrs array.
+  * @param[in] proc  Process on which the pointers are valid.
+  * @return          Zero on success, non-zero otherwise.
+  */
+int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
+  int i;
+  mem_region_t *mreg;
+  void *base, *extent;
+
+  mreg = mreg_lookup(ptrs[0], proc);
+  assert(mreg != NULL);
+
+  base   = mreg->slices[ARMCI_GROUP_WORLD.rank].base;
+  extent = ((uint8_t*) base) + mreg->slices[ARMCI_GROUP_WORLD.rank].size;
+
+  for (i = 1; i < count; i++)
+    if ( !(ptrs[i] >= base && ptrs[i] < extent) )
+      return 1;
+
+  return 0;
+}
+
+
 /** Perform an I/O vector operation.  Local buffers must be private.
   *
   * @param[in] op          Operation to be performed (ARMCII_OP_PUT, ...)
@@ -73,11 +99,12 @@ int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
   * @param[in] size        Size of each transfer
   * @param[in] datatype    Data type for accumulate op (ignored for all others)
   * @param[in] overlapping Do remote regions overlap?
+  * @param[in] same_alloc  Do remote regions correspond to the same allocation?
   * @param[in] proc        Target process
   * @return                Zero on success, error code otherwise
   */
-int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
-    int datatype, int overlapping, int proc) {
+int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
+    int datatype, int overlapping, int same_alloc, int proc) {
 
   int i;
   MPI_Datatype type;
@@ -94,67 +121,148 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
     assert(size % type_size == 0);
   }
 
-  // CASE Overlapping: If remote pointers overlap, use the safe implementation
-  // to avoid invalid MPI use (in MPI-3 this will be undefined so we won't need
-  // a special case, but it's an error in MPI-3).
+  // SAFE CASE: If remote pointers overlap or remote pointers correspond to
+  // multiple allocations, use the safe implementation to avoid invalid MPI
+  // use.
 
-  if (overlapping) {
-    for (i = 0; i < count; i++) {
-      mem_region_t *mreg;
-      void *shr_ptr;
+  if (overlapping || same_alloc) {
+    if (overlapping) printf("Warning: IOV remote buffers overlap\n");
+    if (same_alloc)  printf("Warning: IOV remote buffers are not within the same allocation\n");
+    return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
+  }
 
-      switch(op) {
-        case ARMCII_OP_PUT:
-          shr_ptr = dst[i];
-          break;
-        case ARMCII_OP_GET:
-          shr_ptr = src[i];
-          break;
-        case ARMCII_OP_ACC:
-          shr_ptr = dst[i];
-          break;
-        default:
-          ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
-          return 1;
-      }
-
-      // TODO: Is it safe to assume that all remote pointers are from the same
-      // allocation?
-      mreg = mreg_lookup(shr_ptr, proc);
-      assert(mreg != NULL);
-
-      mreg_lock(mreg, proc);
-
-      switch(op) {
-        case ARMCII_OP_PUT:
-          mreg_put(mreg, src[i], dst[i], type_count, proc);
-          break;
-        case ARMCII_OP_GET:
-          mreg_get(mreg, src[i], dst[i], type_count, proc);
-          break;
-        case ARMCII_OP_ACC:
-          mreg_accumulate(mreg, src[i], dst[i], type_count, type, proc);
-          break;
-        default:
-          ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
-          return 1;
-      }
-
-      mreg_unlock(mreg, proc);
-    }
-
-
-  // CASE Non-Overlapping: It's safe for us to issue all the operations under a
+  // OPTIMIZED CASE: It's safe for us to issue all the operations under a
   // single lock.
 
-  } else {
+  else
 #define IOV_USES_MPI_TYPE
 #ifdef IOV_USES_MPI_TYPE
+    return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
+#else
+    return ARMCII_Iov_op_onelock(op, src, dst, count, type_count, type, proc);
+#endif
+}
+
+
+/** Safe implementation of the ARMCI IOV operation
+  */
+int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count,
+    MPI_Datatype type, int proc) {
+  
+  int i;
+
+  for (i = 0; i < count; i++) {
+    mem_region_t *mreg;
+    void *shr_ptr;
+
+    switch(op) {
+      case ARMCII_OP_PUT:
+        shr_ptr = dst[i];
+        break;
+      case ARMCII_OP_GET:
+        shr_ptr = src[i];
+        break;
+      case ARMCII_OP_ACC:
+        shr_ptr = dst[i];
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        return 1;
+    }
+
+    mreg = mreg_lookup(shr_ptr, proc);
+    assert(mreg != NULL);
+
+    mreg_lock(mreg, proc);
+
+    switch(op) {
+      case ARMCII_OP_PUT:
+        mreg_put(mreg, src[i], dst[i], elem_count, proc);
+        break;
+      case ARMCII_OP_GET:
+        mreg_get(mreg, src[i], dst[i], elem_count, proc);
+        break;
+      case ARMCII_OP_ACC:
+        mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        return 1;
+    }
+
+    mreg_unlock(mreg, proc);
+  }
+
+  return 0;
+}
+
+
+/** Optimized implementation of the ARMCI IOV operation that uses a single
+  * lock/unlock pair.
+  */
+int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_count,
+    MPI_Datatype type, int proc) {
+
+  int i;
+  mem_region_t *mreg;
+  void *shr_ptr;
+
+  switch(op) {
+    case ARMCII_OP_PUT:
+      shr_ptr = dst[0];
+      break;
+    case ARMCII_OP_GET:
+      shr_ptr = src[0];
+      break;
+    case ARMCII_OP_ACC:
+      shr_ptr = dst[0];
+      break;
+    default:
+      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+      return 1;
+  }
+
+  mreg = mreg_lookup(shr_ptr, proc);
+  assert(mreg != NULL);
+
+  mreg_lock(mreg, proc);
+
+  for (i = 0; i < count; i++) {
+    switch(op) {
+      case ARMCII_OP_PUT:
+        mreg_put(mreg, src[i], dst[i], elem_count, proc);
+        break;
+      case ARMCII_OP_GET:
+        mreg_get(mreg, src[i], dst[i], elem_count, proc);
+        break;
+      case ARMCII_OP_ACC:
+        mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        break;
+      default:
+        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        return 1;
+    }
+  }
+
+  mreg_unlock(mreg, proc);
+
+  return 0;
+}
+
+
+/** Optimized implementation of the ARMCI IOV operation that uses an MPI
+  * datatype to achieve a one-sided gather/scatter.
+  */
+int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_count,
+    MPI_Datatype type, int proc) {
+
     mem_region_t *mreg;
     MPI_Datatype  type_loc, type_rem;
     MPI_Aint      disp_loc[count];
     int           disp_rem[count];
-    int           block_len[count], i;
+    int           block_len[count];
+    void         *dst_win_base;
+    int           dst_win_size, i, type_size;
     void        **buf_rem, **buf_loc;
     MPI_Aint      base_rem;
 
@@ -173,24 +281,31 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
         return 1;
     }
 
-    // TODO: Is it safe to assume that all remote pointers are from the same
-    // allocation?
+    MPI_Type_size(type, &type_size);
+
     mreg = mreg_lookup(buf_rem[0], proc);
     assert(mreg != NULL);
-    MPI_Get_address(mreg->slices[proc].base, &base_rem);
+
+    dst_win_base = mreg->slices[proc].base;
+    dst_win_size = mreg->slices[proc].size;
+
+    MPI_Get_address(dst_win_base, &base_rem);
 
     for (i = 0; i < count; i++) {
       MPI_Aint target_rem;
       MPI_Get_address(buf_loc[i], &disp_loc[i]);
       MPI_Get_address(buf_rem[i], &target_rem);
       disp_rem[i]  = (target_rem - base_rem)/type_size;
-      block_len[i] = type_count;
+      block_len[i] = elem_count;
 
-      assert(disp_rem[i] >= 0);
+      assert((target_rem - base_rem) % type_size == 0);
+      assert(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size);
+      assert(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size);
     }
 
     MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);
-    MPI_Type_create_indexed_block(count, type_count, disp_rem, type, &type_rem);
+    //MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
+    MPI_Type_indexed(count, block_len, disp_rem, type, &type_rem);
 
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
@@ -199,7 +314,6 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
 
     switch(op) {
       case ARMCII_OP_ACC:
-        // Broken due to MPI type
         mreg_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         break;
       case ARMCII_OP_PUT:
@@ -215,54 +329,11 @@ int ARMCII_Iov_op(int op, void **src, void **dst, int count, int size,
 
     mreg_unlock(mreg, proc);
 
-#else
-    // TODO: Is it safe to assume that all remote pointers are from the same allocation?
-    mem_region_t *mreg;
-    void *shr_ptr;
+    MPI_Type_free(&type_loc);
+    MPI_Type_free(&type_rem);
 
-    switch(op) {
-      case ARMCII_OP_PUT:
-        shr_ptr = dst[0];
-        break;
-      case ARMCII_OP_GET:
-        shr_ptr = src[0];
-        break;
-      case ARMCII_OP_ACC:
-        shr_ptr = dst[0];
-        break;
-      default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
-        return 1;
-    }
-
-    mreg = mreg_lookup(shr_ptr, proc);
-    assert(mreg != NULL);
-
-    mreg_lock(mreg, proc);
-
-    for (i = 0; i < count; i++) {
-      switch(op) {
-        case ARMCII_OP_PUT:
-          mreg_put(mreg, src[i], dst[i], type_count, proc);
-          break;
-        case ARMCII_OP_GET:
-          mreg_get(mreg, src[i], dst[i], type_count, proc);
-          break;
-        case ARMCII_OP_ACC:
-          mreg_accumulate(mreg, src[i], dst[i], type_count, type, proc);
-          break;
-      default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
-        return 1;
-      }
-    }
-
-    mreg_unlock(mreg, proc);
-#endif /* IOV_USES_MPI_TYPE */
-  }
-
-  return 0;
-}
+    return 0;
+}    
 
 
 /** Generalized I/O vector one-sided put.
@@ -277,12 +348,15 @@ int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
 
   for (v = 0; v < iov_len; v++) {
     void **src_buf;
-    int    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
+    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
+
     ARMCII_Buf_put_prepare(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
-    ARMCII_Iov_op(ARMCII_OP_PUT, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, proc);
+    ARMCII_Iov_op_dispatch(ARMCII_OP_PUT, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, same_alloc, proc);
     ARMCII_Buf_put_finish(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -302,12 +376,15 @@ int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
 
   for (v = 0; v < iov_len; v++) {
     void **dst_buf;
-    int    overlapping = ARMCII_Iov_check_src_overlap(&iov[v]);
+    int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
+    overlapping = ARMCII_Iov_check_src_overlap(&iov[v]);
+    same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].src_ptr_array, iov[v].ptr_array_len, proc);
+
     ARMCII_Buf_get_prepare(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
-    ARMCII_Iov_op(ARMCII_OP_GET, iov[v].src_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, proc);
+    ARMCII_Iov_op_dispatch(ARMCII_OP_GET, iov[v].src_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, same_alloc, proc);
     ARMCII_Buf_get_finish(iov[v].dst_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -327,12 +404,15 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
 
   for (v = 0; v < iov_len; v++) {
     void **src_buf;
-    int    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
+    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
+
     ARMCII_Buf_acc_prepare(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);
-    ARMCII_Iov_op(ARMCII_OP_ACC, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, datatype, overlapping, proc);
+    ARMCII_Iov_op_dispatch(ARMCII_OP_ACC, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, datatype, overlapping, same_alloc, proc);
     ARMCII_Buf_acc_finish(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
