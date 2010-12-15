@@ -65,16 +65,10 @@ int main(int argc, char **argv) {
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, peer, 0, buf_win);
 
-    // Section being transferred is contiguous (SUB_XDIM == XDIM)
-    // 1. This implementation uses no datatypes and works fine:
-    // MPI_Get(loc_buf, SUB_XDIM*SUB_YDIM, MPI_DOUBLE, peer, 0, SUB_XDIM*SUB_YDIM, MPI_DOUBLE, buf_win);
+    MPI_Get(loc_buf, 1, loc_type, peer, 0, 1, rem_type, buf_win);
 
-    // 2. This implementation uses a datatype for target data only and fails:
-    MPI_Get(loc_buf, SUB_XDIM*SUB_YDIM, MPI_DOUBLE, peer, 0, 1, rem_type, buf_win);
-
-    // Support non-contiguous transfers
-    // 3. This implementation uses data types on both ends and fails:
-    // MPI_Get(loc_buf, 1, loc_type, peer, 0, 1, rem_type, buf_win);
+    // Use the datatype only on the remote side (must have SUB_XDIM == XDIM)
+    // MPI_Get(loc_buf, SUB_XDIM*SUB_YDIM, MPI_DOUBLE, peer, 0, 1, rem_type, buf_win);
 
     MPI_Win_unlock(peer, buf_win);
 
