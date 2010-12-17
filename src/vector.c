@@ -18,6 +18,7 @@
   * @return             Logical true when regions overlap, 0 otherwise.
   */
 int ARMCII_Iov_check_src_overlap(armci_giov_t *iov) {
+#ifndef NO_CHECK_OVERLAP
   int i, j;
   const int size = iov->bytes;
 
@@ -33,6 +34,7 @@ int ARMCII_Iov_check_src_overlap(armci_giov_t *iov) {
       }
     }
   }
+#endif
 
   return 0;
 }
@@ -44,6 +46,7 @@ int ARMCII_Iov_check_src_overlap(armci_giov_t *iov) {
   * @return             Logical true when regions overlap, 0 otherwise.
   */
 int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
+#ifndef NO_CHECK_OVERLAP
   int i, j;
   const int size = iov->bytes;
 
@@ -59,6 +62,7 @@ int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
       }
     }
   }
+#endif
 
   return 0;
 }

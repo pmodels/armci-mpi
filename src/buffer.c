@@ -22,8 +22,11 @@
   * @return               Number of buffers that were moved.
   */
 int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
+  int num_moved = 0;
+
+#ifndef NO_CHECK_BUFFERS
   void **new_bufs = malloc(count*sizeof(void*));
-  int i, num_moved = 0;
+  int i;
 
   for (i = 0; i < count; i++)
     new_bufs[i] = NULL;
@@ -48,6 +51,10 @@ int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   }
 
   *new_bufs_ptr = new_bufs;
+
+#else
+  *new_bufs_ptr = orig_bufs;
+#endif /* NO_CHECK_BUFFERS */
   
   return num_moved;
 }
@@ -63,6 +70,7 @@ int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
 void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int size) {
+#ifndef NO_CHECK_BUFFERS
   int i;
 
   for (i = 0; i < count; i++) {
@@ -72,6 +80,7 @@ void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int siz
   }
 
   free(new_bufs);
+#endif /* NO_CHECK_BUFFERS */
 }
 
 

@@ -7,6 +7,13 @@
 
 #include <armci.h>
 
+/* Flags -- TODO: These will need configure options eventually */
+
+#define NO_CHECK_OVERLAP /* Disable checks for overlapping IOV operations */
+#define NO_CHECK_BUFFERS /* Disable checking for shared origin buffers    */
+
+/* Types */
+
 typedef struct {
   int iov_method;
 } global_state_t;
