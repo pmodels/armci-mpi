@@ -58,6 +58,11 @@
 #define ITERATIONS 10
 #define SKIP 1
 
+#ifdef VANILLA_ARMCI
+#define ARMCI_Access_begin(X) ((void*)0)
+#define ARMCI_Access_end(X) ((void*)0)
+#endif 
+
 int main(int argc, char **argv)
 {
 
@@ -98,11 +103,14 @@ int main(int argc, char **argv)
         fflush(stdout);
     }
 
+    ARMCI_Access_begin(buffer[rank]);
     for (i = 0; i < bufsize / sizeof(double); i++)
     {
-        *(buffer[rank] + i) = 1.0 + rank;
-        *(src_buf + i) = 1.0 + rank;
+      *(buffer[rank] + i) = 1.0 + rank;
+      *(src_buf + i) = 1.0 + rank;
     }
+    ARMCI_Access_end(buffer[rank]);
+
     scaling = 2.0;
 
     src_stride = MAX_YDIM * sizeof(double);
