@@ -22,7 +22,9 @@
 #define ARMCI_ABS(a) ((a)>0? (a): -(a))
 #endif
 
+#ifndef ARMCI_MAX_STRIDE_LEVEL
 #define ARMCI_MAX_STRIDE_LEVEL 6
+#endif
 
 /* tells to use ARMCI_Malloc_local instead of plain malloc */
 #define MALLOC_LOC 
