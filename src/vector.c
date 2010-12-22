@@ -305,8 +305,8 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
     }
 
     MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);
-    //MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
-    MPI_Type_indexed(count, block_len, disp_rem, type, &type_rem);
+    MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
+    //MPI_Type_indexed(count, block_len, disp_rem, type, &type_rem);
 
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
