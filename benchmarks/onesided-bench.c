@@ -11,11 +11,15 @@
 #define NUM_WARMUP_ITER 1 
 
 int main(int argc, char ** argv) {
-  int    rank, nproc, test_iter, target_rank, data_size;
+  int    rank, nproc, test_iter, target_rank, data_size, thread_level;
   int   *my_data, *buf;
   void **base_ptrs;
 
+#ifdef MULTIPLE
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &thread_level);
+#else
   MPI_Init(&argc, &argv);
+#endif
   ARMCI_Init();
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
