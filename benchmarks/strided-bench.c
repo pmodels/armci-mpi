@@ -10,7 +10,7 @@
 #define MAX_YDIM        1024
 
 #define MAX_DATA_SIZE   (MAX_XDIM*MAX_YDIM*sizeof(double))
-#define NUM_ITERATIONS  10 //((data_size <= 2048) ? 4096 : ((data_size <= 16384) ? 512 : 128))
+#define NUM_ITERATIONS  ((xdim*ydim <= 1024) ? 64 : 16)
 #define NUM_WARMUP_ITER 1 
 
 int main(int argc, char ** argv) {
@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
   base_ptrs = malloc(sizeof(void*)*nproc);
   ARMCI_Malloc(base_ptrs, MAX_DATA_SIZE);
 
-  memset(buf, rank, MAX_DATA_SIZE);
+  memset(buf, rank+1, MAX_DATA_SIZE);
 
   if (rank == 0)
     printf("%12s %12s %12s %12s %12s %12s %12s %12s\n", "Trg. Rank", "Xdim Ydim",
@@ -56,14 +56,6 @@ int main(int argc, char ** argv) {
 
         for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
           if (test_iter == NUM_WARMUP_ITER)
-            t_get = MPI_Wtime();
-
-          ARMCI_GetS(base_ptrs[target_rank], stride, buf, stride, count, levels, target_rank);
-        }
-        t_get = (MPI_Wtime() - t_get)/NUM_ITERATIONS;
-
-        for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
-          if (test_iter == NUM_WARMUP_ITER)
             t_put = MPI_Wtime();
 
           ARMCI_PutS(buf, stride, base_ptrs[target_rank], stride, count, levels, target_rank);
@@ -79,6 +71,14 @@ int main(int argc, char ** argv) {
         }
         ARMCI_Fence(target_rank);
         t_acc = (MPI_Wtime() - t_acc)/NUM_ITERATIONS;
+
+        for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
+          if (test_iter == NUM_WARMUP_ITER)
+            t_get = MPI_Wtime();
+
+          ARMCI_GetS(base_ptrs[target_rank], stride, buf, stride, count, levels, target_rank);
+        }
+        t_get = (MPI_Wtime() - t_get)/NUM_ITERATIONS;
 
         printf("%12d %6d%6d %12.3f %12.3f %12.3f %12.3f %12.3f %12.3f\n", target_rank, xdim, ydim,
             t_get*1.0e6, t_put*1.0e6, t_acc*1.0e6, data_size/(1024.0*1024.0)/t_get, data_size/(1024.0*1024.0)/t_put, data_size/(1024.0*1024.0)/t_acc);

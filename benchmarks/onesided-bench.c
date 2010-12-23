@@ -21,7 +21,7 @@ int main(int argc, char ** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  if (rank == 0) printf("Starting one-sided performance test with %d processes\n", nproc);
+  if (rank == 0) printf("Starting one-sided contiguous performance test with %d processes\n", nproc);
 
   buf = ARMCI_Malloc_local(MAX_DATA_SIZE);
   base_ptrs = malloc(sizeof(void*)*nproc);
