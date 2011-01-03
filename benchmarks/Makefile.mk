@@ -6,7 +6,7 @@ check_PROGRAMS += benchmarks/ping-pong          \
                   benchmarks/ping-pong-mpi      \
                   benchmarks/ring-flood         \
                   benchmarks/armci-perf         \
-                  benchmarks/onesided-bench     \
+                  benchmarks/contiguous-bench     \
                   benchmarks/strided-bench     \
                   # end
 
@@ -26,9 +26,9 @@ benchmarks_armci_perf_SOURCES = $(top_srcdir)/benchmarks/armci-perf.c
 benchmarks_armci_perf_LDADD = -larmci -lm
 benchmarks_armci_perf_DEPENDENCIES = libarmci.la
 
-benchmarks_onesided_bench_SOURCES = $(top_srcdir)/benchmarks/onesided-bench.c
-benchmarks_onesided_bench_LDADD = -larmci -lm
-benchmarks_onesided_bench_DEPENDENCIES = libarmci.la
+benchmarks_contiguous_bench_SOURCES = $(top_srcdir)/benchmarks/contiguous-bench.c
+benchmarks_contiguous_bench_LDADD = -larmci -lm
+benchmarks_contiguous_bench_DEPENDENCIES = libarmci.la
 
 benchmarks_strided_bench_SOURCES = $(top_srcdir)/benchmarks/strided-bench.c
 benchmarks_strided_bench_LDADD = -larmci -lm

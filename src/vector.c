@@ -110,7 +110,6 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
 int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int same_alloc, int proc) {
 
-  int i;
   MPI_Datatype type;
   int type_count, type_size;
 

@@ -12,7 +12,7 @@
 
 int main(int argc, char ** argv) {
   int    rank, nproc, test_iter, target_rank, data_size, thread_level;
-  int   *my_data, *buf;
+  int   *buf;
   void **base_ptrs;
 
 #ifdef MULTIPLE

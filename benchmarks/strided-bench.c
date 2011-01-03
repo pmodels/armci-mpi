@@ -17,7 +17,7 @@ int main(int argc, char ** argv) {
   int    rank, nproc, thread_level;
   int    target_rank, xdim, ydim, test_iter;
   int    stride[1], count[2], levels, scale;
-  int   *my_data, *buf;
+  int   *buf;
   void **base_ptrs;
 
 #ifdef MULTIPLE

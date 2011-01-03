@@ -353,8 +353,6 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   * @return             0 on success, non-zero on failure
   */
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
-  int disp, grp_proc, type_size;
-
   return mreg_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
 }
 
