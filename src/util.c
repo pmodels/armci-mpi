@@ -56,7 +56,7 @@ int ARMCI_Finalize(void) {
   int nfreed = mreg_destroy_all();
 
   if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
-    printf("Warning: Freed %d leaked allocations\n", nfreed);
+    printf("ARMCI Warning: Freed %d leaked allocations\n", nfreed);
 
   ARMCI_Cleanup();
 
@@ -70,7 +70,7 @@ void ARMCI_Cleanup(void) {
 }
 
 void ARMCI_Error(char *msg, int code) {
-  fprintf(stderr, "ARMCI_Error: %s\n", msg);
+  fprintf(stderr, "ARMCI Error: %s\n", msg);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }
 
