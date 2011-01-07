@@ -115,6 +115,8 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
    AC_ERROR([C99 not supported by the compiler])
 fi
 
+AC_CHECK_HEADERS([execinfo.h])
+
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
                  [ debug=$enableval ],

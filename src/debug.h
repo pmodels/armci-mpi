@@ -16,14 +16,19 @@ enum debug_cats_e {
 
 #define MAX_DEBUG_LABEL_LENGTH 20
 extern char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH];
-
 extern unsigned DEBUG_CATS_ENABLED;
-
 
 #ifdef NO_SEATBELTS
 #define assert(X) ((void)0)
 #else
+
+#ifdef USE_LIBC_ASSERT
 #include <assert.h>
+#else
+void ARMCII_Assert_fail(const char *expr, const char *file, int line, const char *func);
+#define assert(EXPR) do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, __FILE__, __LINE__, __func__); } while(0)
+#endif
+
 #endif /* NO_SEATBELTS */
 
 
@@ -48,7 +53,7 @@ static inline void dprint(unsigned category, const char *func, const char *forma
   int     rank, disp;
   char    string[500];
 
-  if ((category & DEBUG_CATS_ENABLED) == 0)
+  if (DEBUG_CAT_ENABLED(category))
     return;
 
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &rank);
