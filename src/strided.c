@@ -204,7 +204,7 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
   for (i = 0; i < stride_levels; i++)
     iov->ptr_array_len *= count[i+1];
 
-  iov->src_ptr_array = malloc(iov->ptr_array_len*sizeof(void*)); // FIXME: These need to be freed somewhere
+  iov->src_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
   iov->dst_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
 
   assert(iov->src_ptr_array != NULL && iov->dst_ptr_array != NULL);
@@ -284,50 +284,38 @@ int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   return 1;
 }
 
-#if 0
-void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
-  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10);
-}
 
-void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf) {
-  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10);
-}
-#endif
-
-
-/* Pack strided data into a contiguous buffer.
+/* Pack strided data into a contiguous destination buffer.
  */
 void armci_write_strided(void *src, int stride_levels, int src_stride_arr[],
                          int count[], char *dst) {
   armci_giov_t iov;
-  int dst_stride_arr[stride_levels];
   int i;
 
-  dst_stride_arr[0] = count[0];
-  for (i = 1; i < stride_levels; i++)
-    dst_stride_arr[i] = src_stride_arr[i];
-
-  ARMCII_Strided_to_iov(&iov, src, src_stride_arr, dst, dst_stride_arr, count, stride_levels);
+  // Shoehorn the strided information into an IOV
+  ARMCII_Strided_to_iov(&iov, src, src_stride_arr, src, src_stride_arr, count, stride_levels);
 
   for (i = 0; i < iov.ptr_array_len; i++)
     memcpy(dst + i*count[0], iov.src_ptr_array[i], iov.bytes);
+
+  free(iov.src_ptr_array);
+  free(iov.dst_ptr_array);
 }
 
 
-/* Unpack strided data from a contiguous buffer.
+/* Unpack strided data from a contiguous source buffer.
  */
 void armci_read_strided(void *dst, int stride_levels, int dst_stride_arr[],
                         int count[], char *src) {
   armci_giov_t iov;
-  int src_stride_arr[stride_levels];
   int i;
 
-  src_stride_arr[0] = count[0];
-  for (i = 1; i < stride_levels; i++)
-    src_stride_arr[i] = dst_stride_arr[i];
-
-  ARMCII_Strided_to_iov(&iov, src, src_stride_arr, dst, dst_stride_arr, count, stride_levels);
+  // Shoehorn the strided information into an IOV
+  ARMCII_Strided_to_iov(&iov, dst, dst_stride_arr, dst, dst_stride_arr, count, stride_levels);
 
   for (i = 0; i < iov.ptr_array_len; i++)
     memcpy(iov.dst_ptr_array[i], src + i*count[0], iov.bytes);
+
+  free(iov.src_ptr_array);
+  free(iov.dst_ptr_array);
 }
