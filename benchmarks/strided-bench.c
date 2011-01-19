@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
         "Get (usec)", "Put (usec)", "Acc (usec)",
         "Get (MiB/s)", "Put (MiB/s)", "Acc (MiB/s)");
 
-  stride[0] = MAX_XDIM;
+  stride[0] = MAX_XDIM*sizeof(double);
   levels    = 1;
   scale     = 1.0;
 
