@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "conflict_tree.h"
+#include <conflict_tree.h>
 
 #define MAX 20
 #define INC 4
