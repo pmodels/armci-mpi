@@ -9,8 +9,15 @@
 
 /* Flags -- TODO: These will need configure options eventually */
 
-#define NO_CHECK_OVERLAP /* Disable checks for overlapping IOV operations */
-#define NO_CHECK_BUFFERS /* Disable checking for shared origin buffers    */
+#ifdef NO_SEATBELTS
+#define NO_CHECK_OVERLAP
+#define NO_CHECK_BUFFERS
+
+#else
+//#define NO_CHECK_OVERLAP /* Disable checks for overlapping IOV operations */
+//#define NO_USE_CTREE     /* Use the slower O(N) check instead of the conflict tree */
+//#define NO_CHECK_BUFFERS /* Disable checking for shared origin buffers    */
+#endif
 
 /* Types */
 
@@ -39,8 +46,7 @@ int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
 void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *type, int *type_size);
 
-int  ARMCII_Iov_check_src_overlap(armci_giov_t *iov);
-int  ARMCII_Iov_check_dst_overlap(armci_giov_t *iov);
+int  ARMCII_Iov_check_overlap(void **ptrs, int count, int size);
 int  ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc);
 
 void ARMCII_Strided_to_iov(armci_giov_t *iov,

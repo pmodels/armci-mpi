@@ -53,7 +53,7 @@ static inline void dprint(unsigned category, const char *func, const char *forma
   int     rank, disp;
   char    string[500];
 
-  if (DEBUG_CAT_ENABLED(category))
+  if (! DEBUG_CAT_ENABLED(category))
     return;
 
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &rank);

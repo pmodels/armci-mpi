@@ -11,58 +11,58 @@
 #include <debug.h>
 #include <mem_region.h>
 
+#ifndef NO_USE_CTREE
+#include <conflict_tree.h>
+#endif
 
-/** Check an I/O vector operation source buffers for overlap.
+
+/** Check an I/O vector operation's buffers for overlap.
   *
   * @param[in] iov      Vector of transfer information.
   * @return             Logical true when regions overlap, 0 otherwise.
   */
-int ARMCII_Iov_check_src_overlap(armci_giov_t *iov) {
+int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
 #ifndef NO_CHECK_OVERLAP
+#ifdef NO_USE_CTREE
   int i, j;
-  const int size = iov->bytes;
 
-  for (i = 0; i < iov->ptr_array_len; i++) {
-    for (j = i+1; j < iov->ptr_array_len; j++) {
-      const uint8_t *src_1     = iov->src_ptr_array[i];
-      const uint8_t *src_2_low = iov->src_ptr_array[j];
-      const uint8_t *src_2_hi  = ((uint8_t*)iov->src_ptr_array[j]) + size;
+  for (i = 0; i < count; i++) {
+    for (j = i+1; j < count; j++) {
+      const uint8_t *ptr_1_lo = ptrs[i];
+      const uint8_t *ptr_1_hi = ((uint8_t*)ptrs[i]) + size - 1;
+      const uint8_t *ptr_2_lo = ptrs[j];
+      const uint8_t *ptr_2_hi = ((uint8_t*)ptrs[j]) + size - 1;
 
-      if (src_1 >= src_2_low && src_1 < src_2_hi) {
-        printf("%s: Overlapping regions %p and %p (size = %d)\n", __func__, src_1, src_2_low, size);
+      if (   (ptr_1_lo >= ptr_2_lo && ptr_1_lo <= ptr_2_hi)
+          || (ptr_1_hi >= ptr_2_lo && ptr_1_hi <= ptr_2_hi)
+          || (ptr_1_lo <  ptr_2_lo && ptr_1_hi >  ptr_2_hi)) {
+        printf("Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
+            ptr_1_lo, ptr_1_hi, ptr_2_lo, ptr_2_hi);
         return 1;
       }
     }
   }
-#endif
+#else
+  int i;
+  ctree_t ctree = CTREE_EMPTY;
 
-  return 0;
-}
+  for (i = 0; i < count; i++) {
+    int conflict = ctree_insert(&ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
 
+    if (conflict) {
+      ctree_t cnode = ctree_locate(ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
 
-/** Check an I/O vector operation destination buffers for overlap.
-  *
-  * @param[in] iov      Vector of transfer information.
-  * @return             Logical true when regions overlap, 0 otherwise.
-  */
-int ARMCII_Iov_check_dst_overlap(armci_giov_t *iov) {
-#ifndef NO_CHECK_OVERLAP
-  int i, j;
-  const int size = iov->bytes;
+      printf("Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
+          ptrs[i], ((uint8_t*)ptrs[i]) + size - 1, cnode->lo, cnode->hi);
 
-  for (i = 0; i < iov->ptr_array_len; i++) {
-    for (j = i+1; j < iov->ptr_array_len; j++) {
-      const uint8_t *dst_1     = iov->dst_ptr_array[i];
-      const uint8_t *dst_2_low = iov->dst_ptr_array[j];
-      const uint8_t *dst_2_hi  = ((uint8_t*) iov->dst_ptr_array[j]) + size;
-
-      if (dst_1 >= dst_2_low && dst_1 < dst_2_hi) {
-        printf("%s: Overlapping regions %p and %p (size = %d)\n", __func__, dst_1, dst_2_low, size);
-        return 1;
-      }
+      ctree_destroy(&ctree);
+      return 1;
     }
   }
-#endif
+
+  ctree_destroy(&ctree);
+#endif /* NO_USE_CTREE */
+#endif /* NO_CHECK_OVERLAP */
 
   return 0;
 }
@@ -352,7 +352,7 @@ int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
-    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
 
     ARMCII_Buf_put_prepare(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
@@ -380,7 +380,7 @@ int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
-    overlapping = ARMCII_Iov_check_src_overlap(&iov[v]);
+    overlapping = ARMCII_Iov_check_overlap(iov[v].src_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].src_ptr_array, iov[v].ptr_array_len, proc);
 
     ARMCII_Buf_get_prepare(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
@@ -408,7 +408,7 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
 
-    overlapping = ARMCII_Iov_check_dst_overlap(&iov[v]);
+    overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
 
     ARMCII_Buf_acc_prepare(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);

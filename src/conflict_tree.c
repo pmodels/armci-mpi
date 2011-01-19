@@ -14,6 +14,34 @@ static inline void ctree_rotate_right(ctree_t node);
 
 const ctree_t CTREE_EMPTY = NULL;
 
+
+/** Locate the node that conflicts with the given address range.
+  *
+  * @param[in] root Root of the ctree.
+  * @param[in] lo   Low end of the range.
+  * @param[in] hi   High end of the range.
+  * @return         Pointer to the ctree node or NULL if not found.
+  */
+ctree_t ctree_locate(ctree_t root, uint8_t *lo, uint8_t *hi) {
+  ctree_t cur = root;
+
+  while (cur != NULL) {
+    if (   (lo >= cur->lo && lo <= cur->hi)
+        || (hi >= cur->lo && hi <= cur->hi)
+        || (lo <  cur->lo && hi >  cur->hi))
+      break;
+
+    else if (lo < cur->lo)
+      cur = cur->left;
+   
+    else /* lo > cur->hi */
+      cur = cur->right;
+  }
+
+  return cur;
+}
+
+
 /** Insert an address range into the conflict detection tree.
   *
   * @param[inout] root The root of the tree
@@ -47,6 +75,7 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
     if (   (lo >= cur->lo && lo <= cur->hi)
         || (hi >= cur->lo && hi <= cur->hi)
         || (lo <  cur->lo && hi >  cur->hi)) {
+      //printf("CTree: Conflict inserting [%p, %p] with [%p, %p]\n", lo, hi, cur->lo, cur->hi);
       free(new_node);
       return 1;
     }
@@ -86,8 +115,8 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
 static inline void ctree_rotate_left(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  printf("Rotate left: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
-      ctree_node_height(node->left), ctree_node_height(node->right));
+  //printf("Rotate left: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+  //    ctree_node_height(node->left), ctree_node_height(node->right));
 
   assert(old_root->right == node);
 
@@ -123,8 +152,8 @@ static inline void ctree_rotate_left(ctree_t node) {
 static inline void ctree_rotate_right(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  printf("Rotate right: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
-      ctree_node_height(node->left), ctree_node_height(node->right));
+  //printf("Rotate right: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+  //    ctree_node_height(node->left), ctree_node_height(node->right));
 
   assert(old_root->left == node);
 
@@ -213,7 +242,7 @@ static ctree_t ctree_balance(ctree_t node) {
         }
 
       } else {
-        printf("Error, height too large: %d\n", height_l - height_r);
+        printf("CTree: Invariant violated, height is too large: %d\n", height_l - height_r);
         assert(0);
       }
     }

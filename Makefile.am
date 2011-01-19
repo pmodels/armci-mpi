@@ -26,7 +26,8 @@ libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
 	              $(top_srcdir)/src/topology.c      \
                       $(top_srcdir)/src/util.c          \
                       $(top_srcdir)/src/value_ops.c     \
-	              $(top_srcdir)/src/vector.c
+	              $(top_srcdir)/src/vector.c        \
+                      $(top_srcdir)/src/conflict_tree.c
 
 libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
 
