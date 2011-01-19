@@ -1,3 +1,19 @@
+/** Copyright (C) 2010. See COPYRIGHT in top-level directory.
+  *
+  * Conflict Tree -- James Dinan <dinan@mcs.anl.gov>
+  *
+  * Conflict trees are used by ARMCI-MPI to detect conflicting accesses due to
+  * overlapping memory regions.
+  *
+  * This implementation uses an AVL tree which is a self-balancing binary tree.
+  * In contrast with interval and segment trees which can store mutiple
+  * overlapping regions and support stabbing queries, the conflict tree does
+  * not allow any overlap among elements in the tree.  If an overlapping insert
+  * is performed, it will fail.  Thus, objects in the tree are totally ordered
+  * and a standard binary tree (in this case, the AVL tree) is sufficient for
+  * detecting conflicts.
+  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
