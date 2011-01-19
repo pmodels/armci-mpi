@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
       if (rank == 0) printf("Success.\n");
       return 0;
     } else {
-      if (rank == 0) printf("Fail.\n", rank);
+      if (rank == 0) printf("Fail.\n");
       return 1;
     }
 }
