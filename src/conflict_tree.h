@@ -7,6 +7,9 @@ struct ctree_node_s {
   uint8_t *lo;
   uint8_t *hi;
 
+  int height;
+
+  struct ctree_node_s *parent;
   struct ctree_node_s *left;
   struct ctree_node_s *right;
 };
