@@ -35,6 +35,7 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
 
   cur = *root;
 
+  // CASE: Empty tree
   if (cur == NULL) {
     *root = new_node;
     return 0;
@@ -42,7 +43,7 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
 
   for (;;) {
 
-    // Check for conflicts
+    // Check for conflicts as we go
     if (   (lo >= cur->lo && lo <= cur->hi)
         || (hi >= cur->lo && hi <= cur->hi)
         || (lo <  cur->lo && hi >  cur->hi)) {
@@ -78,20 +79,22 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
 
 
 /** Rotate the given pivot node to the left.
+  *
+  * @param[in] node This is the pivot node, it will be the new subtree root
+  *                 after the rotation is performed.
   */
 static inline void ctree_rotate_left(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  int height_l = ctree_node_height(node->left);
-  int height_r = ctree_node_height(node->right);
-  printf("Rotate left: [%p, %p] l=%d r=%d\n", node->lo, node->hi, height_l, height_r);
+  printf("Rotate left: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+      ctree_node_height(node->left), ctree_node_height(node->right));
+
   assert(old_root->right == node);
 
   // Set the parent pointer
   node->parent     = old_root->parent;
-  old_root->parent = node;
 
-  // Set the parent's pointer
+  // Set the parent's child pointer
   if (node->parent != NULL) {
     if (node->parent->left == old_root)
       node->parent->left = node;
@@ -99,8 +102,13 @@ static inline void ctree_rotate_left(ctree_t node) {
       node->parent->right = node;
   }
 
-  old_root->right  = node->left;
-  node->left       = old_root;
+  // Set child pointers and their parents
+  old_root->right         = node->left;
+  if (old_root->right != NULL)
+    old_root->right->parent = old_root;
+
+  node->left              = old_root;
+  node->left->parent      = node;
 
   old_root->height = MAX(ctree_node_height(old_root->left), ctree_node_height(old_root->right)) + 1;
   node->height     = MAX(ctree_node_height(node->left), ctree_node_height(node->right)) + 1;
@@ -108,20 +116,22 @@ static inline void ctree_rotate_left(ctree_t node) {
 
 
 /** Rotate the given pivot node to the right.
+  *
+  * @param[in] node This is the pivot node, it will be the new subtree root
+  *                 after the rotation is performed.
   */
 static inline void ctree_rotate_right(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  int height_l = ctree_node_height(node->left);
-  int height_r = ctree_node_height(node->right);
-  printf("Rotate right: [%p, %p] l=%d r=%d\n", node->lo, node->hi, height_l, height_r);
+  printf("Rotate right: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+      ctree_node_height(node->left), ctree_node_height(node->right));
+
   assert(old_root->left == node);
 
   // Set the parent pointer
   node->parent     = old_root->parent;
-  old_root->parent = node;
 
-  // Set the parent's pointer
+  // Set the parent's child pointer
   if (node->parent != NULL) {
     if (node->parent->left == old_root)
       node->parent->left = node;
@@ -129,8 +139,13 @@ static inline void ctree_rotate_right(ctree_t node) {
       node->parent->right = node;
   }
 
-  old_root->left   = node->right;
-  node->right      = old_root;
+  // Set child pointers and their parents
+  old_root->left  = node->right;
+  if (old_root->left != NULL)
+    old_root->left->parent = old_root;
+
+  node->right         = old_root;
+  node->right->parent = node;
 
   old_root->height = MAX(ctree_node_height(old_root->left), ctree_node_height(old_root->right)) + 1;
   node->height     = MAX(ctree_node_height(node->left), ctree_node_height(node->right)) + 1;
@@ -206,8 +221,16 @@ void ctree_destroy(ctree_t *root) {
   */
 void ctree_print(ctree_t root) {
   if (root != NULL) {
+    int  i,idx;
+    char s[32] = "";
+
     ctree_print(root->left);
-    printf("%p: [%p, %p] p=%p h=%d\n", root, root->lo, root->hi, root->parent, root->height);
+
+    for (i = 1, idx = 0; i < 32-1 && i < root->height; i++)
+      idx += sprintf(s+idx, "\t");
+    
+    printf("%10p:%s[%p, %p] p=%p h=%d\n", root, s, root->lo, root->hi, root->parent, root->height);
+
     ctree_print(root->right);
   }
 }
