@@ -174,18 +174,48 @@ static ctree_t ctree_balance(ctree_t node) {
 
     node->height = MAX(ctree_node_height(node->left), ctree_node_height(node->right)) + 1;
 
+    // Rebalance to preserve the property that right and left heights
+    // differ by at most 1.
     if (abs(height_l - height_r) >= 2) {
-      // perform rebalancing
+
+      // CASE: Right is heavy
       if (height_l - height_r == -2) {
-        node = node->right;
-        ctree_rotate_left(node);
+        int height_r_l = ctree_node_height(node->right->left);
+        int height_r_r = ctree_node_height(node->right->right);
 
+        // CASE: Right, right
+        if (height_r_l - height_r_r <= 0) {
+          node = node->right;
+          ctree_rotate_left(node);
+        }
+        // CASE: Right, left
+        else {
+          ctree_rotate_right(node->right->left);
+          node = node->right;
+          ctree_rotate_left(node);
+        }
+
+      // CASE: Left is heavy
       } else if (height_l - height_r == 2) {
-        node = node->left;
-        ctree_rotate_right(node);
+        int height_l_l = ctree_node_height(node->left->left);
+        int height_l_r = ctree_node_height(node->left->right);
 
-      } else
+        // CASE: Left, left
+        if (height_l_l - height_l_r >= 0) {
+          node = node->left;
+          ctree_rotate_right(node);
+        }
+        // CASE: Left, right
+        else {
+          ctree_rotate_left(node->left->right);
+          node = node->left;
+          ctree_rotate_right(node);
+        }
+
+      } else {
         printf("Error, height too large: %d\n", height_l - height_r);
+        assert(0);
+      }
     }
 
     root = node;
