@@ -3,17 +3,9 @@ Things that are not yet implemented:
   * Perform checking to detect ARMCI_Access_begin/end() usage errors.
     * Detect lock-after-lock, calling Get/Put/Acc in access region.
     * Automatically unlock or re-lock when needed
-  * Free all remaining mem regions in ARMCI_Finalize().  ARMCI_Cleanup() too?
   * Implement locking changes corresponding to ARMCI access modes.
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
-  * implement armci_read/write_strided?
-  * Wrap ARMCII_Error in a macro to do __FILE__ etc automatically
-  * Write my own assert() function
-  * Add ARMCI_PAUSE_ON_FAIL
-  * Add configure option to disable buffer checks
 
 Things that need performance tuning:
 
   * Non-blocking operations
-  * Strided
-  * Vector

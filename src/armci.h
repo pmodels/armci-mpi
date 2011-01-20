@@ -18,7 +18,9 @@ int   ARMCI_Init_args(int *argc, char ***argv);
    
 int   ARMCI_Finalize(void);
 void  ARMCI_Cleanup(void);
-void  ARMCI_Error(char *msg, int code);
+
+#define ARMCI_Error(MSG, CODE) ARMCI_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
+void    ARMCI_Error_impl(const char *file, const int line, const char *func, char *msg, int code);
 
 int   ARMCI_Malloc(void **base_ptrs, int size);
 int   ARMCI_Free(void *ptr);
@@ -30,8 +32,8 @@ void  ARMCI_Barrier(void);
 void  ARMCI_Fence(int proc);
 void  ARMCI_AllFence(void);
 
-void  ARMCI_Access_begin(void *ptr); // NEW
-void  ARMCI_Access_end(void *ptr);   // NEW
+void  ARMCI_Access_begin(void *ptr); /* NEW API */
+void  ARMCI_Access_end(void *ptr);   /* NEW API */
 
 void  ARMCI_Copy(void *src, void *dst, int size);
 
@@ -86,8 +88,8 @@ int   ARMCI_NbAccS(int datatype, void *scale,
                    void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                    int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl);
 
-/* TODO */ void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
-/* TODO */ void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
+void armci_write_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
+void armci_read_strided(void *ptr, int stride_levels, int stride_arr[], int count[], char *buf);
 
 
 /** Generalized I/O Vector operations.

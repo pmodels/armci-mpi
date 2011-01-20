@@ -41,13 +41,13 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   } else if (strncmp(op, "min", 3) == 0) {
     mpi_op = MPI_MIN;
   } else if (strncmp(op, "absmax", 6) == 0) {
-    ARMCII_Error(__FILE__, __LINE__, __func__, "absmax operation not supported", 10); // FIXME: Not supported
+    ARMCII_Error("absmax operation not supported", 10); // FIXME: Not supported
     return;
   } else if (strncmp(op, "absmin", 6) == 0) {
-    ARMCII_Error(__FILE__, __LINE__, __func__, "absmin operation not supported", 10); // FIXME: Not supported
+    ARMCII_Error("absmin operation not supported", 10); // FIXME: Not supported
     return;
   } else {
-    ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100); // FIXME: Not supported
+    ARMCII_Error("unknown operation", 100); // FIXME: Not supported
     return;
   }
 
@@ -68,7 +68,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
       mpi_type = MPI_DOUBLE;
       break;
     default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown type", 100); // FIXME: Not supported
+      ARMCII_Error("unknown type", 100); // FIXME: Not supported
       return;
   }
 

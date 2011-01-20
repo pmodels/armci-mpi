@@ -166,7 +166,7 @@ int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count
         shr_ptr = dst[i];
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        ARMCII_Error("unknown operation", 100);
         return 1;
     }
 
@@ -186,7 +186,7 @@ int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count
         mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        ARMCII_Error("unknown operation", 100);
         return 1;
     }
 
@@ -218,7 +218,7 @@ int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_co
       shr_ptr = dst[0];
       break;
     default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+      ARMCII_Error("unknown operation", 100);
       return 1;
   }
 
@@ -239,7 +239,7 @@ int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_co
         mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        ARMCII_Error("unknown operation", 100);
         return 1;
     }
   }
@@ -277,7 +277,7 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
         buf_loc = dst;
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        ARMCII_Error("unknown operation", 100);
         return 1;
     }
 
@@ -323,7 +323,7 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
         mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown operation", 100);
+        ARMCII_Error("unknown operation", 100);
         return 1;
     }
 

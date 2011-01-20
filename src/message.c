@@ -177,7 +177,7 @@ void armci_msg_reduce(void *x, int n, char *op, int type) {
 
 
 void armci_msg_reduce_scope(int scope, void *x, int n, char *op, int type) {
-  ARMCII_Error(__FILE__, __LINE__, __func__, "unimplemented", 10); // TODO
+  ARMCII_Error("unimplemented", 10); // TODO
 }
 
 

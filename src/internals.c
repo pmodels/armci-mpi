@@ -17,8 +17,8 @@
   * @param[in] msg  Message to be printed
   * @param[in] code Exit error code
   */
-void ARMCII_Error(const char *file, const int line, const char *func, const char *msg, int code) {
-  fprintf(stderr, "ARMCI Error: %s: %s (%s:%d)\n", func, msg, file, line);
+void ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code) {
+  fprintf(stderr, "ARMCI Internal error in %s: %s (%s:%d)\n", func, msg, file, line);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }
 
@@ -75,7 +75,7 @@ void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *
         *mpi_type = MPI_DOUBLE;
         break;
       default:
-        ARMCII_Error(__FILE__, __LINE__, __func__, "unknown data type", 100);
+        ARMCII_Error("unknown data type", 100);
         return;
     }
 

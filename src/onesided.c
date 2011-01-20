@@ -73,7 +73,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
     case ARMCIX_MODE_RMA_ONLY:
       break;
     default:
-      ARMCII_Error(__FILE__, __LINE__, __func__, "Unknown access mode", 100);
+      ARMCII_Error("Unknown access mode", 100);
   }
 
   mreg->access_mode = new_mode;
