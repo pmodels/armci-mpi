@@ -285,7 +285,14 @@ int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 }
 
 
-/* Pack strided data into a contiguous destination buffer.
+/* Pack strided data into a contiguous destination buffer.  This is a local operation.
+ *
+ * @param[in] src            Pointer to the strided buffer
+ * @param[in] stride_levels  Number of levels of striding
+ * @param[in] src_stride_arr Array of length stride_levels of stride lengths
+ * @param[in] count          Array of length stride_levels+1 of the number of
+ *                           units at each stride level (lowest is contiguous)
+ * @param[in] dst            Destination contiguous buffer
  */
 void armci_write_strided(void *src, int stride_levels, int src_stride_arr[],
                          int count[], char *dst) {
@@ -303,7 +310,14 @@ void armci_write_strided(void *src, int stride_levels, int src_stride_arr[],
 }
 
 
-/* Unpack strided data from a contiguous source buffer.
+/* Unpack strided data from a contiguous source buffer.  This is a local operation.
+ *
+ * @param[in] src            Pointer to the contiguous buffer
+ * @param[in] stride_levels  Number of levels of striding
+ * @param[in] src_stride_arr Array of length stride_levels of stride lengths
+ * @param[in] count          Array of length stride_levels+1 of the number of
+ *                           units at each stride level (lowest is contiguous)
+ * @param[in] dst            Destination strided buffer
  */
 void armci_read_strided(void *dst, int stride_levels, int dst_stride_arr[],
                         int count[], char *src) {
