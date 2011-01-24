@@ -1,9 +1,20 @@
-Things that are not yet implemented:
+Things on the to do list:
+
+  * Verify NWChem on GA on ARMCI-MPI on shared memory.
+
+  * Look into invalid memory references that GA makes on the ghost cells
+    examples.
+
+  * Buffer checking: What happens when the target is self and both the
+    source and destination buffers are shared.  Is this case handled?
+    Can we optimize it with a memcpy?
 
   * Perform checking to detect ARMCI_Access_begin/end() usage errors.
     * Detect lock-after-lock, calling Get/Put/Acc in access region.
     * Automatically unlock or re-lock when needed
+
   * Implement locking changes corresponding to ARMCI access modes.
+
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
 
 Things that need performance tuning:
