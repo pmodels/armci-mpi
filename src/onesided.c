@@ -25,7 +25,7 @@ void ARMCI_Access_begin(void *ptr) {
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
-  mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
+  mreg_lock_ldst(mreg);
 }
 
 
@@ -61,20 +61,11 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
 
-  assert(group->comm == mreg->comm);
+  assert(group->comm == mreg->group.comm);
 
   // Wait for all processes to complete any outstanding communication before we
   // do the mode switch
-  MPI_Barrier(mreg->comm);
-
-  switch (new_mode) {
-    case ARMCIX_MODE_ALL:
-      break;
-    case ARMCIX_MODE_RMA_ONLY:
-      break;
-    default:
-      ARMCII_Error("Unknown access mode", 100);
-  }
+  MPI_Barrier(mreg->group.comm);
 
   mreg->access_mode = new_mode;
 

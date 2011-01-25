@@ -23,8 +23,7 @@ typedef struct {
 
 typedef struct mem_region_s {
   MPI_Win              window;
-  MPI_Comm             comm;
-  ARMCI_Group         *group;
+  ARMCI_Group          group;
 
   int                  access_mode;
   int                  lock_state;
@@ -55,6 +54,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 
 void mreg_lock(mem_region_t *mreg, int proc);
+void mreg_lock_ldst(mem_region_t *mreg);
 void mreg_unlock(mem_region_t *mreg, int proc);
 
 #endif /* HAVE_MEM_REGION_H */

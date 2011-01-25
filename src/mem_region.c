@@ -48,7 +48,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
   assert(alloc_slices != NULL);
 
-  mreg->group          = group;
+  mreg->group          = *group;
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
   mreg->lock_state     = MREG_LOCK_UNLOCKED;
@@ -198,7 +198,7 @@ int mreg_destroy_all(void) {
   int count = 0;
 
   while (mreg_list != NULL) {
-    mreg_destroy(mreg_list, mreg_list->group);
+    mreg_destroy(mreg_list, &mreg_list->group);
     count++;
   }
 
@@ -267,7 +267,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   int disp, grp_proc;
   MPI_Aint lb, extent;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
@@ -321,7 +321,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   int disp, grp_proc;
   MPI_Aint lb, extent;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
@@ -376,7 +376,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   int disp, grp_proc;
   MPI_Aint lb, extent;
 
-  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
+  grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
@@ -404,10 +404,52 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   * @return             0 on success, non-zero on failure
   */
 void mreg_lock(mem_region_t *mreg, int proc) {
-  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
-  assert(grp_proc >= 0);
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
+  int assert, lock_mode;
 
+  assert(grp_proc >= 0);
   assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+
+  if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
+      && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
+  {
+    /* Only non-conflicting RMA accesses allowed.
+       Shared and exclusive locks. */
+    assert    = MPI_MODE_NOCHECK;
+    lock_mode = MPI_LOCK_SHARED;
+  } else if (mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE) {
+    /* Non-conflicting RMA and local accesses allowed.
+       Shared and exclusive locks. */
+    assert    = 0;
+    lock_mode = MPI_LOCK_SHARED;
+  } else {
+    /* Conflicting RMA and local accesses allowed.
+       Exclusive locks. */
+    assert    = 0;
+    lock_mode = MPI_LOCK_EXCLUSIVE;
+  }
+
+  MPI_Win_lock(lock_mode, grp_proc, assert, mreg->window);
+
+  if (lock_mode == MPI_LOCK_EXCLUSIVE)
+    mreg->lock_state = MREG_LOCK_EXCLUSIVE;
+  else
+    mreg->lock_state = MREG_LOCK_SHARED;
+}
+
+
+/** Lock a memory region so that load/store operations can be performed.
+  *
+  * @param[in] mreg     Memory region
+  * @param[in] mode     Lock mode (exclusive, shared, etc...)
+  * @return             0 on success, non-zero on failure
+  */
+void mreg_lock_ldst(mem_region_t *mreg) {
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
+
+  assert(grp_proc >= 0);
+  assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+  assert(mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE == 0);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
@@ -422,7 +464,7 @@ void mreg_lock(mem_region_t *mreg, int proc) {
   * @return             0 on success, non-zero on failure
   */
 void mreg_unlock(mem_region_t *mreg, int proc) {
-  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group->comm, proc);
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   assert(grp_proc >= 0);
 
   assert(mreg->lock_state != MREG_LOCK_UNLOCKED);

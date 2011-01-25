@@ -12,16 +12,9 @@
   */
 
 enum armcix_access_mode_e {
-  ARMCIX_MODE_ALL      = 1,  /* All access types permitted   */
-  ARMCIX_MODE_RMA_ONLY = 2,  /* Remote read/write/acc only   */
-  ARMCIX_MODE_READ_ONLY= 3,  /* Local/remote read only       */
-  ARMCIX_MODE_ACC_ONLY = 4   /* Local/remote accumulate only */
-};
-
-enum armcix_consistency_mode_e {
-  ARMCIX_MODE_ORDERED  = 1024, /* Operations are location consistent  */
-  ARMCIX_MODE_UNORDERD = 2048  /* Operations are ordered, consistency 
-                                * is achieved through sync and flush  */
+  ARMCIX_MODE_ALL           = 0x1,  /* All access types permitted          */
+  ARMCIX_MODE_CONFLICT_FREE = 0x2,  /* Operations do not conflict          */
+  ARMCIX_MODE_NO_LOAD_STORE = 0x4   /* Load/store operations not permitted */
 };
 
 int ARMCIX_Mode_set(int mode, void *ptr, ARMCI_Group *group);

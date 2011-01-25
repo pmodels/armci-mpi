@@ -5,6 +5,7 @@
 
 #include <mpi.h>
 #include <armci.h>
+#include <armcix.h>
 
 #define MAX_XDIM        1024
 #define MAX_YDIM        1024
@@ -19,6 +20,7 @@ int main(int argc, char ** argv) {
   int    stride[1], count[2], levels, scale;
   int   *buf;
   void **base_ptrs;
+  ARMCI_Group grp_world;
 
 #ifdef MULTIPLE
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &thread_level);
@@ -37,6 +39,17 @@ int main(int argc, char ** argv) {
   ARMCI_Malloc(base_ptrs, MAX_DATA_SIZE);
 
   memset(buf, rank+1, MAX_DATA_SIZE);
+
+#ifndef NO_MODE_SET
+  ARMCI_Group_get_default(&grp_world);
+
+  if (getenv("ARMCIX_MODE_SET"))
+    ARMCIX_Mode_set(ARMCIX_MODE_CONFLICT_FREE | ARMCIX_MODE_NO_LOAD_STORE, base_ptrs[rank], &grp_world);
+  else if (rank == 0)
+    printf("Warning: ARMCIX_MODE_SET not enabled\n");
+#else
+#warn Not using ARMCIX_Mode_set optimization
+#endif
 
   if (rank == 0)
     printf("%12s %12s %12s %12s %12s %12s %12s %12s\n", "Trg. Rank", "Xdim Ydim",
