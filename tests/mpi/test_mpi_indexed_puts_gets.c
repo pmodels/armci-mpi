@@ -125,6 +125,7 @@ int main(int argc, char **argv) {
     MPI_Win_free(&buf_win);
     MPI_Free_mem(win_buf);
     MPI_Free_mem(src_buf);
+    MPI_Free_mem(dst_buf);
 
     MPI_Finalize();
 
