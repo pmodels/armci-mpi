@@ -17,23 +17,22 @@ global_state_t ARMCII_GLOBAL_STATE = { 0 };
 int ARMCI_Init(void) {
   char *var;
 
+  /* Setup groups and communicators */
+
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.rank);
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.size);
 
   ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
-  // Check environment variables and set global options
-
-  // TODO: Handle the case where variables aren't defined everywhere.
-  //       should they be broadcast so everyone agrees?
+  /* Set the IOV/strided transfer method */
 
   var = getenv("ARMCI_IOV_METHOD");
 
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
 
   if (var != NULL) {
-    if (strcmp(var, "AUTO") == 0) // TODO: tolower?
+    if (strcmp(var, "AUTO") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
     else if (strcmp(var, "SAFE") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_SAFE;
@@ -45,6 +44,11 @@ int ARMCI_Init(void) {
       printf("Warning: Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
+  /* Initialize the Direct Local Access (DLA) state */
+
+  ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
+  ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
+
   return 0;
 }
 
@@ -53,7 +57,11 @@ int ARMCI_Init_args(int *argc, char ***argv) {
 }
 
 int ARMCI_Finalize(void) {
-  int nfreed = mreg_destroy_all();
+  int nfreed;
+
+  /* Free all remaining mem regions */
+
+  nfreed = mreg_destroy_all();
 
   if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
     printf("ARMCI Warning: Freed %d leaked allocations\n", nfreed);

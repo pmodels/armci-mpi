@@ -44,13 +44,16 @@ void ARMCII_Assert_fail(const char *expr, const char *file, int line, const char
     if (symbols == NULL)
       perror("Backtrace failure");
 
-    printf("%d: Backtrace:\n", rank);
+    fprintf(stderr, "%d: Backtrace:\n", rank);
     for (j = 0; j < nframes; j++)
-      printf("%d:   %d - %s\n", rank, nframes-j-1, symbols[j]);
+      fprintf(stderr, "%d:   %d - %s\n", rank, nframes-j-1, symbols[j]);
 
     free(symbols);
   }
 #endif
 
+  fflush(NULL);
+  double stall = MPI_Wtime();
+  while (MPI_Wtime() - stall < 1) ;
   MPI_Abort(MPI_COMM_WORLD, -1);
 }

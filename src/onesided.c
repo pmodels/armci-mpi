@@ -22,8 +22,15 @@
 void ARMCI_Access_begin(void *ptr) {
   mem_region_t *mreg;
 
+  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED);
+
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
+
+  assert((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0);
+
+  ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_OPEN;
+  ARMCII_GLOBAL_STATE.dla_mreg  = mreg;
 
   mreg_lock_ldst(mreg);
 }
@@ -40,10 +47,20 @@ void ARMCI_Access_begin(void *ptr) {
 void ARMCI_Access_end(void *ptr) {
   mem_region_t *mreg;
 
+  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN);
+
+#ifndef NO_SEATBELTS
+  /* Extra check to ensure the right mem region is unlocked */
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   assert(mreg != NULL);
+  assert(mreg == ARMCII_GLOBAL_STATE.dla_mreg);
+#endif
 
+  mreg = ARMCII_GLOBAL_STATE.dla_mreg;
   mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
+  ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
 }
 
 

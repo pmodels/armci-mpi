@@ -6,28 +6,32 @@
 #define HAVE_ARMCI_INTERNALS_H
 
 #include <armci.h>
+#include <mem_region.h>
 
-/* Flags -- TODO: These will need configure options eventually */
+/* Disable safety checks if the user asks for it */
 
 #ifdef NO_SEATBELTS
-#define NO_CHECK_OVERLAP
-#define NO_CHECK_BUFFERS
+#define NO_CHECK_OVERLAP /* Disable checks for overlapping IOV operations */
+//#define NO_USE_CTREE     /* Use the slower O(N) check instead of the conflict tree */
+#define NO_CHECK_BUFFERS /* Disable checking for shared origin buffers    */
 
 #else
-//#define NO_CHECK_OVERLAP /* Disable checks for overlapping IOV operations */
-//#define NO_USE_CTREE     /* Use the slower O(N) check instead of the conflict tree */
-//#define NO_CHECK_BUFFERS /* Disable checking for shared origin buffers    */
 #endif
 
-/* Types */
+/* Internal types */
 
 typedef struct {
-  int iov_method;
+  int     iov_method;     /* Currently selected IOV transfer method */
+  int     dla_state;      /* Direct Local Access (load/store) state */
+  mem_region_t *dla_mreg; /* Current region exposed for DLA         */
 } global_state_t;
 
 enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
+
 enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
                             ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
+
+enum ARMCII_Dla_state { ARMCII_DLA_CLOSED, ARMCII_DLA_OPEN, ARMCII_DLA_SUSPENDED };
 
 /* Global data */
 

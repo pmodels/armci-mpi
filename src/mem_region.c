@@ -163,6 +163,20 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   if (mreg == NULL) printf("Err: mreg == NULL.  base=%p proc=%d\n", search_base, search_proc_out);
   assert(mreg != NULL);
 
+  // Check for an open DLA epoch
+  if (   ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN
+      && ARMCII_GLOBAL_STATE.dla_mreg  == mreg            )
+  {
+    printf("%d: ARMCI Warning: Closed open local access epoch while freeing shared allocation\n",
+        ARMCI_GROUP_WORLD.rank);
+
+    mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+
+    ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
+    ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
+  }
+
+
   // Remove from the list of mem regions
   if (mreg->prev == NULL) {
     assert(mreg_list == mreg);
@@ -410,6 +424,9 @@ void mreg_lock(mem_region_t *mreg, int proc) {
   assert(grp_proc >= 0);
   assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
+  // TODO: This seems like it should be somewhere higher up
+  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED);
+
   if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
       && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
   {
@@ -449,7 +466,7 @@ void mreg_lock_ldst(mem_region_t *mreg) {
 
   assert(grp_proc >= 0);
   assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
-  assert(mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE == 0);
+  assert((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0);
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
