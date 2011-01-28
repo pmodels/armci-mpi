@@ -41,12 +41,12 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
   mreg = malloc(sizeof(mem_region_t));
-  assert(mreg != NULL);
+  ARMCII_Assert(mreg != NULL);
 
   mreg->slices = malloc(sizeof(mem_region_slice_t)*world_nproc);
-  assert(mreg->slices != NULL);
+  ARMCII_Assert(mreg->slices != NULL);
   alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
-  assert(alloc_slices != NULL);
+  ARMCII_Assert(alloc_slices != NULL);
 
   mreg->group          = *group;
   mreg->nslices        = world_nproc;
@@ -142,7 +142,8 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
 
   // Collectively decide on who will provide the base address
   MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, group->comm);
-  assert(search_proc_out != -1); // Somebody must pass in non-NULL
+  ARMCII_Assert_msg(search_proc_out != -1, 
+      "Could not locate the desired allocation"); // Somebody must pass in non-NULL
 
   // Translate world rank to group rank
   MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
@@ -160,8 +161,8 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   if (mreg == NULL)
     mreg = mreg_lookup(search_base, search_proc_out);
 
-  if (mreg == NULL) printf("Err: mreg == NULL.  base=%p proc=%d\n", search_base, search_proc_out);
-  assert(mreg != NULL);
+  // If it's still not found, the user may have passed the wrong group
+  ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
   // Check for an open DLA epoch
   if (   ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN
@@ -179,7 +180,7 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
 
   // Remove from the list of mem regions
   if (mreg->prev == NULL) {
-    assert(mreg_list == mreg);
+    ARMCII_Assert(mreg_list == mreg);
     mreg_list = mreg->next;
 
     if (mreg->next != NULL)
@@ -231,7 +232,7 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
   mreg = mreg_list;
 
   while (mreg != NULL) {
-    assert(proc < mreg->nslices);
+    ARMCII_Assert(proc < mreg->nslices);
 
     if (proc < mreg->nslices) {
       const uint8_t *base = mreg->slices[proc].base;
@@ -282,7 +283,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
-  assert(grp_proc >= 0);
+  ARMCII_Assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
   if (dst == MPI_BOTTOM) 
@@ -292,9 +293,9 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
-  assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(disp + dst_count*extent <= mreg->slices[proc].size);
+  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
   MPI_Put(src, src_count, src_type, grp_proc, disp, dst_count, dst_type, mreg->window);
 
@@ -336,7 +337,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
-  assert(grp_proc >= 0);
+  ARMCII_Assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
   if (src == MPI_BOTTOM) 
@@ -346,9 +347,9 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   // Perform checks
   MPI_Type_get_extent(src_type, &lb, &extent);
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
-  assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(disp + src_count*extent <= mreg->slices[proc].size);
+  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
   MPI_Get(dst, dst_count, dst_type, grp_proc, disp, src_count, src_type, mreg->window);
 
@@ -391,7 +392,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   MPI_Aint lb, extent;
 
   grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
-  assert(grp_proc >= 0);
+  ARMCII_Assert(grp_proc >= 0);
 
   // Calculate displacement from beginning of the window
   if (dst == MPI_BOTTOM) 
@@ -401,9 +402,9 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
-  assert(disp >= 0 && disp < mreg->slices[proc].size);
-  assert(disp + dst_count*extent <= mreg->slices[proc].size);
+  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
   MPI_Accumulate(src, src_count, src_type, grp_proc, disp, dst_count, dst_type, MPI_SUM, mreg->window);
 
@@ -419,34 +420,35 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   */
 void mreg_lock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
-  int assert, lock_mode;
+  int lock_assert, lock_mode;
 
-  assert(grp_proc >= 0);
-  assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
   // TODO: This seems like it should be somewhere higher up
-  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED);
+  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED,
+      "Operation conflicts with active direct local access");
 
   if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
       && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
   {
     /* Only non-conflicting RMA accesses allowed.
        Shared and exclusive locks. */
-    assert    = MPI_MODE_NOCHECK;
-    lock_mode = MPI_LOCK_SHARED;
+    lock_assert = MPI_MODE_NOCHECK;
+    lock_mode   = MPI_LOCK_SHARED;
   } else if (mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE) {
     /* Non-conflicting RMA and local accesses allowed.
        Shared and exclusive locks. */
-    assert    = 0;
-    lock_mode = MPI_LOCK_SHARED;
+    lock_assert = 0;
+    lock_mode   = MPI_LOCK_SHARED;
   } else {
     /* Conflicting RMA and local accesses allowed.
        Exclusive locks. */
-    assert    = 0;
-    lock_mode = MPI_LOCK_EXCLUSIVE;
+    lock_assert = 0;
+    lock_mode   = MPI_LOCK_EXCLUSIVE;
   }
 
-  MPI_Win_lock(lock_mode, grp_proc, assert, mreg->window);
+  MPI_Win_lock(lock_mode, grp_proc, lock_assert, mreg->window);
 
   if (lock_mode == MPI_LOCK_EXCLUSIVE)
     mreg->lock_state = MREG_LOCK_EXCLUSIVE;
@@ -464,9 +466,10 @@ void mreg_lock(mem_region_t *mreg, int proc) {
 void mreg_lock_ldst(mem_region_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
-  assert(grp_proc >= 0);
-  assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
-  assert((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0);
+  ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
+      "Direct local access is not allowed in the current access mode");
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
@@ -482,9 +485,9 @@ void mreg_lock_ldst(mem_region_t *mreg) {
   */
 void mreg_unlock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
-  assert(grp_proc >= 0);
+  ARMCII_Assert(grp_proc >= 0);
 
-  assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
 
   MPI_Win_unlock(grp_proc, mreg->window);
 

@@ -16,9 +16,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
-#include "conflict_tree.h"
+#include <debug.h>
+#include <conflict_tree.h>
 
 #define MAX(A,B) (((A) > (B)) ? A : B)
 
@@ -134,7 +134,7 @@ static inline void ctree_rotate_left(ctree_t node) {
   //printf("Rotate left: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
   //    ctree_node_height(node->left), ctree_node_height(node->right));
 
-  assert(old_root->right == node);
+  ARMCII_Assert(old_root->right == node);
 
   // Set the parent pointer
   node->parent     = old_root->parent;
@@ -171,7 +171,7 @@ static inline void ctree_rotate_right(ctree_t node) {
   //printf("Rotate right: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
   //    ctree_node_height(node->left), ctree_node_height(node->right));
 
-  assert(old_root->left == node);
+  ARMCII_Assert(old_root->left == node);
 
   // Set the parent pointer
   node->parent     = old_root->parent;
@@ -258,8 +258,8 @@ static ctree_t ctree_balance(ctree_t node) {
         }
 
       } else {
-        printf("CTree: Invariant violated, height is too large: %d\n", height_l - height_r);
-        assert(0);
+        printf("CTree error: height difference is %d\n", height_l - height_r);
+        ARMCII_Error("CTree invariant violated, height difference is too large", 10);
       }
     }
 

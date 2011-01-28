@@ -30,7 +30,7 @@ int armci_domain_id(armci_domain_t domain, int glob_proc_id) {
 /** Translate a domain process ID to a global process ID.
   */
 int armci_domain_glob_proc_id(armci_domain_t domain, int domain_id, int loc_proc_id) {
-  assert(loc_proc_id == 0); // Groups must be size 1
+  ARMCII_Assert(loc_proc_id == 0); // Groups must be size 1
   return domain_id;
 }
 

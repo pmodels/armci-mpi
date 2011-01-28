@@ -40,10 +40,7 @@ extern ARMCI_Group    ARMCI_GROUP_DEFAULT;
 extern global_state_t ARMCII_GLOBAL_STATE;
 
 
-/* Assorted utility functions */
-
-#define ARMCII_Error(MSG,CODE) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
-void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code);
+/* Translate betwee ARMCI and MPI ranks */
 
 int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 

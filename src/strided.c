@@ -207,7 +207,7 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
   iov->src_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
   iov->dst_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
 
-  assert(iov->src_ptr_array != NULL && iov->dst_ptr_array != NULL);
+  ARMCII_Assert(iov->src_ptr_array != NULL && iov->dst_ptr_array != NULL);
 
   // Case 1: Non-strided transfer
   if (stride_levels == 0) {
@@ -226,7 +226,7 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
       int disp_src = 0;
       int disp_dst = 0;
 
-      assert(xfer < iov->ptr_array_len);
+      ARMCII_Assert(xfer < iov->ptr_array_len);
 
       // Calculate displacements from base pointers
       for (i = 0; i < stride_levels; i++) {
@@ -251,7 +251,7 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
       }
     }
 
-    assert(xfer == iov->ptr_array_len);
+    ARMCII_Assert(xfer == iov->ptr_array_len);
   }
 }
 

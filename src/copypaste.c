@@ -67,7 +67,7 @@ int len, lenmes, min;
 
     if (work == NULL) {
       work = (double *)malloc(sizeof(double)*BUF_SIZE);
-      assert(work != NULL);
+      ARMCII_Assert(work != NULL);
     }
 
     min = (strncmp(op,"min",3) == 0);

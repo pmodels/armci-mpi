@@ -22,12 +22,16 @@ unsigned DEBUG_CATS_ENABLED = 0;
 //unsigned DEBUG_CATS_ENABLED = -1;
 
 
-void ARMCII_Assert_fail(const char *expr, const char *file, int line, const char *func) {
+void ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int line, const char *func) {
   int rank;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  fprintf(stderr, "%d: ARMCI assert fail in %s() [%s:%d]: \"%s\"\n", rank, func, file, line, expr);
+  if (msg == NULL)
+    fprintf(stderr, "%d: ARMCI assert fail in %s() [%s:%d]: \"%s\"\n", rank, func, file, line, expr);
+  else
+    fprintf(stderr, "%d: ARMCI assert fail in %s() [%s:%d]: \"%s\"\n"
+                    "%d: Message: \"%s\"\n", rank, func, file, line, expr, rank, msg);
 
 #if HAVE_EXECINFO_H
   {

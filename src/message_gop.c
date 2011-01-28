@@ -75,7 +75,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   MPI_Type_size(mpi_type, &mpi_type_size);
 
   out = malloc(n*mpi_type_size);
-  assert(out != NULL);
+  ARMCII_Assert(out != NULL);
 
   MPI_Allreduce(x, out, n, mpi_type, mpi_op, group->comm);
 

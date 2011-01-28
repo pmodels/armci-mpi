@@ -22,12 +22,14 @@
 void ARMCI_Access_begin(void *ptr) {
   mem_region_t *mreg;
 
-  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED);
+  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED, 
+      "Local access epoch already in progress");
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  assert((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0);
+  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
+      "Direct local access is not permitted in the current access mode");
 
   ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_OPEN;
   ARMCII_GLOBAL_STATE.dla_mreg  = mreg;
@@ -47,13 +49,14 @@ void ARMCI_Access_begin(void *ptr) {
 void ARMCI_Access_end(void *ptr) {
   mem_region_t *mreg;
 
-  assert(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN);
+  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN,
+      "No direct local access epoch is currently in progress");
 
 #ifndef NO_SEATBELTS
   /* Extra check to ensure the right mem region is unlocked */
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL);
-  assert(mreg == ARMCII_GLOBAL_STATE.dla_mreg);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
+  ARMCII_Assert(mreg == ARMCII_GLOBAL_STATE.dla_mreg);
 #endif
 
   mreg = ARMCII_GLOBAL_STATE.dla_mreg;
@@ -76,9 +79,9 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   mem_region_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  assert(group->comm == mreg->group.comm);
+  ARMCII_Assert(group->comm == mreg->group.comm);
 
   // Wait for all processes to complete any outstanding communication before we
   // do the mode switch
@@ -99,7 +102,7 @@ int ARMCIX_Mode_get(void *ptr) {
   mem_region_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   return mreg->access_mode;
 }
@@ -120,7 +123,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   ARMCII_Buf_get_prepare(&dst, &dst_buf, 1, size);
 
   mreg = mreg_lookup(src, target);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   mreg_lock(mreg, target);
   mreg_get(mreg, src, dst_buf[0], size, target);
@@ -147,7 +150,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   ARMCII_Buf_put_prepare(&src, &src_buf, 1, size);
 
   mreg = mreg_lookup(dst, target);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   mreg_lock(mreg, target);
   mreg_put(mreg, src_buf[0], dst, size, target);
@@ -179,12 +182,13 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   ARMCII_Buf_acc_prepare(&src, &src_buf, 1, bytes, datatype, scale);
 
   mreg = mreg_lookup(dst, proc);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   ARMCII_Acc_type_translate(datatype, &type, &type_size);
   count = bytes/type_size;
 
-  assert(bytes % type_size == 0);
+  ARMCII_Assert_msg(bytes % type_size == 0, 
+      "Transfer size is not a multiple of the datatype size");
 
   mreg_lock(mreg, proc);
   mreg_accumulate(mreg, src_buf[0], dst, count, type, proc);

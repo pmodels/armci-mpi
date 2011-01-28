@@ -110,13 +110,14 @@ void armci_msg_group_bcast_scope(int scope, void *buf, int len, int abs_root, AR
 
   if (scope == SCOPE_ALL || scope == SCOPE_MASTERS) {
     grp_root = ARMCII_Translate_absolute_to_group(group->comm, abs_root);
-    assert(grp_root >= 0 && grp_root < group->size);
+    ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
 
     MPI_Bcast(buf, len, MPI_BYTE, grp_root, group->comm);
 
-  } else {
-    grp_root = ARMCII_Translate_absolute_to_group(MPI_COMM_SELF, abs_root);
-    assert(grp_root >= 0 && grp_root < group->size);
+  } else /* SCOPE_NODE */ {
+    // grp_root = ARMCII_Translate_absolute_to_group(MPI_COMM_SELF, abs_root);
+    // ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
+    grp_root = 0;
 
     MPI_Bcast(buf, len, MPI_BYTE, grp_root, MPI_COMM_SELF);
   }

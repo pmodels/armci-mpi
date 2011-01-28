@@ -71,7 +71,7 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
 
   if (ptr != NULL) {
     mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-    assert(mreg != NULL);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
   } else {
     dprint(DEBUG_CAT_ALLOC, __func__, "given NULL\n");
     mreg = NULL;

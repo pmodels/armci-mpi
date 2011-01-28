@@ -114,10 +114,10 @@ armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
   armcix_mutex_grp_t grp;
 
   grp = malloc(sizeof(struct mutex_grp_s));
-  assert(grp != NULL);
+  ARMCII_Assert(grp != NULL);
 
   ierr = MPI_Alloc_mem(count*sizeof(long), MPI_INFO_NULL, &grp->base);
-  assert(ierr == MPI_SUCCESS);
+  ARMCII_Assert(ierr == MPI_SUCCESS);
 
   grp->count = count;
 
@@ -129,7 +129,7 @@ armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
 
   ierr = MPI_Win_create(grp->base, count*sizeof(long), sizeof(long) /* displacement size */,
                         MPI_INFO_NULL, ARMCI_GROUP_WORLD.comm, &grp->window);
-  assert(ierr == MPI_SUCCESS);
+  ARMCII_Assert(ierr == MPI_SUCCESS);
 
   return grp;
 }
@@ -178,8 +178,8 @@ void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
     MPI_Get(&lock_out, 1, MPI_LONG, proc, mutex, 1, MPI_LONG, grp->window);
     MPI_Win_unlock(proc, grp->window);
 
-    assert(lock_out > 0);
-    assert(lock_out <= nproc*(nproc+1)/2); // Must be < sum of all ranks
+    ARMCII_Assert(lock_out > 0);
+    ARMCII_Assert(lock_out <= nproc*(nproc+1)/2); // Must be < sum of all ranks
 
     /* We are holding the mutex */
     if (lock_out == rank+1)
@@ -234,8 +234,8 @@ int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int proc) {
   MPI_Get(&lock_out, 1, MPI_LONG, proc, mutex, 1, MPI_LONG, grp->window);
   MPI_Win_unlock(proc, grp->window);
 
-  assert(lock_out > 0);
-  assert(lock_out <= nproc*(nproc+1)/2); // Must be < sum of all ranks
+  ARMCII_Assert(lock_out > 0);
+  ARMCII_Assert(lock_out <= nproc*(nproc+1)/2); // Must be < sum of all ranks
 
   /* We are holding the mutex */
   if (lock_out == rank+1)

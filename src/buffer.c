@@ -38,7 +38,7 @@ int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
 
     if (mreg != NULL) {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      assert(ierr == MPI_SUCCESS);
+      ARMCII_Assert(ierr == MPI_SUCCESS);
 
       mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
       mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
@@ -132,7 +132,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           int *scl_i;
           const int s = *((int*) scale);
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_i);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_i;
           for (j = 0; j < nelem; j++)
             scl_i[j] = src_i[j]*s;
@@ -151,7 +151,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           long *scl_l;
           const long s = *((long*) scale);
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_l);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_l;
           for (j = 0; j < nelem; j++)
             scl_l[j] = src_l[j]*s;
@@ -170,7 +170,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           float *scl_f;
           const float s = *((float*) scale);
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_f);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_f;
           for (j = 0; j < nelem; j++)
             scl_f[j] = src_f[j]*s;
@@ -189,7 +189,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           double *scl_d;
           const double s = *((double*) scale);
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_d);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_d;
           for (j = 0; j < nelem; j++)
             scl_d[j] = src_d[j]*s;
@@ -209,7 +209,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           const float s_r = ((float*)scale)[0];
           const float s_c = ((float*)scale)[1];
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_fc);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_fc;
           for (j = 0; j < nelem; j += 2) {
             // Complex multiplication: (a + bi)*(c + di)
@@ -232,7 +232,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
           const double s_r = ((double*)scale)[0];
           const double s_c = ((double*)scale)[1];
           int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_dc);
-          assert(ierr == MPI_SUCCESS);
+          ARMCII_Assert(ierr == MPI_SUCCESS);
           scaled_data = scl_dc;
           for (j = 0; j < nelem; j += 2) {
             // Complex multiplication: (a + bi)*(c + di)
@@ -246,7 +246,8 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
         ARMCII_Error("unknown data type", 100);
     }
 
-    assert(size % type_size == 0);
+    ARMCII_Assert_msg(size % type_size == 0, 
+        "Transfer size is not a multiple of the datatype size");
 
     // Scaling was applied, we have a private buffer
     if (scaled_data != NULL) {
@@ -260,7 +261,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
     // Buffer is in shared space, make a private copy
     } else {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      assert(ierr == MPI_SUCCESS);
+      ARMCII_Assert(ierr == MPI_SUCCESS);
       mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
       num_moved++;
     }
@@ -313,7 +314,7 @@ int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
 
     if (mreg != NULL) {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      assert(ierr == MPI_SUCCESS);
+      ARMCII_Assert(ierr == MPI_SUCCESS);
       num_moved++;
     } else {
       new_bufs[i] = orig_bufs[i];
@@ -341,7 +342,7 @@ void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int siz
   for (i = 0; i < count; i++) {
     if (orig_bufs[i] != new_bufs[i]) {
       mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
-      assert(mreg != NULL);
+      ARMCII_Assert(mreg != NULL);
 
       mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
       mreg_put(mreg, new_bufs[i], orig_bufs[i], size, ARMCI_GROUP_WORLD.rank);

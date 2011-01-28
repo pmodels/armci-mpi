@@ -81,7 +81,7 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   void *base, *extent;
 
   mreg = mreg_lookup(ptrs[0], proc);
-  assert(mreg != NULL);
+  ARMCII_Assert(mreg != NULL);
 
   base   = mreg->slices[proc].base;
   extent = ((uint8_t*) base) + mreg->slices[proc].size;
@@ -116,12 +116,12 @@ int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
   if (op == ARMCII_OP_ACC) {
     ARMCII_Acc_type_translate(datatype, &type, &type_size);
     type_count = size/type_size;
-    assert(size % type_size == 0);
+    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   } else {
     type = MPI_BYTE;
     MPI_Type_size(type, &type_size);
     type_count = size/type_size;
-    assert(size % type_size == 0);
+    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   }
 
   // SAFE CASE: If remote pointers overlap or remote pointers correspond to
@@ -171,7 +171,7 @@ int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count
     }
 
     mreg = mreg_lookup(shr_ptr, proc);
-    assert(mreg != NULL);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
     mreg_lock(mreg, proc);
 
@@ -223,7 +223,7 @@ int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_co
   }
 
   mreg = mreg_lookup(shr_ptr, proc);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   mreg_lock(mreg, proc);
 
@@ -284,7 +284,7 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
     MPI_Type_size(type, &type_size);
 
     mreg = mreg_lookup(buf_rem[0], proc);
-    assert(mreg != NULL);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
     dst_win_base = mreg->slices[proc].base;
     dst_win_size = mreg->slices[proc].size;
@@ -298,9 +298,9 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
       disp_rem[i]  = (target_rem - base_rem)/type_size;
       block_len[i] = elem_count;
 
-      assert((target_rem - base_rem) % type_size == 0);
-      assert(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size);
-      assert(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size);
+      ARMCII_Assert_msg((target_rem - base_rem) % type_size == 0, "Transfer size is not a multiple of type size");
+      ARMCII_Assert_msg(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size, "Invalid remote pointer");
+      ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
     }
 
     MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);

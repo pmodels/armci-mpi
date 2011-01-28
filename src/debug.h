@@ -18,18 +18,25 @@ enum debug_cats_e {
 extern char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH];
 extern unsigned DEBUG_CATS_ENABLED;
 
-#ifdef NO_SEATBELTS
-#define assert(X) ((void)0)
-#else
+/** Define assert functions **/
 
+#ifdef NO_SEATBELTS
+#define ARMCII_Assert(X) ((void)0)
+#define ARMCII_Assert_msg(X,MSG) ((void)0)
+
+#else
 #ifdef USE_LIBC_ASSERT
 #include <assert.h>
+#define ARMCII_Assert(X) assert(X)
+#define ARMCII_Assert_msg(X,MSG) assert(X)
 #else
-void ARMCII_Assert_fail(const char *expr, const char *file, int line, const char *func);
-#define assert(EXPR) do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, __FILE__, __LINE__, __func__); } while(0)
-#endif
 
-#endif /* NO_SEATBELTS */
+void    ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int line, const char *func);
+#define ARMCII_Assert(EXPR)          do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, NULL, __FILE__, __LINE__, __func__); } while(0)
+#define ARMCII_Assert_msg(EXPR, MSG) do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, MSG,  __FILE__, __LINE__, __func__); } while(0)
+
+#endif /* USE_LIBC_ASSERT */
+#endif /* NO_SEATBELTS    */
 
 
 #ifdef NO_SEATBELTS
@@ -69,5 +76,7 @@ static inline void dprint(unsigned category, const char *func, const char *forma
 }
 #endif /* NO_SEATBELTS */
 
+#define ARMCII_Error(MSG,CODE) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
+void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code);
 
 #endif /* HAVE_DEBUG_H */

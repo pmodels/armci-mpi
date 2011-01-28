@@ -32,7 +32,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   mem_region_t *mreg;
 
   mreg = mreg_lookup(prem, proc);
-  assert(mreg != NULL);
+  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   if (op == ARMCI_SWAP_LONG || op == ARMCI_FETCH_AND_ADD_LONG)
     is_long = 1;
