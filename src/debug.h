@@ -46,5 +46,6 @@ void    ARMCII_Dbg_print_impl(const char *func, const char *format, ...);
 
 #define ARMCII_Error(MSG,CODE) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
 void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code);
+void    ARMCII_Warning(const char *fmt, ...);
 
 #endif /* HAVE_DEBUG_H */

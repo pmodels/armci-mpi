@@ -41,7 +41,7 @@ int ARMCI_Init(void) {
     else if (strcmp(var, "DTYPE") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DTYPE;
     else if (ARMCI_GROUP_WORLD.rank == 0)
-      printf("ARMCI Warning: Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
+      ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
   /* Initialize the Direct Local Access (DLA) state */
@@ -64,7 +64,7 @@ int ARMCI_Finalize(void) {
   nfreed = mreg_destroy_all();
 
   if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
-    printf("ARMCI Warning: Freed %d leaked allocations\n", nfreed);
+    ARMCII_Warning("Freed %d leaked allocations\n", nfreed);
 
   ARMCI_Cleanup();
 
@@ -78,7 +78,7 @@ void ARMCI_Cleanup(void) {
 }
 
 void ARMCI_Error(char *msg, int code) {
-  fprintf(stderr, "%d: ARMCI Error: %s\n", ARMCI_GROUP_WORLD.rank, msg);
+  fprintf(stderr, "[%d] ARMCI Error: %s\n", ARMCI_GROUP_WORLD.rank, msg);
   fflush(NULL);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }

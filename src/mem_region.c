@@ -168,7 +168,7 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   if (   ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN
       && ARMCII_GLOBAL_STATE.dla_mreg  == mreg            )
   {
-    printf("%d: ARMCI Warning: Closed open local access epoch while freeing shared allocation\n",
+    ARMCII_Warning("Closed open local access epoch while freeing shared allocation\n",
         ARMCI_GROUP_WORLD.rank);
 
     mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
