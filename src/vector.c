@@ -36,7 +36,7 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
       if (   (ptr_1_lo >= ptr_2_lo && ptr_1_lo <= ptr_2_hi)
           || (ptr_1_hi >= ptr_2_lo && ptr_1_hi <= ptr_2_hi)
           || (ptr_1_lo <  ptr_2_lo && ptr_1_hi >  ptr_2_hi)) {
-        printf("Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
+        ARMCII_Dbg_print(DEBUG_CAT_IOV, "Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
             ptr_1_lo, ptr_1_hi, ptr_2_lo, ptr_2_hi);
         return 1;
       }
@@ -52,7 +52,7 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
     if (conflict) {
       ctree_t cnode = ctree_locate(ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
 
-      printf("Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
+      ARMCII_Dbg_print(DEBUG_CAT_IOV, "Warning: IOV regions overlap: [%p, %p] - [%p, %p]\n",
           ptrs[i], ((uint8_t*)ptrs[i]) + size - 1, cnode->lo, cnode->hi);
 
       ctree_destroy(&ctree);
@@ -129,8 +129,8 @@ int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
   // use.
 
   if (overlapping || !same_alloc || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_SAFE) {
-    if (overlapping) printf("Warning: IOV remote buffers overlap\n");
-    if (!same_alloc) printf("Warning: IOV remote buffers are not within the same allocation\n");
+    if (overlapping) ARMCII_Dbg_print(DEBUG_CAT_IOV, "Warning: IOV remote buffers overlap\n");
+    if (!same_alloc) ARMCII_Dbg_print(DEBUG_CAT_IOV, "Warning: IOV remote buffers are not within the same allocation\n");
     return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
   }
 

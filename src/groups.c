@@ -53,7 +53,7 @@ void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_gr
     for (i = 0; i < grp_size && count < BUF_LEN; i++)
       count += snprintf(string+count, BUF_LEN-count, (i == grp_size-1) ? "%d" : "%d ", pid_list[i]);
 
-    dprint(DEBUG_CAT_GROUPS, __func__, "%d procs [%s]\n", grp_size, string);
+    ARMCII_Dbg_print(DEBUG_CAT_GROUPS, "%d procs [%s]\n", grp_size, string);
 #undef BUF_LEN
   }
 

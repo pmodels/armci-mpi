@@ -4,24 +4,25 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <mpi.h>
 
+#include <armci_internals.h>
 #include <debug.h>
 
-char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH] = {
-  "mem_region",
-  "alloc",
-  "mutex"
-};
-
-unsigned DEBUG_CATS_ENABLED = 0;
-//unsigned DEBUG_CATS_ENABLED = DEBUG_CAT_ALLOC;
-//unsigned DEBUG_CATS_ENABLED = DEBUG_CAT_ALLOC | DEBUG_CAT_MEM_REGION;
-//unsigned DEBUG_CATS_ENABLED = DEBUG_CAT_MUTEX;
-//unsigned DEBUG_CATS_ENABLED = DEBUG_CAT_GROUPS;
-//unsigned DEBUG_CATS_ENABLED = -1;
+/* Set the default debugging message classes to enable.
+ */
+unsigned DEBUG_CATS_ENABLED = 
+    // DEBUG_CAT_NONE;
+    DEBUG_CAT_ALL;
+    // DEBUG_CAT_ALLOC;
+    // DEBUG_CAT_ALLOC | DEBUG_CAT_MEM_REGION;
+    // DEBUG_CAT_MUTEX;
+    // DEBUG_CAT_GROUPS;
 
 
+/** Print an assertion failure message and abort the program.
+  */
 void ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int line, const char *func) {
   int rank;
 
@@ -60,4 +61,21 @@ void ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int
   double stall = MPI_Wtime();
   while (MPI_Wtime() - stall < 1) ;
   MPI_Abort(MPI_COMM_WORLD, -1);
+}
+
+
+/** Print a debugging message.
+  */
+void ARMCII_Dbg_print_impl(const char *func, const char *format, ...) {
+  va_list etc;
+  int  disp;
+  char string[500];
+
+  disp  = 0;
+  disp += snprintf(string, 500, "[%4d] %s: ", ARMCI_GROUP_WORLD.rank, func);
+  va_start(etc, format);
+  disp += vsnprintf(string+disp, 500-disp, format, etc);
+  va_end(etc);
+
+  fprintf(stderr, "%s", string);
 }

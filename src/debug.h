@@ -5,76 +5,44 @@
 #ifndef HAVE_DEBUG_H
 #define HAVE_DEBUG_H
 
+#include <stdarg.h>
 #include <armciconf.h>
 
 enum debug_cats_e {
-  DEBUG_CAT_MEM_REGION = 1, // 2^0
-  DEBUG_CAT_ALLOC      = 2, // 2^1
-  DEBUG_CAT_MUTEX      = 4, // 2^2 ...
-  DEBUG_CAT_GROUPS     = 8
+  DEBUG_CAT_ALL        =  -1,
+  DEBUG_CAT_NONE       =   0,
+  DEBUG_CAT_MEM_REGION = 0x1,  // 2^0
+  DEBUG_CAT_ALLOC      = 0x2,  // 2^1
+  DEBUG_CAT_MUTEX      = 0x4,  // 2^2
+  DEBUG_CAT_GROUPS     = 0x8,  // 2^3
+  DEBUG_CAT_CTREE      = 0x10, // 2^4, ...
+  DEBUG_CAT_IOV        = 0x20
 };
 
-#define MAX_DEBUG_LABEL_LENGTH 20
-extern char debug_cat_labels[][MAX_DEBUG_LABEL_LENGTH];
-extern unsigned DEBUG_CATS_ENABLED;
+/* A logical OR of the debug message categories that are enabled.
+ */
+extern  unsigned DEBUG_CATS_ENABLED;
 
-/** Define assert functions **/
 
 #ifdef NO_SEATBELTS
 #define ARMCII_Assert(X) ((void)0)
 #define ARMCII_Assert_msg(X,MSG) ((void)0)
-
 #else
-#ifdef USE_LIBC_ASSERT
-#include <assert.h>
-#define ARMCII_Assert(X) assert(X)
-#define ARMCII_Assert_msg(X,MSG) assert(X)
-#else
-
 void    ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int line, const char *func);
 #define ARMCII_Assert(EXPR)          do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, NULL, __FILE__, __LINE__, __func__); } while(0)
 #define ARMCII_Assert_msg(EXPR, MSG) do { if (!(EXPR)) ARMCII_Assert_fail(#EXPR, MSG,  __FILE__, __LINE__, __func__); } while(0)
-
-#endif /* USE_LIBC_ASSERT */
 #endif /* NO_SEATBELTS    */
 
 
 #ifdef NO_SEATBELTS
 #define DEBUG_CAT_ENABLED(X) 0
+#define ARMCII_Dbg_print(CAT,FMT,...) ((void)0)
 #else
 #define DEBUG_CAT_ENABLED(X) (DEBUG_CATS_ENABLED & (X))
+void    ARMCII_Dbg_print_impl(const char *func, const char *format, ...);
+#define ARMCII_Dbg_print(CAT,FMT,...) do { if (DEBUG_CAT_ENABLED(CAT)) ARMCII_Dbg_print_impl(__func__,FMT, ## __VA_ARGS__); } while (0)
 #endif /* NO_SEATBELTS */
 
-
-#ifdef NO_SEATBELTS
-#define dprint(CAT,FUNC,FMT,...) ((void)0)
-
-#else
-#include <stdio.h>
-#include <stdarg.h>
-#include <mpi.h>
-#include <armci_internals.h>
-
-static inline void dprint(unsigned category, const char *func, const char *format, ...) {
-  va_list ap;
-  int     rank, disp;
-  char    string[500];
-
-  if (! DEBUG_CAT_ENABLED(category))
-    return;
-
-  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &rank);
-
-  disp  = 0;
-  disp += snprintf(string, 500, "[%4d] %s: ", rank, func);
-  va_start(ap, format);
-  disp += vsnprintf(string+disp, 500-disp, format, ap);
-  va_end(ap);
-
-  fprintf(stderr, "%s", string);
-
-}
-#endif /* NO_SEATBELTS */
 
 #define ARMCII_Error(MSG,CODE) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
 void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code);

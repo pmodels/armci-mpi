@@ -122,11 +122,11 @@ void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   /* Wait for notification */
   if (already_locked) {
     MPI_Status status;
-    dprint(DEBUG_CAT_MUTEX, __func__, "waiting for notification [proc = %d, mutex = %d]\n", proc, mutex);
+    ARMCII_Dbg_print(DEBUG_CAT_MUTEX, "waiting for notification [proc = %d, mutex = %d]\n", proc, mutex);
     MPI_Recv(NULL, 0, MPI_BYTE, MPI_ANY_SOURCE, ARMCI_MUTEX_TAG+mutex, grp->comm, &status);
   }
 
-  dprint(DEBUG_CAT_MUTEX, __func__, "lock acquired [proc = %d, mutex = %d]\n", proc, mutex);
+  ARMCII_Dbg_print(DEBUG_CAT_MUTEX, "lock acquired [proc = %d, mutex = %d]\n", proc, mutex);
   free(buf);
 }
 
@@ -191,12 +191,12 @@ void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   /* Notify the next waiting process */
   for (i = 0; i < nproc; i++) {
     if (buf[i] == 1) {
-      dprint(DEBUG_CAT_MUTEX, __func__, "notifying %d [proc = %d, mutex = %d]\n", i, proc, mutex);
+      ARMCII_Dbg_print(DEBUG_CAT_MUTEX, "notifying %d [proc = %d, mutex = %d]\n", i, proc, mutex);
       MPI_Send(NULL, 0, MPI_BYTE, i, ARMCI_MUTEX_TAG+mutex, grp->comm);
       break;
     }
   }
 
-  dprint(DEBUG_CAT_MUTEX, __func__, "lock released [proc = %d, mutex = %d]\n", proc, mutex);
+  ARMCII_Dbg_print(DEBUG_CAT_MUTEX, "lock released [proc = %d, mutex = %d]\n", proc, mutex);
   free(buf);
 }

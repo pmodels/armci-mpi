@@ -41,7 +41,7 @@ int ARMCI_Init(void) {
     else if (strcmp(var, "DTYPE") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DTYPE;
     else if (ARMCI_GROUP_WORLD.rank == 0)
-      printf("Warning: Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
+      printf("ARMCI Warning: Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
   /* Initialize the Direct Local Access (DLA) state */
