@@ -91,7 +91,7 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
     if (   (lo >= cur->lo && lo <= cur->hi)
         || (hi >= cur->lo && hi <= cur->hi)
         || (lo <  cur->lo && hi >  cur->hi)) {
-      ARMCII_Dbg_print(DEBUG_CAT_CTREE, "CTree: Conflict inserting [%p, %p] with [%p, %p]\n", lo, hi, cur->lo, cur->hi);
+      ARMCII_Dbg_print(DEBUG_CAT_CTREE, "Conflict inserting [%p, %p] with [%p, %p]\n", lo, hi, cur->lo, cur->hi);
       free(new_node);
       return 1;
     }
@@ -131,7 +131,7 @@ int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
 static inline void ctree_rotate_left(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  //ARMCII_Dbg_print(DEBUG_CAT_CTREE, "Rotate left: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+  //ARMCII_Dbg_print(DEBUG_CAT_CTREE, "[%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
   //    ctree_node_height(node->left), ctree_node_height(node->right));
 
   ARMCII_Assert(old_root->right == node);
@@ -168,7 +168,7 @@ static inline void ctree_rotate_left(ctree_t node) {
 static inline void ctree_rotate_right(ctree_t node) {
   ctree_t old_root = node->parent;
 
-  //ARMCII_Dbg_print(DEBUG_CAT_CTREE, "Rotate right: [%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
+  //ARMCII_Dbg_print(DEBUG_CAT_CTREE, "[%10p, %10p] l=%d r=%d\n", node->lo, node->hi, 
   //    ctree_node_height(node->left), ctree_node_height(node->right));
 
   ARMCII_Assert(old_root->left == node);
