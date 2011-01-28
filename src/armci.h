@@ -19,8 +19,7 @@ int   ARMCI_Init_args(int *argc, char ***argv);
 int   ARMCI_Finalize(void);
 void  ARMCI_Cleanup(void);
 
-#define ARMCI_Error(MSG, CODE) ARMCI_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
-void    ARMCI_Error_impl(const char *file, const int line, const char *func, char *msg, int code);
+void  ARMCI_Error(char *msg, int code);
 
 int   ARMCI_Malloc(void **base_ptrs, int size);
 int   ARMCI_Free(void *ptr);

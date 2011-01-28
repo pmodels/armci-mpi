@@ -72,11 +72,11 @@ int len, lenmes, min;
 
     min = (strncmp(op,"min",3) == 0);
     if(!min && (strncmp(op,"max",3) != 0))
-            ARMCI_Error("armci_msg_gop_info: operation not supported ", 0);
+            ARMCII_Error("armci_msg_gop_info: operation not supported ", 0);
 
-    if(!x)ARMCI_Error("armci_msg_gop_info: NULL pointer", n);
+    if(!x)ARMCII_Error("armci_msg_gop_info: NULL pointer", n);
 
-    if(n>INFO_BUF_SIZE)ARMCI_Error("armci_msg_gop_info: info too large",n);
+    if(n>INFO_BUF_SIZE)ARMCII_Error("armci_msg_gop_info: info too large",n);
 
     len = lenmes = n;
 

@@ -77,8 +77,9 @@ void ARMCI_Cleanup(void) {
   return;
 }
 
-void ARMCI_Error_impl(const char *file, const int line, const char *func, char *msg, int code) {
-  fprintf(stderr, "ARMCI Error in %s: %s (%s:%d)\n", func, msg, file, line);
+void ARMCI_Error(char *msg, int code) {
+  fprintf(stderr, "%d: ARMCI Error: %s\n", ARMCI_GROUP_WORLD.rank, msg);
+  fflush(NULL);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
 }
 
