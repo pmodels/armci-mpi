@@ -10,10 +10,7 @@ Things on the to do list:
     Can we optimize it with a memcpy?
 
   * Perform checking to detect ARMCI_Access_begin/end() usage errors.
-    * Detect lock-after-lock, calling Get/Put/Acc in access region.
     * Automatically unlock or re-lock when needed
-
-  * Implement locking changes corresponding to ARMCI access modes.
 
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
 
