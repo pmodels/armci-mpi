@@ -32,14 +32,16 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   else
     comm = MPI_COMM_SELF;
 
-  if (op[0] == '+') {
+  if (strncmp(op, "+", 1) == 0) {
     mpi_op = MPI_SUM;
-  } else if (op[0] == '*') {
+  } else if (strncmp(op, "*", 1) == 0) {
     mpi_op = MPI_PROD;
   } else if (strncmp(op, "max", 3) == 0) {
     mpi_op = MPI_MAX;
   } else if (strncmp(op, "min", 3) == 0) {
     mpi_op = MPI_MIN;
+  } else if (strncmp(op, "or", 2) == 0) {
+    mpi_op = MPI_LOR; // is ARMCI logical or bitwise?  need to check.
   } else if (strncmp(op, "absmax", 6) == 0) {
     ARMCII_Error("absmax operation not supported", 10); // FIXME: Not supported
     return;
