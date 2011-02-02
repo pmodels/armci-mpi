@@ -258,8 +258,7 @@ static ctree_t ctree_balance(ctree_t node) {
         }
 
       } else {
-        printf("CTree error: height difference is %d\n", height_l - height_r);
-        ARMCII_Error("CTree invariant violated, height difference is too large", 10);
+        ARMCII_Error("CTree invariant violated, height difference of %d is too large", height_l - height_r);
       }
     }
 

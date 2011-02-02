@@ -243,7 +243,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
         break;
 
       default:
-        ARMCII_Error("unknown data type", 100);
+        ARMCII_Error("unknown data type (%d)", datatype);
     }
 
     ARMCII_Assert_msg(size % type_size == 0, 

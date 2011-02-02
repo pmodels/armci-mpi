@@ -20,41 +20,41 @@
 
 static double *work=NULL;
 
-static void armci_sel(int type, char *op, void *x, void* work, int n)
+static void armci_sel(int type, char *op, void *x, void* mywork, int n)
 {
 int selected=0;
   switch (type) {
   case ARMCI_INT:
      if(strncmp(op,"min",3) == 0){ 
-        if(*(int*)x > *(int*)work) selected=1;
+        if(*(int*)x > *(int*)mywork) selected=1;
      }else
-        if(*(int*)x < *(int*)work) selected=1;
+        if(*(int*)x < *(int*)mywork) selected=1;
      break;
   case ARMCI_LONG:
      if(strncmp(op,"min",3) == 0){ 
-        if(*(long*)x > *(long*)work) selected=1;
+        if(*(long*)x > *(long*)mywork) selected=1;
      }else
-        if(*(long*)x < *(long*)work) selected=1;
+        if(*(long*)x < *(long*)mywork) selected=1;
      break;
   case ARMCI_LONG_LONG:
      if(strncmp(op,"min",3) == 0){ 
-        if(*(long long*)x > *(long long*)work) selected=1;
+        if(*(long long*)x > *(long long*)mywork) selected=1;
      }else
-        if(*(long long*)x < *(long long*)work) selected=1;
+        if(*(long long*)x < *(long long*)mywork) selected=1;
      break;
   case ARMCI_FLOAT:
      if(strncmp(op,"min",3) == 0){ 
-        if(*(float*)x > *(float*)work) selected=1;
+        if(*(float*)x > *(float*)mywork) selected=1;
      }else
-        if(*(float*)x < *(float*)work) selected=1;
+        if(*(float*)x < *(float*)mywork) selected=1;
      break;
   default:
      if(strncmp(op,"min",3) == 0){
-        if(*(double*)x > *(double*)work) selected=1;
+        if(*(double*)x > *(double*)mywork) selected=1;
      }else
-        if(*(double*)x < *(double*)work) selected=1;
+        if(*(double*)x < *(double*)mywork) selected=1;
   }
-  if(selected)ARMCI_Copy(work,x, n);
+  if(selected)ARMCI_Copy(mywork,x, n);
 }
 
 /*\ global for  op with extra info 
@@ -72,11 +72,11 @@ int len, lenmes, min;
 
     min = (strncmp(op,"min",3) == 0);
     if(!min && (strncmp(op,"max",3) != 0))
-            ARMCII_Error("armci_msg_gop_info: operation not supported ", 0);
+            ARMCII_Error("armci_msg_gop_info: operation not supported '%s'", op);
 
-    if(!x)ARMCII_Error("armci_msg_gop_info: NULL pointer", n);
+    if(!x)ARMCII_Error("armci_msg_gop_info: NULL pointer");
 
-    if(n>INFO_BUF_SIZE)ARMCII_Error("armci_msg_gop_info: info too large",n);
+    if(n>INFO_BUF_SIZE)ARMCII_Error("armci_msg_gop_info: info too large");
 
     len = lenmes = n;
 

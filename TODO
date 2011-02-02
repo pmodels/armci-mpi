@@ -1,5 +1,7 @@
 Things on the to do list:
 
+  * Be less dependent on C99.  Provide non-variadic macro versions of debug and error routines.
+
   * Verify NWChem on GA on ARMCI-MPI on shared memory.
 
   * Look into invalid memory references that GA makes on the ghost cells

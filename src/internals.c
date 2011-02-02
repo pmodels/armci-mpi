@@ -17,9 +17,19 @@
   * @param[in] msg  Message to be printed
   * @param[in] code Exit error code
   */
-void ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code) {
-  fprintf(stderr, "ARMCI Internal error in %s: %s (%s:%d)\n", func, msg, file, line);
-  MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
+void ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, ...) {
+  va_list ap;
+  int  disp;
+  char string[500];
+
+  disp  = 0;
+  va_start(ap, msg);
+  disp += vsnprintf(string, 500, msg, ap);
+  va_end(ap);
+
+  fprintf(stderr, "[%d] ARMCI Internal error in %s (%s:%d)\n[%d] Messge: %s\n", ARMCI_GROUP_WORLD.rank, 
+      func, file, line, ARMCI_GROUP_WORLD.rank, string);
+  MPI_Abort(ARMCI_GROUP_WORLD.comm, 100);
 }
 
 

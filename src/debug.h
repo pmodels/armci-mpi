@@ -44,8 +44,8 @@ void    ARMCII_Dbg_print_impl(const char *func, const char *format, ...);
 #endif /* NO_SEATBELTS */
 
 
-#define ARMCII_Error(MSG,CODE) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG,CODE)
-void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, int code);
+#define ARMCII_Error(MSG,...) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG, ## __VA_ARGS__)
+void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, ...);
 void    ARMCII_Warning(const char *fmt, ...);
 
 #endif /* HAVE_DEBUG_H */

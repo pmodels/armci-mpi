@@ -58,8 +58,10 @@ void ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, int
 #endif
 
   fflush(NULL);
-  double stall = MPI_Wtime();
-  while (MPI_Wtime() - stall < 1) ;
+  {
+    double stall = MPI_Wtime();
+    while (MPI_Wtime() - stall < 1) ;
+  }
   MPI_Abort(MPI_COMM_WORLD, -1);
 }
 
