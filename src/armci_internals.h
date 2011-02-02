@@ -37,7 +37,15 @@ enum ARMCII_Dla_state { ARMCII_DLA_CLOSED, ARMCII_DLA_OPEN, ARMCII_DLA_SUSPENDED
 
 extern ARMCI_Group    ARMCI_GROUP_WORLD;
 extern ARMCI_Group    ARMCI_GROUP_DEFAULT;
+extern MPI_Op         MPI_ABSMIN_OP;
+extern MPI_Op         MPI_ABSMAX_OP;
 extern global_state_t ARMCII_GLOBAL_STATE;
+  
+  
+/* GOP Operators */
+
+void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
+void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 
 
 /* Translate betwee ARMCI and MPI ranks */

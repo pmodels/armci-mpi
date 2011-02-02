@@ -1,5 +1,7 @@
 Things on the to do list:
 
+  * ARMCI Message operations are not shared local buffer safe.  This is high priority.
+
   * Be less dependent on C99.  Provide non-variadic macro versions of debug and error routines.
 
   * Verify NWChem on GA on ARMCI-MPI on shared memory.

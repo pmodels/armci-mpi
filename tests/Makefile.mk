@@ -18,6 +18,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_assert           \
+                  tests/test_igop              \
                   # end
 
 tests_test_onesided_SOURCES = $(top_srcdir)/tests/test_onesided.c
@@ -83,6 +84,10 @@ tests_test_puts_gets_DEPENDENCIES = libarmci.la
 tests_test_assert_SOURCES = $(top_srcdir)/tests/test_assert.c
 tests_test_assert_LDADD = -larmci
 tests_test_assert_DEPENDENCIES = libarmci.la
+
+tests_test_igop_SOURCES = $(top_srcdir)/tests/test_igop.c
+tests_test_igop_LDADD = -larmci
+tests_test_igop_DEPENDENCIES = libarmci.la
 
 include tests/armci_test/Makefile.mk
 include tests/cg/Makefile.mk

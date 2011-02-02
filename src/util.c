@@ -49,6 +49,11 @@ int ARMCI_Init(void) {
   ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
   ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
 
+  /* Create GOP operators */
+
+  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
+  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP); // TODO
+
   return 0;
 }
 
@@ -65,6 +70,11 @@ int ARMCI_Finalize(void) {
 
   if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
     ARMCII_Warning("Freed %d leaked allocations\n", nfreed);
+
+  /* Free GOP operators */
+
+  MPI_Op_free(&MPI_ABSMIN_OP);
+  MPI_Op_free(&MPI_ABSMAX_OP);
 
   ARMCI_Cleanup();
 

@@ -11,6 +11,138 @@
 #include <armci.h>
 #include <armci_internals.h>
 
+/* MPI Operations, registered in Init */
+MPI_Op MPI_ABSMIN_OP;
+MPI_Op MPI_ABSMAX_OP;
+
+#define IABS(X)  (((X) > 0  ) ? X : -X)
+#define FABS(X)  (((X) > 0.0) ? X : -X)
+#define MIN(X,Y) (((X) < (Y)) ? X : Y)
+#define MAX(X,Y) (((X) > (Y)) ? X : Y)
+
+#define ABSMIN(IN,INOUT,COUNT,DTYPE,ABSOP)      \
+      do {                                      \
+        int i;                                  \
+        DTYPE *in = (DTYPE *)IN;                \
+        DTYPE *io = (DTYPE *)INOUT;             \
+        for (i = 0; i < COUNT; i++) {           \
+          const DTYPE x = ABSOP(in[i]);         \
+          const DTYPE y = ABSOP(io[i]);         \
+          io[i] = MIN(x,y);                     \
+        }                                       \
+      } while (0)
+
+/** MPI reduction operator that computes the minimum absolute value.
+  */
+void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
+  const int count = *len;
+
+  switch(*datatype) {
+    case MPI_INT:
+      ABSMIN(invec, inoutvec, count, int, IABS);
+      break;
+    case MPI_LONG:
+      ABSMIN(invec, inoutvec, count, long, IABS);
+      break;
+    case MPI_LONG_LONG:
+      ABSMIN(invec, inoutvec, count, long long, IABS);
+      break;
+    case MPI_FLOAT:
+      ABSMIN(invec, inoutvec, count, float, FABS);
+      break;
+    case MPI_DOUBLE:
+      ABSMIN(invec, inoutvec, count, double, FABS);
+      break;
+    default:
+      ARMCII_Error("unknown type (%d)", *datatype);
+      return;
+  }
+}
+
+#undef ABSMIN
+
+
+#define ABSMAX(IN,INOUT,COUNT,DTYPE,ABSOP)      \
+      do {                                      \
+        int i;                                  \
+        DTYPE *in = (DTYPE *)IN;                \
+        DTYPE *io = (DTYPE *)INOUT;             \
+        for (i = 0; i < COUNT; i++) {           \
+          const DTYPE x = ABSOP(in[i]);         \
+          const DTYPE y = ABSOP(io[i]);         \
+          io[i] = MAX(x,y);                     \
+        }                                       \
+      } while (0)
+
+/** MPI reduction operator that computes the maximum absolute value.
+  */
+void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
+  const int count = *len;
+
+  switch(*datatype) {
+    case MPI_INT:
+      ABSMAX(invec, inoutvec, count, int, IABS);
+      break;
+    case MPI_LONG:
+      ABSMAX(invec, inoutvec, count, long, IABS);
+      break;
+    case MPI_LONG_LONG:
+      ABSMAX(invec, inoutvec, count, long long, IABS);
+      break;
+    case MPI_FLOAT:
+      ABSMAX(invec, inoutvec, count, float, FABS);
+      break;
+    case MPI_DOUBLE:
+      ABSMAX(invec, inoutvec, count, double, FABS);
+      break;
+    default:
+      ARMCII_Error("unknown type (%d)", *datatype);
+      return;
+  }
+}
+
+#undef ABSMAX
+
+
+#define ABSV(IN,INOUT,COUNT,DTYPE,ABSOP)        \
+      do {                                      \
+        int i;                                  \
+        DTYPE *in = (DTYPE *)IN;                \
+        DTYPE *io = (DTYPE *)INOUT;             \
+        for (i = 0; i < COUNT; i++)             \
+          io[i] = ABSOP(in[i]);                 \
+      } while (0)
+
+/** Compute the absolute value.
+  */
+void ARMCII_Absv_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
+  const int count = *len;
+
+  switch(*datatype) {
+    case MPI_INT:
+      ABSV(invec, inoutvec, count, int, IABS);
+      break;
+    case MPI_LONG:
+      ABSV(invec, inoutvec, count, long, IABS);
+      break;
+    case MPI_LONG_LONG:
+      ABSV(invec, inoutvec, count, long long, IABS);
+      break;
+    case MPI_FLOAT:
+      ABSV(invec, inoutvec, count, float, FABS);
+      break;
+    case MPI_DOUBLE:
+      ABSV(invec, inoutvec, count, double, FABS);
+      break;
+    default:
+      ARMCII_Error("unknown type (%d)", *datatype);
+      return;
+  }
+}
+
+#undef ABSV
+
+
 /** General ARMCI global operation (reduction).  Collective on group.
   *
   * @param[in]    scope Scope in which to perform the GOP (only SCOPE_ALL is supported)
@@ -43,11 +175,9 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   } else if (strncmp(op, "or", 2) == 0) {
     mpi_op = MPI_BOR;
   } else if (strncmp(op, "absmax", 6) == 0) {
-    ARMCII_Error("absmax operation not implemented"); // FIXME
-    return;
+    mpi_op = MPI_ABSMAX_OP;
   } else if (strncmp(op, "absmin", 6) == 0) {
-    ARMCII_Error("absmin operation not implemented"); // FIXME
-    return;
+    mpi_op = MPI_ABSMIN_OP;
   } else {
     ARMCII_Error("unknown operation \'%s\'", op);
     return;
@@ -72,6 +202,13 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     default:
       ARMCII_Error("unknown type (%d)", type);
       return;
+  }
+
+  // ABS MAX/MIN are unary as well as binary.  We need to also apply abs in the
+  // single processor case when reduce would normally just be a no-op.
+  if (group->size == 1 && (mpi_op == MPI_ABSMAX_OP || mpi_op == MPI_ABSMIN_OP)) {
+    ARMCII_Absv_op(x, x, &n, &mpi_type);
+    return;
   }
 
   MPI_Type_size(mpi_type, &mpi_type_size);
