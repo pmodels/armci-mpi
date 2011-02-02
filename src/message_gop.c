@@ -32,9 +32,9 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   else
     comm = MPI_COMM_SELF;
 
-  if (strncmp(op, "+", 1) == 0) {
+  if (op[0] == '+') {
     mpi_op = MPI_SUM;
-  } else if (strncmp(op, "*", 1) == 0) {
+  } else if (op[0] == '*') {
     mpi_op = MPI_PROD;
   } else if (strncmp(op, "max", 3) == 0) {
     mpi_op = MPI_MAX;
