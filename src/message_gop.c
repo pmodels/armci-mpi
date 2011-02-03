@@ -35,27 +35,21 @@ MPI_Op MPI_ABSMAX_OP;
 /** MPI reduction operator that computes the minimum absolute value.
   */
 void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-  const int count = *len;
+  const int    count = *len;
+  MPI_Datatype dt    = *datatype;
 
-  switch(*datatype) {
-    case MPI_INT:
+  if (dt == MPI_INT) {
       ABSMIN(invec, inoutvec, count, int, IABS);
-      break;
-    case MPI_LONG:
+  } else if (dt == MPI_LONG) {
       ABSMIN(invec, inoutvec, count, long, IABS);
-      break;
-    case MPI_LONG_LONG:
+  } else if (dt == MPI_LONG_LONG) {
       ABSMIN(invec, inoutvec, count, long long, IABS);
-      break;
-    case MPI_FLOAT:
+  } else if (dt == MPI_FLOAT) {
       ABSMIN(invec, inoutvec, count, float, FABS);
-      break;
-    case MPI_DOUBLE:
+  } else if (dt == MPI_DOUBLE) {
       ABSMIN(invec, inoutvec, count, double, FABS);
-      break;
-    default:
+  } else {
       ARMCII_Error("unknown type (%d)", *datatype);
-      return;
   }
 }
 
@@ -77,27 +71,21 @@ void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datat
 /** MPI reduction operator that computes the maximum absolute value.
   */
 void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-  const int count = *len;
+  const int    count = *len;
+  MPI_Datatype dt    = *datatype;
 
-  switch(*datatype) {
-    case MPI_INT:
+  if (dt == MPI_INT) {
       ABSMAX(invec, inoutvec, count, int, IABS);
-      break;
-    case MPI_LONG:
+  } else if (dt == MPI_LONG) {
       ABSMAX(invec, inoutvec, count, long, IABS);
-      break;
-    case MPI_LONG_LONG:
+  } else if (dt == MPI_LONG_LONG) {
       ABSMAX(invec, inoutvec, count, long long, IABS);
-      break;
-    case MPI_FLOAT:
+  } else if (dt == MPI_FLOAT) {
       ABSMAX(invec, inoutvec, count, float, FABS);
-      break;
-    case MPI_DOUBLE:
+  } else if (dt == MPI_DOUBLE) {
       ABSMAX(invec, inoutvec, count, double, FABS);
-      break;
-    default:
+  } else {
       ARMCII_Error("unknown type (%d)", *datatype);
-      return;
   }
 }
 
@@ -116,27 +104,21 @@ void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datat
 /** Compute the absolute value.
   */
 void ARMCII_Absv_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
-  const int count = *len;
+  const int    count = *len;
+  MPI_Datatype dt    = *datatype;
 
-  switch(*datatype) {
-    case MPI_INT:
+  if (dt == MPI_INT) {
       ABSV(invec, inoutvec, count, int, IABS);
-      break;
-    case MPI_LONG:
+  } else if (dt == MPI_LONG) {
       ABSV(invec, inoutvec, count, long, IABS);
-      break;
-    case MPI_LONG_LONG:
+  } else if (dt == MPI_LONG_LONG) {
       ABSV(invec, inoutvec, count, long long, IABS);
-      break;
-    case MPI_FLOAT:
+  } else if (dt == MPI_FLOAT) {
       ABSV(invec, inoutvec, count, float, FABS);
-      break;
-    case MPI_DOUBLE:
+  } else if (dt == MPI_DOUBLE) {
       ABSV(invec, inoutvec, count, double, FABS);
-      break;
-    default:
+  } else {
       ARMCII_Error("unknown type (%d)", *datatype);
-      return;
   }
 }
 
