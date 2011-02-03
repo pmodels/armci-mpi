@@ -5,7 +5,9 @@
 
 #include <mpi.h>
 #include <armci.h>
+#ifndef NO_MODE_SET
 #include <armcix.h>
+#endif
 
 #define MAX_DATA_SIZE   (1024*1024)
 #define NUM_ITERATIONS  ((data_size <= 2048) ? 4096 : ((data_size <= 16384) ? 512 : 128))
@@ -42,8 +44,6 @@ int main(int argc, char ** argv) {
     ARMCIX_Mode_set(ARMCIX_MODE_CONFLICT_FREE | ARMCIX_MODE_NO_LOAD_STORE, base_ptrs[rank], &grp_world);
   else if (rank == 0)
     printf("Warning: ARMCIX_MODE_SET not enabled\n");
-#else
-#warn Not using ARMCIX_Mode_set optimization
 #endif
 
   if (rank == 0)
