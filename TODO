@@ -1,5 +1,7 @@
 Things on the to do list:
 
+  * Add function entry checks to make sure ARMCI is initialized (ARMCII_GLOBAL_STATE.initialized)
+
   * ARMCI Message operations are not shared local buffer safe.  This is high priority.
 
   * Be less dependent on C99.  Provide non-variadic macro versions of debug and error routines.
