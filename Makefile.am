@@ -42,3 +42,6 @@ check_PROGRAMS =
 
 include benchmarks/Makefile.mk
 include tests/Makefile.mk
+
+.PHONY: checkprogs
+checkprogs: $(check_PROGRAMS)
