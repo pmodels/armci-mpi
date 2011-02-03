@@ -23,7 +23,7 @@
  *   acc(mutex, p, -1*me)
  */
 
-// FIXME: Should each mutex be in a different window?
+// TODO: Should each mutex be in a different window?
 
 #include <stdio.h>
 #include <stdlib.h>

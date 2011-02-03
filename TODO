@@ -20,6 +20,8 @@ Things on the to do list:
 
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
 
+  * Implement remaining functions marked TODO in message.h
+
 Things that need performance tuning:
 
   * Non-blocking operations

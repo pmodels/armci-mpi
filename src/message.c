@@ -215,7 +215,7 @@ void armci_msg_bintree(int scope, int *root, int *up, int *left, int *right) {
 }
 
 
-/** I have no idea what this does.  It's needed by GA.  FIXME.
+/** I have no idea what this does.  It's needed by GA.  TODO: Copy-pasted in copypaste.c
   */
 void armci_msg_sel(void *x, int n, char *op, int type, int contribute) {
   armci_msg_sel_scope(SCOPE_ALL, x, n, op, type, contribute);
