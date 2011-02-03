@@ -137,10 +137,17 @@ int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
   // OPTIMIZED CASE: It's safe for us to issue all the operations under a
   // single lock.
 
-  else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DTYPE)
+  else if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DTYPE
+           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO  )
     return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
-  else
+
+  else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK)
     return ARMCII_Iov_op_onelock(op, src, dst, count, type_count, type, proc);
+
+  else {
+    ARMCII_Error("unknown iov method (%d)\n", ARMCII_GLOBAL_STATE.iov_method);
+    return 1;
+  }
 }
 
 
