@@ -63,6 +63,11 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   else
     MPI_Alloc_mem(local_size, MPI_INFO_NULL, &(alloc_slices[alloc_me].base));
 
+  if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
+    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+    bzero(alloc_slices[alloc_me].base, local_size);
+  }
+
   MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
 
   // All-to-all on <base, size> to build up slices vector

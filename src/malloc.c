@@ -4,9 +4,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
-#include <debug.h>
 
+#include <debug.h>
 #include <armci.h>
 #include <armci_internals.h>
 #include <mem_region.h>
@@ -91,6 +92,12 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
 void *ARMCI_Malloc_local(int size) {
   void *buf;
   MPI_Alloc_mem(size, MPI_INFO_NULL, &buf);
+
+  if (ARMCII_GLOBAL_STATE.debug_alloc) {
+    ARMCII_Assert(buf != NULL);
+    bzero(buf, size);
+  }
+
   return buf;
 }
 

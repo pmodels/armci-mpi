@@ -12,10 +12,19 @@
 #include <debug.h>
 #include <mem_region.h>
 
-global_state_t ARMCII_GLOBAL_STATE = { 0 };
 
 int ARMCI_Init(void) {
   char *var;
+
+  ARMCII_Assert_msg(!(ARMCII_GLOBAL_STATE.initialized), "ARMCI is already initialized");
+
+  /* Check for MPI initialization */
+  {
+    int mpi_is_init;
+    MPI_Initialized(&mpi_is_init);
+    if (!mpi_is_init)
+      ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
+  }
 
   /* Setup groups and communicators */
 
@@ -44,6 +53,10 @@ int ARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
+  /* Check for debugging flags. */
+  var = getenv("ARMCI_DEBUG_ALLOC");
+  if (var != NULL) ARMCII_GLOBAL_STATE.debug_alloc = 1;
+
   /* Initialize the Direct Local Access (DLA) state */
 
   ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
@@ -52,7 +65,10 @@ int ARMCI_Init(void) {
   /* Create GOP operators */
 
   MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
-  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP); // TODO
+  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
+
+
+  ARMCII_GLOBAL_STATE.initialized = 1;
 
   return 0;
 }
@@ -63,6 +79,8 @@ int ARMCI_Init_args(int *argc, char ***argv) {
 
 int ARMCI_Finalize(void) {
   int nfreed;
+
+  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.initialized, "ARMCI has not been initialized");
 
   /* Free all remaining mem regions */
 
@@ -79,6 +97,8 @@ int ARMCI_Finalize(void) {
   ARMCI_Cleanup();
 
   MPI_Comm_free(&ARMCI_GROUP_WORLD.comm);
+
+  ARMCII_GLOBAL_STATE.initialized = 0;
 
   return 0;
 }

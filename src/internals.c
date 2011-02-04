@@ -8,6 +8,9 @@
 #include <armci_internals.h>
 #include <debug.h>
 
+/** ARMCI Internal global state */
+global_state_t ARMCII_GLOBAL_STATE = { 0 };
+
 
 /** Raise an internal fatal ARMCI error.
   *
