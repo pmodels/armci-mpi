@@ -21,13 +21,14 @@
 /* Internal types */
 
 typedef struct {
-  int     initialized;    /* Has ARMCI been initialized?            */
-  int     debug_alloc;    /* Has ARMCI been initialized?            */
+  int     initialized;          /* Has ARMCI been initialized?            */
+  int     debug_alloc;          /* Has ARMCI been initialized?            */
+  int     iov_checks_disabled;  /* Has ARMCI been initialized?            */
 
-  int     iov_method;     /* Currently selected IOV transfer method */
+  int     iov_method;           /* Currently selected IOV transfer method */
 
-  int     dla_state;      /* Direct Local Access (load/store) state */
-  mem_region_t *dla_mreg; /* Current region exposed for DLA         */
+  int     dla_state;            /* Direct Local Access (load/store) state */
+  mem_region_t *dla_mreg;       /* Current region exposed for DLA         */
 } global_state_t;
 
 enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };

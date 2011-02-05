@@ -26,6 +26,8 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
 #ifdef NO_USE_CTREE
   int i, j;
 
+  if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 0;
+
   for (i = 0; i < count; i++) {
     for (j = i+1; j < count; j++) {
       const uint8_t *ptr_1_lo = ptrs[i];
@@ -45,6 +47,8 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
 #else
   int i;
   ctree_t ctree = CTREE_EMPTY;
+
+  if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 0;
 
   for (i = 0; i < count; i++) {
     int conflict = ctree_insert(&ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
@@ -79,6 +83,8 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   int i;
   mem_region_t *mreg;
   void *base, *extent;
+
+  if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 1;
 
   mreg = mreg_lookup(ptrs[0], proc);
   ARMCII_Assert(mreg != NULL);

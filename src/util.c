@@ -56,6 +56,8 @@ int ARMCI_Init(void) {
   /* Check for debugging flags. */
   var = getenv("ARMCI_DEBUG_ALLOC");
   if (var != NULL) ARMCII_GLOBAL_STATE.debug_alloc = 1;
+  var = getenv("ARMCI_DISABLE_IOV_CHECKS");
+  if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
 
   /* Initialize the Direct Local Access (DLA) state */
 
