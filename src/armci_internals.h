@@ -51,9 +51,10 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 
 void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
+void ARMCII_Absv_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 
 
-/* Translate betwee ARMCI and MPI ranks */
+/* Translate between ARMCI and MPI ranks */
 
 int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
