@@ -1,5 +1,12 @@
 Things on the to do list:
 
+  * We can lock one target per window.  Adjust DLA engine to allow this.
+
+  * Add a check for MPI_Finalized() anywhere?  Could be expensive.
+
+  * IOV_METHOD = Onelock is safe for IOV accumulate and get even when the is overlap.  Safe is needed
+    for put or when the same allocation check fails.
+
   * Add function entry checks to make sure ARMCI is initialized (ARMCII_GLOBAL_STATE.initialized)
 
   * ARMCI Message operations are not shared local buffer safe.  This is high priority.
