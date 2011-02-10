@@ -78,7 +78,7 @@ int ARMCIX_Destroy_mutexes_grp(armcix_mutex_grp_t grp) {
   */
 void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   int       rank, nproc, already_locked, i, proc;
-  byte_t *buf;
+  uint8_t *buf;
 
   ARMCII_Assert(mutex >= 0);
 
@@ -89,7 +89,7 @@ void ARMCIX_Lock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   proc = ARMCII_Translate_absolute_to_group(grp->comm, world_proc);
   ARMCII_Assert(proc >= 0);
 
-  buf = malloc(nproc*sizeof(byte_t));
+  buf = malloc(nproc*sizeof(uint8_t));
   ARMCII_Assert(buf != NULL);
 
   buf[rank] = 1;
@@ -153,7 +153,7 @@ int ARMCIX_Trylock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   */
 void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   int      rank, nproc, i, proc;
-  byte_t *buf;
+  uint8_t *buf;
 
   ARMCII_Assert(mutex >= 0);
 
@@ -163,7 +163,7 @@ void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   proc = ARMCII_Translate_absolute_to_group(grp->comm, world_proc);
   ARMCII_Assert(proc >= 0);
 
-  buf = malloc(nproc*sizeof(byte_t));
+  buf = malloc(nproc*sizeof(uint8_t));
 
   buf[rank] = 0;
 

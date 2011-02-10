@@ -29,10 +29,10 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
 
   for (i = 0; i < count; i++) {
     for (j = i+1; j < count; j++) {
-      const byte_t *ptr_1_lo = ptrs[i];
-      const byte_t *ptr_1_hi = ((byte_t*)ptrs[i]) + size - 1;
-      const byte_t *ptr_2_lo = ptrs[j];
-      const byte_t *ptr_2_hi = ((byte_t*)ptrs[j]) + size - 1;
+      const uint8_t *ptr_1_lo = ptrs[i];
+      const uint8_t *ptr_1_hi = ((uint8_t*)ptrs[i]) + size - 1;
+      const uint8_t *ptr_2_lo = ptrs[j];
+      const uint8_t *ptr_2_hi = ((uint8_t*)ptrs[j]) + size - 1;
 
       if (   (ptr_1_lo >= ptr_2_lo && ptr_1_lo <= ptr_2_hi)
           || (ptr_1_hi >= ptr_2_lo && ptr_1_hi <= ptr_2_hi)
@@ -50,13 +50,13 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
   if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 0;
 
   for (i = 0; i < count; i++) {
-    int conflict = ctree_insert(&ctree, ptrs[i], ((byte_t*)ptrs[i]) + size - 1);
+    int conflict = ctree_insert(&ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
 
     if (conflict) {
-      ctree_t cnode = ctree_locate(ctree, ptrs[i], ((byte_t*)ptrs[i]) + size - 1);
+      ctree_t cnode = ctree_locate(ctree, ptrs[i], ((uint8_t*)ptrs[i]) + size - 1);
 
       ARMCII_Dbg_print(DEBUG_CAT_IOV, "IOV regions overlap: [%p, %p] - [%p, %p]\n",
-          ptrs[i], ((byte_t*)ptrs[i]) + size - 1, cnode->lo, cnode->hi);
+          ptrs[i], ((uint8_t*)ptrs[i]) + size - 1, cnode->lo, cnode->hi);
 
       ctree_destroy(&ctree);
       return 1;
@@ -89,7 +89,7 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   ARMCII_Assert(mreg != NULL);
 
   base   = mreg->slices[proc].base;
-  extent = ((byte_t*) base) + mreg->slices[proc].size;
+  extent = ((uint8_t*) base) + mreg->slices[proc].size;
 
   for (i = 1; i < count; i++)
     if ( !(ptrs[i] >= base && ptrs[i] < extent) )
@@ -312,7 +312,7 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
 
       ARMCII_Assert_msg((target_rem - base_rem) % type_size == 0, "Transfer size is not a multiple of type size");
       ARMCII_Assert_msg(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size, "Invalid remote pointer");
-      ARMCII_Assert_msg(((byte_t*)buf_rem[i]) + block_len[i] <= ((byte_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
+      ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
     }
 
     MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);

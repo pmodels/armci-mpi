@@ -8,13 +8,10 @@
 #include <armci.h>
 #include <armciconf.h>
 
-/* Define the byte type */
-
-#if _STDINT_H_ == 1
-#include <stdint.h>
-typedef uint8_t byte_t;
-#else
-typedef unsigned char byte_t;
+#if   HAVE_STDINT_H
+#  include <stdint.h>
+#elif HAVE_INTTYPES_H
+#  include <inttypes.h>
 #endif
 
 /* Disable safety checks if the user asks for it */

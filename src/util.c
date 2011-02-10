@@ -80,7 +80,7 @@ void ARMCI_Copy(void *src, void *dst, int size) {
   */
 void ARMCII_Bzero(void *buf, int size) {
   int      i;
-  byte_t *buf_b = (byte_t *)buf;
+  uint8_t *buf_b = (uint8_t *)buf;
 
   for (i = 0; i < size; i++)
     buf_b[i] = 0;

@@ -4,8 +4,8 @@
 #include <armci_internals.h>
 
 struct ctree_node_s {
-  byte_t *lo;
-  byte_t *hi;
+  uint8_t *lo;
+  uint8_t *hi;
 
   int height;
 
@@ -18,8 +18,8 @@ typedef struct ctree_node_s * ctree_t;
 
 extern const ctree_t CTREE_EMPTY;
 
-int     ctree_insert(ctree_t *root, byte_t *lo, byte_t *hi);
-ctree_t ctree_locate(ctree_t root, byte_t *lo, byte_t *hi);
+int     ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi);
+ctree_t ctree_locate(ctree_t root, uint8_t *lo, uint8_t *hi);
 void    ctree_destroy(ctree_t *root);
 void    ctree_print(ctree_t root);
 

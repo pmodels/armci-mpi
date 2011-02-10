@@ -229,10 +229,10 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
     ARMCII_Assert(proc < mreg->nslices);
 
     if (proc < mreg->nslices) {
-      const byte_t *base = mreg->slices[proc].base;
+      const uint8_t *base = mreg->slices[proc].base;
       const int      size = mreg->slices[proc].size;
 
-      if ((byte_t*) ptr >= base && (byte_t*) ptr < base + size)
+      if ((uint8_t*) ptr >= base && (uint8_t*) ptr < base + size)
         break;
     }
 
@@ -283,7 +283,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   if (dst == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((byte_t*)dst - (byte_t*)mreg->slices[proc].base);
+    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);
@@ -337,7 +337,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   if (src == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((byte_t*)src - (byte_t*)mreg->slices[proc].base);
+    disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(src_type, &lb, &extent);
@@ -392,7 +392,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   if (dst == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((byte_t*)dst - (byte_t*)mreg->slices[proc].base);
+    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);

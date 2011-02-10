@@ -85,10 +85,10 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
  *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef ARMCICONF_H_INCLUDED
-#define ARMCICONF_H_INCLUDED
+#ifndef _ARMCICONF_H_
+#define _ARMCICONF_H_
 ])
-AH_BOTTOM([#endif])
+AH_BOTTOM([#endif /* _ARMCICONF_H_ */])
 
 PAC_ARG_STRICT
 PAC_CC_FUNCTION_NAME_SYMBOL
@@ -115,7 +115,8 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
    AC_ERROR([C99 not supported by the compiler])
 fi
 
-AC_CHECK_HEADERS([execinfo.h])
+AC_CHECK_HEADERS([execinfo.h stdint.h inttypes.h])
+AC_TYPE_UINT8_T
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),

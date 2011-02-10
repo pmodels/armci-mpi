@@ -174,19 +174,63 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg;
-  void **src_buf;
+  mem_region_t *src_mreg, *dst_mreg;
 
-  ARMCII_Buf_put_prepare(&src, &src_buf, 1, size);
+  src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
+  dst_mreg = mreg_lookup(dst, target);
 
-  mreg = mreg_lookup(dst, target);
-  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
+  ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
 
-  mreg_lock(mreg, target);
-  mreg_put(mreg, src_buf[0], dst, size, target);
-  mreg_unlock(mreg, target);
+  /* Local operation */
+  if (target == ARMCI_GROUP_WORLD.rank) {
+    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+      if (dst_mreg) mreg_dla_lock(dst_mreg);
+      if (src_mreg) mreg_dla_lock(src_mreg);
+    }
 
-  ARMCII_Buf_put_finish(&src, src_buf, 1, size);
+    ARMCI_Copy(src, dst, size);
+    
+    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+      if (dst_mreg) mreg_dla_unlock(dst_mreg);
+      if (src_mreg) mreg_dla_unlock(src_mreg);
+    }
+  }
+
+  /* Origin buffer is private */
+  else if (src_mreg == NULL || ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    mreg_lock(dst_mreg, target);
+    mreg_put(dst_mreg, src, dst, size, target);
+    mreg_unlock(dst_mreg, target);
+  }
+
+  /* Origin and target buffers are in separate windows */
+  else if (src_mreg != dst_mreg && !ARMCII_GLOBAL_STATE.always_copy_shr_bufs) {
+    mreg_dla_lock(src_mreg);
+    mreg_lock(dst_mreg, target);
+    mreg_put(dst_mreg, src, dst, size, target);
+    mreg_unlock(dst_mreg, target);
+    mreg_dla_unlock(src_mreg);
+  }
+
+  /* COPY: Either origin and target buffers are in the same window and we can't
+   * lock the same window twice (MPI semantics) or the user can has requested
+   * copy mode. */
+  else {
+    void *src_buf;
+
+    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
+    ARMCII_Assert(ierr == MPI_SUCCESS);
+
+    mreg_dla_lock(src_mreg);
+    ARMCI_Copy(src, src_buf, size);
+    mreg_dla_unlock(dst_mreg);
+
+    mreg_lock(dst_mreg, target);
+    mreg_put(dst_mreg, src_buf, dst, size, target);
+    mreg_unlock(dst_mreg, target);
+
+    MPI_Free_mem(src_buf);
+  }
 
   return 0;
 }

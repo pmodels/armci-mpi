@@ -234,8 +234,8 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
       }
 
       // Add to the IO Vector
-      iov->src_ptr_array[xfer] = ((byte_t*)src_ptr) + disp_src;
-      iov->dst_ptr_array[xfer] = ((byte_t*)dst_ptr) + disp_dst;
+      iov->src_ptr_array[xfer] = ((uint8_t*)src_ptr) + disp_src;
+      iov->dst_ptr_array[xfer] = ((uint8_t*)dst_ptr) + disp_dst;
 
       // Increment innermost index
       idx[0] += 1;
