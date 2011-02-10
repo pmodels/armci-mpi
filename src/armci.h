@@ -2,8 +2,8 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#ifndef HAVE_ARMCI_H
-#define HAVE_ARMCI_H
+#ifndef _ARMCI_H_
+#define _ARMCI_H_
 
 #include <mpi.h>
 
@@ -198,4 +198,4 @@ int  ARMCI_Uses_shm(void);
 void ARMCI_Set_shm_limit(unsigned long shmemlimit);
 int  ARMCI_Uses_shm_grp(ARMCI_Group *group);
 
-#endif /* HAVE_ARMCI_H */
+#endif /* _ARMCI_H_ */

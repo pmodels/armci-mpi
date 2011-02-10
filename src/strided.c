@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <armci.h>
@@ -235,8 +234,8 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
       }
 
       // Add to the IO Vector
-      iov->src_ptr_array[xfer] = ((uint8_t*)src_ptr) + disp_src;
-      iov->dst_ptr_array[xfer] = ((uint8_t*)dst_ptr) + disp_dst;
+      iov->src_ptr_array[xfer] = ((byte_t*)src_ptr) + disp_src;
+      iov->dst_ptr_array[xfer] = ((byte_t*)dst_ptr) + disp_dst;
 
       // Increment innermost index
       idx[0] += 1;
@@ -303,7 +302,7 @@ void armci_write_strided(void *src, int stride_levels, int src_stride_arr[],
   ARMCII_Strided_to_iov(&iov, src, src_stride_arr, src, src_stride_arr, count, stride_levels);
 
   for (i = 0; i < iov.ptr_array_len; i++)
-    memcpy(dst + i*count[0], iov.src_ptr_array[i], iov.bytes);
+    ARMCI_Copy(iov.src_ptr_array[i], dst + i*count[0], iov.bytes);
 
   free(iov.src_ptr_array);
   free(iov.dst_ptr_array);
@@ -328,7 +327,7 @@ void armci_read_strided(void *dst, int stride_levels, int dst_stride_arr[],
   ARMCII_Strided_to_iov(&iov, dst, dst_stride_arr, dst, dst_stride_arr, count, stride_levels);
 
   for (i = 0; i < iov.ptr_array_len; i++)
-    memcpy(iov.dst_ptr_array[i], src + i*count[0], iov.bytes);
+    ARMCI_Copy(src + i*count[0], iov.dst_ptr_array[i], iov.bytes);
 
   free(iov.src_ptr_array);
   free(iov.dst_ptr_array);

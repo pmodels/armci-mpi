@@ -11,9 +11,11 @@
 #include <armcix.h>
 
 enum mreg_lock_states_e { 
-  MREG_LOCK_UNLOCKED,  /* Mem region is unlocked */
-  MREG_LOCK_EXCLUSIVE, /* Mem region is locked for exclusive access */
-  MREG_LOCK_SHARED     /* Mem region is locked for shared (non-conflicting) access */
+  MREG_LOCK_UNLOCKED,    /* Mem region is unlocked */
+  MREG_LOCK_EXCLUSIVE,   /* Mem region is locked for exclusive access */
+  MREG_LOCK_SHARED,      /* Mem region is locked for shared (non-conflicting) access */
+  MREG_LOCK_DLA,         /* Mem region is locked for Direct Local Access */
+  MREG_LOCK_DLA_SUSP     /* Mem region is unlocked and DLA is suspended */
 };
 
 typedef struct {
@@ -25,9 +27,11 @@ typedef struct mem_region_s {
   MPI_Win              window;
   ARMCI_Group          group;
 
-  int                  access_mode;
-  int                  lock_state;
-  armcix_mutex_grp_t   rmw_mutex;
+  int                     access_mode;    /* Current access mode                                            */
+  enum mreg_lock_states_e lock_state;     /* State of the lock                                              */
+  int                     lock_target;    /* Group (window) rank of the current target (if locked)          */
+  int                     dla_lock_count; /* Access count on the DLA lock.  Can unlock when this reaches 0. */
+  armcix_mutex_grp_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
 
   struct mem_region_s *prev;
   struct mem_region_s *next;
@@ -54,7 +58,10 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 
 void mreg_lock(mem_region_t *mreg, int proc);
-void mreg_lock_ldst(mem_region_t *mreg);
 void mreg_unlock(mem_region_t *mreg, int proc);
+
+void mreg_dla_lock(mem_region_t *mreg);
+void mreg_dla_unlock(mem_region_t *mreg);
+int  mreg_dla_is_active(mem_region_t *mreg);
 
 #endif /* HAVE_MEM_REGION_H */

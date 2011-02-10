@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -22,19 +21,13 @@
 void ARMCI_Access_begin(void *ptr) {
   mem_region_t *mreg;
 
-  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED, 
-      "Local access epoch already in progress");
-
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not permitted in the current access mode");
 
-  ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_OPEN;
-  ARMCII_GLOBAL_STATE.dla_mreg  = mreg;
-
-  mreg_lock_ldst(mreg);
+  mreg_dla_lock(mreg);
 }
 
 
@@ -49,21 +42,10 @@ void ARMCI_Access_begin(void *ptr) {
 void ARMCI_Access_end(void *ptr) {
   mem_region_t *mreg;
 
-  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN,
-      "No direct local access epoch is currently in progress");
-
-#ifndef NO_SEATBELTS
-  /* Extra check to ensure the right mem region is unlocked */
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
-  ARMCII_Assert(mreg == ARMCII_GLOBAL_STATE.dla_mreg);
-#endif
 
-  mreg = ARMCII_GLOBAL_STATE.dla_mreg;
-  mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
-
-  ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
-  ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
+  mreg_dla_unlock(mreg);
 }
 
 
@@ -82,6 +64,11 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   ARMCII_Assert(group->comm == mreg->group.comm);
+
+  ARMCII_Assert_msg(mreg->lock_state != MREG_LOCK_DLA,
+      "Cannot change the access mode; window is locked for local access.");
+  ARMCII_Assert_msg(mreg->lock_state == MREG_LOCK_UNLOCKED,
+      "Cannot change the access mode on a window that is locked.");
 
   // Wait for all processes to complete any outstanding communication before we
   // do the mode switch
@@ -117,19 +104,62 @@ int ARMCIX_Mode_get(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  mem_region_t *mreg;
-  void **dst_buf;
+  mem_region_t *src_mreg, *dst_mreg;
 
-  ARMCII_Buf_get_prepare(&dst, &dst_buf, 1, size);
+  src_mreg = mreg_lookup(src, target);
+  dst_mreg = mreg_lookup(dst, ARMCI_GROUP_WORLD.rank);
 
-  mreg = mreg_lookup(src, target);
-  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
+  ARMCII_Assert_msg(src_mreg != NULL, "Invalid remote pointer");
 
-  mreg_lock(mreg, target);
-  mreg_get(mreg, src, dst_buf[0], size, target);
-  mreg_unlock(mreg, target);
+  /* Local operation */
+  if (target == ARMCI_GROUP_WORLD.rank) {
+    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+      if (dst_mreg) mreg_dla_lock(dst_mreg);
+      if (src_mreg) mreg_dla_lock(src_mreg);
+    }
 
-  ARMCII_Buf_get_finish(&dst, dst_buf, 1, size);
+    ARMCI_Copy(src, dst, size);
+    
+    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+      if (dst_mreg) mreg_dla_unlock(dst_mreg);
+      if (src_mreg) mreg_dla_unlock(src_mreg);
+    }
+  }
+
+  /* Origin buffer is private */
+  else if (dst_mreg == NULL || ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    mreg_lock(src_mreg, target);
+    mreg_get(src_mreg, src, dst, size, target);
+    mreg_unlock(src_mreg, target);
+  }
+
+  /* Origin and target buffers are in separate windows */
+  else if (src_mreg != dst_mreg && !ARMCII_GLOBAL_STATE.always_copy_shr_bufs) {
+    mreg_dla_lock(dst_mreg);
+    mreg_lock(src_mreg, target);
+    mreg_get(src_mreg, src, dst, size, target);
+    mreg_unlock(src_mreg, target);
+    mreg_dla_unlock(dst_mreg);
+  }
+
+  /* COPY: Either origin and target buffers are in the same window and we can't
+   * lock the same window twice (MPI semantics) or the user can has requested
+   * copy mode. */
+  else {
+    void *dst_buf;
+
+    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
+    ARMCII_Assert(ierr == MPI_SUCCESS);
+
+    mreg_lock(src_mreg, target);
+    mreg_get(src_mreg, src, dst, size, target);
+    mreg_unlock(src_mreg, target);
+
+    mreg_dla_lock(dst_mreg);
+    ARMCI_Copy(dst_buf, dst, size);
+    MPI_Free_mem(dst_buf);
+    mreg_dla_unlock(dst_mreg);
+  }
 
   return 0;
 }
@@ -179,6 +209,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   MPI_Datatype type;
   mem_region_t *mreg;
 
+  // Could pass a copy argument to indicate if it needs to be copied.
   ARMCII_Buf_acc_prepare(&src, &src_buf, 1, bytes, datatype, scale);
 
   mreg = mreg_lookup(dst, proc);
@@ -199,17 +230,18 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   return 0;
 }
 
+
 /** One-sided copy of data from the source to the destination.  Set a flag on
- * the remote process when the transfer is complete.
- *
- * @param[in] src   Source buffer
- * @param[in] dst   Destination buffer on proc
- * @param[in] size  Number of bytes to transfer
- * @param[in] flag  Address of the flag buffer on proc
- * @param[in] value Value to set the flag to
- * @param[in] proc  Process id of the target
- * @return          0 on success, non-zero on failure
- */
+  * the remote process when the transfer is complete.
+  *
+  * @param[in] src   Source buffer
+  * @param[in] dst   Destination buffer on proc
+  * @param[in] size  Number of bytes to transfer
+  * @param[in] flag  Address of the flag buffer on proc
+  * @param[in] value Value to set the flag to
+  * @param[in] proc  Process id of the target
+  * @return          0 on success, non-zero on failure
+  */
 int ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc) {
   ARMCI_Put(src, dst, size, proc);
   ARMCI_Fence(proc);

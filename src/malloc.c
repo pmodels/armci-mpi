@@ -95,7 +95,7 @@ void *ARMCI_Malloc_local(int size) {
 
   if (ARMCII_GLOBAL_STATE.debug_alloc) {
     ARMCII_Assert(buf != NULL);
-    bzero(buf, size);
+    ARMCII_Bzero(buf, size);
   }
 
   return buf;

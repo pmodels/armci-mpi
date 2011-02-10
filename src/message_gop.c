@@ -200,7 +200,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
 
   MPI_Allreduce(x, out, n, mpi_type, mpi_op, group->comm);
 
-  memcpy(x, out, n*mpi_type_size);
+  ARMCI_Copy(out, x, n*mpi_type_size);
   free(out);
 }
 

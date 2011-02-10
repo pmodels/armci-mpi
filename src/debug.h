@@ -2,8 +2,8 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#ifndef HAVE_DEBUG_H
-#define HAVE_DEBUG_H
+#ifndef _DEBUG_H_
+#define _DEBUG_H_
 
 #include <stdarg.h>
 #include <armciconf.h>
@@ -48,4 +48,4 @@ void    ARMCII_Dbg_print_impl(const char *func, const char *format, ...);
 void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, ...);
 void    ARMCII_Warning(const char *fmt, ...);
 
-#endif /* HAVE_DEBUG_H */
+#endif /* _DEBUG_H_ */

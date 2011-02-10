@@ -38,7 +38,7 @@ const ctree_t CTREE_EMPTY = NULL;
   * @param[in] hi   High end of the range.
   * @return         Pointer to the ctree node or NULL if not found.
   */
-ctree_t ctree_locate(ctree_t root, uint8_t *lo, uint8_t *hi) {
+ctree_t ctree_locate(ctree_t root, byte_t *lo, byte_t *hi) {
   ctree_t cur = root;
 
   while (cur != NULL) {
@@ -66,7 +66,7 @@ ctree_t ctree_locate(ctree_t root, uint8_t *lo, uint8_t *hi) {
   * @return            Zero on success, nonzero when a conflict is detected.
   *                    When a conflict exists, the range is not added.
   */
-int ctree_insert(ctree_t *root, uint8_t *lo, uint8_t *hi) {
+int ctree_insert(ctree_t *root, byte_t *lo, byte_t *hi) {
   ctree_t cur;
   ctree_t new_node = (ctree_t) malloc(sizeof(struct ctree_node_s));
 

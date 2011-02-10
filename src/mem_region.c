@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -52,6 +51,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
   mreg->lock_state     = MREG_LOCK_UNLOCKED;
+  mreg->dla_lock_count = 0;
   mreg->prev           = NULL;
   mreg->next           = NULL;
 
@@ -65,7 +65,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
 
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
-    bzero(alloc_slices[alloc_me].base, local_size);
+    ARMCII_Bzero(alloc_slices[alloc_me].base, local_size);
   }
 
   MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
@@ -169,19 +169,8 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   // If it's still not found, the user may have passed the wrong group
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
-  // Check for an open DLA epoch
-  if (   ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_OPEN
-      && ARMCII_GLOBAL_STATE.dla_mreg  == mreg            )
-  {
-    ARMCII_Warning("Closed open local access epoch while freeing shared allocation\n",
-        ARMCI_GROUP_WORLD.rank);
-
-    mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
-
-    ARMCII_GLOBAL_STATE.dla_state = ARMCII_DLA_CLOSED;
-    ARMCII_GLOBAL_STATE.dla_mreg  = NULL;
-  }
-
+  // TODO: Make sure the window is unlocked
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
   // Remove from the list of mem regions
   if (mreg->prev == NULL) {
@@ -240,10 +229,10 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
     ARMCII_Assert(proc < mreg->nslices);
 
     if (proc < mreg->nslices) {
-      const uint8_t *base = mreg->slices[proc].base;
+      const byte_t *base = mreg->slices[proc].base;
       const int      size = mreg->slices[proc].size;
 
-      if ((uint8_t*) ptr >= base && (uint8_t*) ptr < base + size)
+      if ((byte_t*) ptr >= base && (byte_t*) ptr < base + size)
         break;
     }
 
@@ -294,7 +283,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   if (dst == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+    disp = (int) ((byte_t*)dst - (byte_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);
@@ -348,7 +337,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   if (src == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
+    disp = (int) ((byte_t*)src - (byte_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(src_type, &lb, &extent);
@@ -403,7 +392,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   if (dst == MPI_BOTTOM) 
     disp = 0;
   else
-    disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+    disp = (int) ((byte_t*)dst - (byte_t*)mreg->slices[proc].base);
 
   // Perform checks
   MPI_Type_get_extent(dst_type, &lb, &extent);
@@ -425,14 +414,18 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   */
 void mreg_lock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
+  int grp_me   = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
   int lock_assert, lock_mode;
 
-  ARMCII_Assert(grp_proc >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED || mreg->lock_state == MREG_LOCK_DLA);
 
-  // TODO: This seems like it should be somewhere higher up
-  ARMCII_Assert_msg(ARMCII_GLOBAL_STATE.dla_state == ARMCII_DLA_CLOSED,
-      "Operation conflicts with active direct local access");
+  /* Check for active DLA and suspend if needed */
+  if (mreg->lock_state == MREG_LOCK_DLA) {
+    ARMCII_Assert(grp_me == mreg->lock_target);
+    MPI_Win_unlock(mreg->lock_target, mreg->window);
+    mreg->lock_state = MREG_LOCK_DLA_SUSP;
+  }
 
   if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
       && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
@@ -459,26 +452,8 @@ void mreg_lock(mem_region_t *mreg, int proc) {
     mreg->lock_state = MREG_LOCK_EXCLUSIVE;
   else
     mreg->lock_state = MREG_LOCK_SHARED;
-}
 
-
-/** Lock a memory region so that load/store operations can be performed.
-  *
-  * @param[in] mreg     Memory region
-  * @param[in] mode     Lock mode (exclusive, shared, etc...)
-  * @return             0 on success, non-zero on failure
-  */
-void mreg_lock_ldst(mem_region_t *mreg) {
-  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
-
-  ARMCII_Assert(grp_proc >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
-  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
-      "Direct local access is not allowed in the current access mode");
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
-
-  mreg->lock_state = MREG_LOCK_EXCLUSIVE;
+  mreg->lock_target = grp_proc;
 }
 
 
@@ -490,11 +465,84 @@ void mreg_lock_ldst(mem_region_t *mreg) {
   */
 void mreg_unlock(mem_region_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
+  int grp_me   = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_EXCLUSIVE || mreg->lock_state == MREG_LOCK_SHARED);
+  ARMCII_Assert(mreg->lock_target == grp_proc);
+
+  /* Check if DLA is suspended and needs to be resumed */
+  if (mreg->dla_lock_count > 0) {
+
+    if (mreg->lock_state != MREG_LOCK_EXCLUSIVE || mreg->lock_target != grp_me) {
+      MPI_Win_unlock(grp_proc, mreg->window);
+      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_me, 0, mreg->window); // FIXME: NOCHECK here?
+    }
+
+    mreg->lock_state = MREG_LOCK_DLA;
+    mreg->lock_target= grp_me;
+  }
+  else {
+    MPI_Win_unlock(grp_proc, mreg->window);
+    mreg->lock_state = MREG_LOCK_UNLOCKED;
+  }
+}
+
+
+/** Lock a memory region so that load/store operations can be performed.
+  *
+  * @param[in] mreg     Memory region
+  * @param[in] mode     Lock mode (exclusive, shared, etc...)
+  * @return             0 on success, non-zero on failure
+  */
+void mreg_dla_lock(mem_region_t *mreg) {
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
+
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED || mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
+      "Direct local access is not allowed in the current access mode");
 
-  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  if (mreg->dla_lock_count == 0) {
+    ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
 
-  MPI_Win_unlock(grp_proc, mreg->window);
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
-  mreg->lock_state = MREG_LOCK_UNLOCKED;
+    mreg->lock_state = MREG_LOCK_DLA;
+    mreg->lock_target= ARMCI_GROUP_WORLD.rank;
+  }
+
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_DLA);
+  mreg->dla_lock_count++;
+}
+
+
+/** Unlock a memory region that was locked for direct local access.
+  *
+  * @param[in] mreg     Memory region
+  */
+void mreg_dla_unlock(mem_region_t *mreg) {
+  int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert(mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
+      "Direct local access is not allowed in the current access mode");
+
+  mreg->dla_lock_count--;
+
+  if (mreg->dla_lock_count == 0) {
+    MPI_Win_unlock(grp_proc, mreg->window);
+    mreg->lock_state = MREG_LOCK_UNLOCKED;
+  }
+}
+
+
+/** Query if DLA is active on the given window.
+  *
+  * @param[in] mreg     Memory region
+  * @return             Non-zero when DLA is active, zero otherwise.
+  */
+int mreg_dla_is_active(mem_region_t *mreg) {
+  return mreg->lock_state == MREG_LOCK_DLA;
 }

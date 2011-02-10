@@ -6,7 +6,16 @@
 #define HAVE_ARMCI_INTERNALS_H
 
 #include <armci.h>
-#include <mem_region.h>
+#include <armciconf.h>
+
+/* Define the byte type */
+
+#if _STDINT_H_ == 1
+#include <stdint.h>
+typedef uint8_t byte_t;
+#else
+typedef unsigned char byte_t;
+#endif
 
 /* Disable safety checks if the user asks for it */
 
@@ -21,14 +30,13 @@
 /* Internal types */
 
 typedef struct {
-  int     initialized;          /* Has ARMCI been initialized?            */
-  int     debug_alloc;          /* Has ARMCI been initialized?            */
-  int     iov_checks_disabled;  /* Has ARMCI been initialized?            */
+  int     initialized;          /* Has ARMCI been initialized?                          */
+  int     debug_alloc;          /* Do extra debuggin on memory allocation               */
+  int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
 
-  int     iov_method;           /* Currently selected IOV transfer method */
-
-  int     dla_state;            /* Direct Local Access (load/store) state */
-  mem_region_t *dla_mreg;       /* Current region exposed for DLA         */
+  int     iov_method;           /* Currently selected IOV transfer method               */
+  int     always_copy_shr_bufs; /* Always copy shared buffers instead of using DLA      */
+  int     no_guard_shr_bufs;    /* Don't guard shared buffers / assume CC hardware      */
 } global_state_t;
 
 enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
@@ -36,7 +44,6 @@ enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
 enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
                             ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
 
-enum ARMCII_Dla_state { ARMCII_DLA_CLOSED, ARMCII_DLA_OPEN, ARMCII_DLA_SUSPENDED };
 
 /* Global data */
 
@@ -46,7 +53,12 @@ extern MPI_Op         MPI_ABSMIN_OP;
 extern MPI_Op         MPI_ABSMAX_OP;
 extern global_state_t ARMCII_GLOBAL_STATE;
   
-  
+
+/* Utility functions */
+
+void ARMCII_Bzero(void *buf, int size);
+
+
 /* GOP Operators */
 
 void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
