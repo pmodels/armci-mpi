@@ -143,8 +143,8 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
-   * lock the same window twice (MPI semantics) or the user can has requested
-   * copy mode. */
+   * lock the same window twice (MPI semantics) or the user has requested
+   * always-copy mode. */
   else {
     void *dst_buf;
 
@@ -213,8 +213,8 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
-   * lock the same window twice (MPI semantics) or the user can has requested
-   * copy mode. */
+   * lock the same window twice (MPI semantics) or the user has requested
+   * always-copy mode. */
   else {
     void *src_buf;
 
