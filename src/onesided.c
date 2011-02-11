@@ -113,28 +113,28 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank) {
-    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       if (dst_mreg) mreg_dla_lock(dst_mreg);
       mreg_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
-    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       if (dst_mreg) mreg_dla_unlock(dst_mreg);
       mreg_dla_unlock(src_mreg);
     }
   }
 
   /* Origin buffer is private */
-  else if (dst_mreg == NULL || ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+  else if (dst_mreg == NULL || ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) {
     mreg_lock(src_mreg, target);
     mreg_get(src_mreg, src, dst, size, target);
     mreg_unlock(src_mreg, target);
   }
 
   /* Origin and target buffers are in separate windows */
-  else if (src_mreg != dst_mreg && !ARMCII_GLOBAL_STATE.always_copy_shr_bufs) {
+  else if (src_mreg != dst_mreg && ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
     mreg_dla_lock(dst_mreg);
     mreg_lock(src_mreg, target);
     mreg_get(src_mreg, src, dst, size, target);
@@ -152,7 +152,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
     ARMCII_Assert(ierr == MPI_SUCCESS);
 
     mreg_lock(src_mreg, target);
-    mreg_get(src_mreg, src, dst, size, target);
+    mreg_get(src_mreg, src, dst_buf, size, target);
     mreg_unlock(src_mreg, target);
 
     mreg_dla_lock(dst_mreg);
@@ -183,28 +183,28 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank) {
-    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       mreg_dla_lock(dst_mreg);
       if (src_mreg) mreg_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
-    if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       mreg_dla_unlock(dst_mreg);
       if (src_mreg) mreg_dla_unlock(src_mreg);
     }
   }
 
   /* Origin buffer is private */
-  else if (src_mreg == NULL || ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+  else if (src_mreg == NULL || ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) {
     mreg_lock(dst_mreg, target);
     mreg_put(dst_mreg, src, dst, size, target);
     mreg_unlock(dst_mreg, target);
   }
 
   /* Origin and target buffers are in separate windows */
-  else if (src_mreg != dst_mreg && !ARMCII_GLOBAL_STATE.always_copy_shr_bufs) {
+  else if (src_mreg != dst_mreg && ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
     mreg_dla_lock(src_mreg);
     mreg_lock(dst_mreg, target);
     mreg_put(dst_mreg, src, dst, size, target);
@@ -223,7 +223,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
 
     mreg_dla_lock(src_mreg);
     ARMCI_Copy(src, src_buf, size);
-    mreg_dla_unlock(dst_mreg);
+    mreg_dla_unlock(src_mreg);
 
     mreg_lock(dst_mreg, target);
     mreg_put(dst_mreg, src_buf, dst, size, target);
@@ -261,7 +261,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   /* Prepare the input data: Apply scaling if needed and acquire the DLA lock if
    * needed.  We hold the DLA lock if (src_buf == src && src_mreg != NULL). */
 
-  if (src_mreg && !ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+  if (src_mreg && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
     mreg_dla_lock(src_mreg);
     src_is_locked = 1;
   }
@@ -270,7 +270,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   /* Check if we need to copy: user requested it or same mem region */
   if (   (src_buf == src) /* buf_prepare didn't make a copy */
-      && (ARMCII_GLOBAL_STATE.always_copy_shr_bufs || src_mreg == dst_mreg) )
+      && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY || src_mreg == dst_mreg) )
   {
     int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
     ARMCII_Assert(ierr == MPI_SUCCESS);

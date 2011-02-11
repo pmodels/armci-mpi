@@ -66,12 +66,22 @@ int ARMCI_Init(void) {
   var = getenv("ARMCI_DISABLE_IOV_CHECKS");
   if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
 
-  /* Shared buffer handling flags */
+  /* Shared buffer handling method */
 
-  var = getenv("ARMCI_NO_GUARD_SHR_BUFS");
-  if (var != NULL) ARMCII_GLOBAL_STATE.no_guard_shr_bufs = 1;
-  var = getenv("ARMCI_ALWAYS_COPY_SHR_BUFS");
-  if (var != NULL) ARMCII_GLOBAL_STATE.always_copy_shr_bufs = 1;
+  var = getenv("ARMCI_SHR_BUF_METHOD");
+
+  ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_LOCK;
+
+  if (var != NULL) {
+    if (strcmp(var, "LOCK") == 0)
+      ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_LOCK;
+    else if (strcmp(var, "COPY") == 0)
+      ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
+    else if (strcmp(var, "NOGUARD") == 0)
+      ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_NOGUARD;
+    else if (ARMCI_GROUP_WORLD.rank == 0)
+      ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
+  }
 
   /* Create GOP operators */
 

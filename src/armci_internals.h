@@ -26,20 +26,22 @@
 
 /* Internal types */
 
+enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
+
+enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
+                            ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
+
+enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_LOCK, ARMCII_SHR_BUF_COPY, 
+                                ARMCII_SHR_BUF_NOGUARD };
+
 typedef struct {
   int     initialized;          /* Has ARMCI been initialized?                          */
   int     debug_alloc;          /* Do extra debuggin on memory allocation               */
   int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
 
-  int     iov_method;           /* Currently selected IOV transfer method               */
-  int     always_copy_shr_bufs; /* Always copy shared buffers instead of using DLA      */
-  int     no_guard_shr_bufs;    /* Don't guard shared buffers / assume CC hardware      */
+  enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
+  enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */
 } global_state_t;
-
-enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
-
-enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
-                            ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
 
 
 /* Global data */
