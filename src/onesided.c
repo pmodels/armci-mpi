@@ -248,16 +248,40 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   * @return             0 on success, non-zero on failure
   */
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
-  void **src_buf;
-  int    count, type_size;
+  void  *src_buf;
+  int    count, type_size, src_is_locked = 0;
   MPI_Datatype type;
-  mem_region_t *mreg;
+  mem_region_t *src_mreg, *dst_mreg;
 
-  // Could pass a copy argument to indicate if it needs to be copied.
-  ARMCII_Buf_acc_prepare(&src, &src_buf, 1, bytes, datatype, scale);
+  src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
+  dst_mreg = mreg_lookup(dst, proc);
 
-  mreg = mreg_lookup(dst, proc);
-  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
+  ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
+
+  /* Prepare the input data: Apply scaling if needed and acquire the DLA lock if
+   * needed.  We hold the DLA lock if (src_buf == src && src_mreg != NULL). */
+
+  if (src_mreg && !ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
+    mreg_dla_lock(src_mreg);
+    src_is_locked = 1;
+  }
+
+  src_buf = ARMCII_Buf_prepare_acc(src, bytes, datatype, scale);
+
+  /* Check if we need to copy: user requested it or same mem region */
+  if (   (src_buf == src) /* buf_prepare didn't make a copy */
+      && (ARMCII_GLOBAL_STATE.always_copy_shr_bufs || src_mreg == dst_mreg) )
+  {
+    int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
+    ARMCII_Assert(ierr == MPI_SUCCESS);
+    ARMCI_Copy(src, src_buf, bytes);
+  }
+
+  /* Unlock early if src_buf is a copy */
+  if (src_buf != src && src_is_locked) {
+    mreg_dla_unlock(src_mreg);
+    src_is_locked = 0;
+  }
 
   ARMCII_Acc_type_translate(datatype, &type, &type_size);
   count = bytes/type_size;
@@ -265,11 +289,19 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   ARMCII_Assert_msg(bytes % type_size == 0, 
       "Transfer size is not a multiple of the datatype size");
 
-  mreg_lock(mreg, proc);
-  mreg_accumulate(mreg, src_buf[0], dst, count, type, proc);
-  mreg_unlock(mreg, proc);
+  /* TODO: Support a local accumulate operation more efficiently */
 
-  ARMCII_Buf_acc_finish(&src, src_buf, 1, bytes);
+  mreg_lock(dst_mreg, proc);
+  mreg_accumulate(dst_mreg, src_buf, dst, count, type, proc);
+  mreg_unlock(dst_mreg, proc);
+
+  if (src_is_locked) {
+    mreg_dla_unlock(src_mreg);
+    src_is_locked = 0;
+  }
+
+  if (src_buf != src)
+    MPI_Free_mem(src_buf);
 
   return 0;
 }

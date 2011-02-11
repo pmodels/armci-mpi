@@ -101,4 +101,6 @@ void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int siz
 int  ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
 void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int size);
 
+void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale);
+
 #endif /* HAVE_ARMCI_INTERNALS_H */

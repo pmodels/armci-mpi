@@ -352,3 +352,158 @@ void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int siz
     }
   }
 }
+
+
+/** Prepare a set of buffers for use with an accumulate operation.  The
+  * returned set of buffers is guaranteed to be in private space and scaled.
+  * Copies will be made if needed, the result should be completed by finish.
+  *
+  * @param[in]  buf       Original set of buffers.
+  * @param[in]  count     Number of entries in the buffer list.
+  * @param[in]  size      The size of the buffers (all are of the same size).
+  * @param[in]  datatype  The type of the buffer.
+  * @param[in]  scale     Scaling constant to apply to each buffer.
+  * @return               Pointer to the new buffer or buf
+  */
+void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
+  int   j, nelem;
+  void *scaled_data = NULL;
+  int   type_size;
+  MPI_Datatype type;
+
+  switch (datatype) {
+    case ARMCI_ACC_INT:
+      MPI_Type_size(MPI_INT, &type_size);
+      type = MPI_INT;
+      nelem= size/type_size;
+
+      if (*((int*)scale) == 1)
+        break;
+      else {
+        int *src_i = (int*) buf;
+        int *scl_i;
+        const int s = *((int*) scale);
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_i);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_i;
+        for (j = 0; j < nelem; j++)
+          scl_i[j] = src_i[j]*s;
+      }
+      break;
+
+    case ARMCI_ACC_LNG:
+      MPI_Type_size(MPI_LONG, &type_size);
+      type = MPI_LONG;
+      nelem= size/type_size;
+
+      if (*((long*)scale) == 1)
+        break;
+      else {
+        long *src_l = (long*) buf;
+        long *scl_l;
+        const long s = *((long*) scale);
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_l);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_l;
+        for (j = 0; j < nelem; j++)
+          scl_l[j] = src_l[j]*s;
+      }
+      break;
+
+    case ARMCI_ACC_FLT:
+      MPI_Type_size(MPI_FLOAT, &type_size);
+      type = MPI_FLOAT;
+      nelem= size/type_size;
+
+      if (*((float*)scale) == 1.0)
+        break;
+      else {
+        float *src_f = (float*) buf;
+        float *scl_f;
+        const float s = *((float*) scale);
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_f);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_f;
+        for (j = 0; j < nelem; j++)
+          scl_f[j] = src_f[j]*s;
+      }
+      break;
+
+    case ARMCI_ACC_DBL:
+      MPI_Type_size(MPI_DOUBLE, &type_size);
+      type = MPI_DOUBLE;
+      nelem= size/type_size;
+
+      if (*((double*)scale) == 1.0)
+        break;
+      else {
+        double *src_d = (double*) buf;
+        double *scl_d;
+        const double s = *((double*) scale);
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_d);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_d;
+        for (j = 0; j < nelem; j++)
+          scl_d[j] = src_d[j]*s;
+      }
+      break;
+
+    case ARMCI_ACC_CPL:
+      MPI_Type_size(MPI_FLOAT, &type_size);
+      type = MPI_FLOAT;
+      nelem= size/type_size;
+
+      if (((float*)scale)[0] == 1.0 && ((float*)scale)[1] == 0.0)
+        break;
+      else {
+        float *src_fc = (float*) buf;
+        float *scl_fc;
+        const float s_r = ((float*)scale)[0];
+        const float s_c = ((float*)scale)[1];
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_fc);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_fc;
+        for (j = 0; j < nelem; j += 2) {
+          // Complex multiplication: (a + bi)*(c + di)
+          scl_fc[j]   = src_fc[j]*s_r   - src_fc[j+1]*s_c;
+          scl_fc[j+1] = src_fc[j+1]*s_r + src_fc[j]*s_c;
+        }
+      }
+      break;
+
+    case ARMCI_ACC_DCP:
+      MPI_Type_size(MPI_DOUBLE, &type_size);
+      type = MPI_DOUBLE;
+      nelem= size/type_size;
+
+      if (((double*)scale)[0] == 1.0 && ((double*)scale)[1] == 0.0)
+        break;
+      else {
+        double *src_dc = (double*) buf;
+        double *scl_dc;
+        const double s_r = ((double*)scale)[0];
+        const double s_c = ((double*)scale)[1];
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_dc);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        scaled_data = scl_dc;
+        for (j = 0; j < nelem; j += 2) {
+          // Complex multiplication: (a + bi)*(c + di)
+          scl_dc[j]   = src_dc[j]*s_r   - src_dc[j+1]*s_c;
+          scl_dc[j+1] = src_dc[j+1]*s_r + src_dc[j]*s_c;
+        }
+      }
+      break;
+
+    default:
+      ARMCII_Error("unknown data type (%d)", datatype);
+  }
+
+  ARMCII_Assert_msg(size % type_size == 0, 
+      "Transfer size is not a multiple of the datatype size");
+
+  // Scaling was applied, returnt the new buffer
+  if (scaled_data != NULL)
+    return scaled_data;
+
+  return buf;
+}
