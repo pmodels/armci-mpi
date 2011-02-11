@@ -169,8 +169,16 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   // If it's still not found, the user may have passed the wrong group
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
-  // TODO: Make sure the window is unlocked
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+  switch (mreg->lock_state) {
+    case MREG_LOCK_UNLOCKED:
+      break;
+    case MREG_LOCK_DLA:
+      ARMCII_Warning("Releasing direct local access before freeing shared allocation\n");
+      mreg_dla_unlock(mreg);
+      break;
+    default:
+      ARMCII_Error("Unable to free locked memory region (%d)\n", mreg->lock_state);
+  }
 
   // Remove from the list of mem regions
   if (mreg->prev == NULL) {

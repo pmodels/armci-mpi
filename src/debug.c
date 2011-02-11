@@ -97,4 +97,5 @@ void ARMCII_Warning(const char *fmt, ...) {
   va_end(etc);
 
   fprintf(stderr, "%s", string);
+  fflush(NULL);
 }
