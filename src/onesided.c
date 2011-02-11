@@ -115,14 +115,14 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   if (target == ARMCI_GROUP_WORLD.rank) {
     if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
       if (dst_mreg) mreg_dla_lock(dst_mreg);
-      if (src_mreg) mreg_dla_lock(src_mreg);
+      mreg_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
     if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
       if (dst_mreg) mreg_dla_unlock(dst_mreg);
-      if (src_mreg) mreg_dla_unlock(src_mreg);
+      mreg_dla_unlock(src_mreg);
     }
   }
 
@@ -184,14 +184,14 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank) {
     if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
-      if (dst_mreg) mreg_dla_lock(dst_mreg);
+      mreg_dla_lock(dst_mreg);
       if (src_mreg) mreg_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
     if (!ARMCII_GLOBAL_STATE.no_guard_shr_bufs) {
-      if (dst_mreg) mreg_dla_unlock(dst_mreg);
+      mreg_dla_unlock(dst_mreg);
       if (src_mreg) mreg_dla_unlock(src_mreg);
     }
   }

@@ -5,7 +5,7 @@
 #include <mpi.h>
 #include <armci.h>
 
-#define VERBOSE        1
+#define VERBOSE        0
 #define DATA_NELTS     1000
 #define NUM_ITERATIONS 10
 #define DATA_SZ        (DATA_NELTS*sizeof(int))
