@@ -278,6 +278,7 @@ int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  int *flag, int value, int proc) {
 
   ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  ARMCI_Fence(proc);
   ARMCI_Put(&value, flag, sizeof(int), proc);
 
   return 1;
