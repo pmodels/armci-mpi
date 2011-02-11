@@ -86,14 +86,24 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 1;
 
   mreg = mreg_lookup(ptrs[0], proc);
-  ARMCII_Assert(mreg != NULL);
 
-  base   = mreg->slices[proc].base;
-  extent = ((uint8_t*) base) + mreg->slices[proc].size;
+  /* If local, all must be local */
+  if (mreg == NULL) {
+    for (i = 1; i < count; i++) {
+      mreg = mreg_lookup(ptrs[i], proc);
+      if (mreg != NULL)
+        return 0;
+    }
+  }
+  /* If shared, all must fall in this region */
+  else {
+    base   = mreg->slices[proc].base;
+    extent = ((uint8_t*) base) + mreg->slices[proc].size;
 
-  for (i = 1; i < count; i++)
-    if ( !(ptrs[i] >= base && ptrs[i] < extent) )
-      return 0;
+    for (i = 1; i < count; i++)
+      if ( !(ptrs[i] >= base && ptrs[i] < extent) )
+        return 0;
+  }
 
   return 1;
 }
