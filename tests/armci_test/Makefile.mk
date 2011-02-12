@@ -4,6 +4,8 @@
 
 check_PROGRAMS += tests/armci_test/test
 
+TESTS          += tests/armci_test/test
+
 tests_armci_test_test_SOURCES = $(top_srcdir)/tests/armci_test/test.c
 tests_armci_test_test_LDADD = -larmci
 tests_armci_test_test_DEPENDENCIES = libarmci.la

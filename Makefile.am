@@ -40,6 +40,11 @@ include_HEADERS = $(top_srcdir)/src/armci.h $(top_srcdir)/src/message.h \
 
 bin_PROGRAMS =
 check_PROGRAMS = 
+TESTS = 
+XFAIL_TESTS = 
+
+MPIEXEC ?= mpiexec -n 2
+TESTS_ENVIRONMENT = $(MPIEXEC)
 
 include benchmarks/Makefile.mk
 include tests/Makefile.mk

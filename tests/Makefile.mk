@@ -19,7 +19,29 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_assert           \
-                  tests/test_igop              \
+                  tests/test_igop             \
+                  # end
+
+TESTS          += tests/test_onesided         \
+                  tests/test_onesided_shared  \
+                  tests/test_onesided_shared_dla \
+                  tests/test_mutex            \
+                  tests/test_mutex_rmw        \
+                  tests/test_mutex_trylock    \
+                  tests/test_malloc           \
+                  tests/test_malloc_irreg     \
+                  tests/ARMCI_PutS_latency    \
+                  tests/ARMCI_AccS_latency    \
+                  tests/test_groups           \
+                  tests/test_group_split      \
+                  tests/test_malloc_group     \
+                  tests/test_accs             \
+                  tests/test_puts             \
+                  tests/test_puts_gets        \
+                  tests/test_igop             \
+                  # end
+
+XFAIL_TESTS    += tests/test_assert           \
                   # end
 
 tests_test_onesided_SOURCES = $(top_srcdir)/tests/test_onesided.c
