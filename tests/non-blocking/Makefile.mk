@@ -4,6 +4,8 @@
 
 check_PROGRAMS += tests/non-blocking/overlap tests/non-blocking/simple
 
+TESTS          += tests/non-blocking/simple
+
 tests_non_blocking_overlap_SOURCES = $(top_srcdir)/tests/non-blocking/overlap.c
 tests_non_blocking_overlap_LDADD = -larmci -lm
 tests_non_blocking_overlap_DEPENDENCIES = libarmci.la

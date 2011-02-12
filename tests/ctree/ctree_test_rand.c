@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   srand(time(NULL));
 
   for (i = 0; i < NELT; i++)
-    data[i] = (uint8_t*) i;
+    data[i] = ((uint8_t*) NULL) + i;
 
   // Perform NELT random swaps
   for (i = 0; i < NELT; i++) {

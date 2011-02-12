@@ -121,3 +121,4 @@ include tests/cg/Makefile.mk
 include tests/lu/Makefile.mk
 include tests/transp1D/Makefile.mk
 include tests/non-blocking/Makefile.mk
+include tests/ctree/Makefile.mk

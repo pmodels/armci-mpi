@@ -19,9 +19,9 @@ int main(int argc, char **argv) {
 
   // Generate random intervals that fully cover the space from [0,next)
   for (i = next = 0; i < NELT; i++, next++) {
-    data[i][0]  = (uint8_t*) next;
+    data[i][0]  = ((uint8_t*) NULL) + next;
     next        = next + rand()%MAX_INTVL;
-    data[i][1]  = (uint8_t*) next;
+    data[i][1]  = ((uint8_t*) NULL) + next;
     upper_bound = next;
   }
 
@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
     int x = rand() % upper_bound;
     int y = rand() % upper_bound;
 
-    data[i][0]  = (uint8_t*) MIN(x,y);
-    data[i][1]  = (uint8_t*) MAX(x,y);
+    data[i][0]  = ((uint8_t*) NULL) + MIN(x,y);
+    data[i][1]  = ((uint8_t*) NULL) + MAX(x,y);
   }
 
   for (i = 0; i < NELT; i++) {

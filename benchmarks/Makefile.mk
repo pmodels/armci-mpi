@@ -6,16 +6,15 @@ check_PROGRAMS += benchmarks/ping-pong          \
                   benchmarks/ping-pong-mpi      \
                   benchmarks/ring-flood         \
                   benchmarks/armci-perf         \
-                  benchmarks/contiguous-bench     \
-                  benchmarks/strided-bench     \
+                  benchmarks/contiguous-bench   \
+                  benchmarks/strided-bench      \
                   # end
 
 TESTS          += benchmarks/ping-pong          \
-                  benchmarks/ping-pong-mpi      \
                   benchmarks/ring-flood         \
                   benchmarks/armci-perf         \
-                  benchmarks/contiguous-bench     \
-                  benchmarks/strided-bench     \
+                  benchmarks/contiguous-bench   \
+                  benchmarks/strided-bench      \
                   # end
 
 benchmarks_ping_pong_SOURCES = $(top_srcdir)/benchmarks/ping-pong.c

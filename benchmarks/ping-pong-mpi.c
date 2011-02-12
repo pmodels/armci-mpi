@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   if (nproc < 2) {
-    if (me == 0) printf("This benchmark should be run on at least two processes");
+    if (me == 0) printf("This benchmark should be run on at least two processes\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
