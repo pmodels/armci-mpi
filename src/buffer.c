@@ -24,37 +24,38 @@
 int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
   int num_moved = 0;
 
-#ifndef NO_CHECK_BUFFERS
-  void **new_bufs = malloc(count*sizeof(void*));
-  int i;
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+    void **new_bufs = malloc(count*sizeof(void*));
+    int i;
 
-  for (i = 0; i < count; i++)
-    new_bufs[i] = NULL;
+    for (i = 0; i < count; i++)
+      new_bufs[i] = NULL;
 
-  for (i = 0; i < count; i++) {
-    // Check if the source buffer is within a shared region.  If so, copy it
-    // into a private buffer.
-    mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    for (i = 0; i < count; i++) {
+      // Check if the source buffer is within a shared region.  If so, copy it
+      // into a private buffer.
+      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
-    if (mreg != NULL) {
-      int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      ARMCII_Assert(ierr == MPI_SUCCESS);
+      if (mreg != NULL) {
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
 
-      mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
-      mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
-      mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+        mreg_dla_lock(mreg);
+        ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
+        // mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
+        mreg_dla_unlock(mreg);
 
-      num_moved++;
-    } else {
-      new_bufs[i] = orig_bufs[i];
+        num_moved++;
+      } else {
+        new_bufs[i] = orig_bufs[i];
+      }
     }
+
+    *new_bufs_ptr = new_bufs;
   }
-
-  *new_bufs_ptr = new_bufs;
-
-#else
-  *new_bufs_ptr = orig_bufs;
-#endif /* NO_CHECK_BUFFERS */
+  else {
+    *new_bufs_ptr = orig_bufs;
+  }
   
   return num_moved;
 }
@@ -70,17 +71,17 @@ int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
 void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int size) {
-#ifndef NO_CHECK_BUFFERS
-  int i;
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+    int i;
 
-  for (i = 0; i < count; i++) {
-    if (orig_bufs[i] != new_bufs[i]) {
-      MPI_Free_mem(new_bufs[i]);
+    for (i = 0; i < count; i++) {
+      if (orig_bufs[i] != new_bufs[i]) {
+        MPI_Free_mem(new_bufs[i]);
+      }
     }
-  }
 
-  free(new_bufs);
-#endif /* NO_CHECK_BUFFERS */
+    free(new_bufs);
+  }
 }
 
 
@@ -116,8 +117,8 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
     mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
     // Lock if needed so we can directly access the buffer
-    if (mreg != NULL)
-      mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
+    if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+      mreg_dla_lock(mreg);
 
     switch (datatype) {
       case ARMCI_ACC_INT:
@@ -262,12 +263,13 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
     } else {
       int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
       ARMCII_Assert(ierr == MPI_SUCCESS);
-      mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
+      ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
+      //mreg_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
       num_moved++;
     }
 
-    if (mreg != NULL)
-      mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+    if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+      mreg_dla_unlock(mreg);
   }
 
   *new_bufs_ptr = new_bufs;
@@ -286,7 +288,15 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
 void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int size) {
-  ARMCII_Buf_put_finish(orig_bufs, new_bufs, count, size);
+  int i;
+
+  for (i = 0; i < count; i++) {
+    if (orig_bufs[i] != new_bufs[i]) {
+      MPI_Free_mem(new_bufs[i]);
+    }
+  }
+
+  free(new_bufs);
 }
 
 
@@ -301,27 +311,33 @@ void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int siz
   * @return               Number of buffers that were moved.
   */
 int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
-  void **new_bufs = malloc(count*sizeof(void*));
-  int i, num_moved = 0;
+  int num_moved = 0;
 
-  for (i = 0; i < count; i++)
-    new_bufs[i] = NULL;
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+    void **new_bufs = malloc(count*sizeof(void*));
+    int i;
 
-  for (i = 0; i < count; i++) {
-    // Check if the destination buffer is within a shared region.  If not, create
-    // a temporary private buffer to hold the result.
-    mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    for (i = 0; i < count; i++)
+      new_bufs[i] = NULL;
 
-    if (mreg != NULL) {
-      int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      ARMCII_Assert(ierr == MPI_SUCCESS);
-      num_moved++;
-    } else {
-      new_bufs[i] = orig_bufs[i];
+    for (i = 0; i < count; i++) {
+      // Check if the destination buffer is within a shared region.  If not, create
+      // a temporary private buffer to hold the result.
+      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+
+      if (mreg != NULL) {
+        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+        ARMCII_Assert(ierr == MPI_SUCCESS);
+        num_moved++;
+      } else {
+        new_bufs[i] = orig_bufs[i];
+      }
     }
-  }
 
-  *new_bufs_ptr = new_bufs;
+    *new_bufs_ptr = new_bufs;
+  } else {
+    *new_bufs_ptr = orig_bufs;
+  }
   
   return num_moved;
 }
@@ -337,18 +353,21 @@ int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
 void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int size) {
-  int i;
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+    int i;
 
-  for (i = 0; i < count; i++) {
-    if (orig_bufs[i] != new_bufs[i]) {
-      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
-      ARMCII_Assert(mreg != NULL);
+    for (i = 0; i < count; i++) {
+      if (orig_bufs[i] != new_bufs[i]) {
+        mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+        ARMCII_Assert(mreg != NULL);
 
-      mreg_lock(mreg, ARMCI_GROUP_WORLD.rank);
-      mreg_put(mreg, new_bufs[i], orig_bufs[i], size, ARMCI_GROUP_WORLD.rank);
-      mreg_unlock(mreg, ARMCI_GROUP_WORLD.rank);
+        mreg_dla_lock(mreg);
+        ARMCI_Copy(new_bufs[i], orig_bufs[i], size);
+        // mreg_put(mreg, new_bufs[i], orig_bufs[i], size, ARMCI_GROUP_WORLD.rank);
+        mreg_dla_unlock(mreg);
 
-      MPI_Free_mem(new_bufs[i]);
+        MPI_Free_mem(new_bufs[i]);
+      }
     }
   }
 }
