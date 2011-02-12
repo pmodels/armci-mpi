@@ -95,13 +95,13 @@ int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_c
 
 /* Shared to private buffer management routines */
 
-int  ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
-void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int size);
-int  ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
+int  ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+void ARMCII_Buf_finish_putv(void **orig_bufs, void **new_bufs, int count, int size);
+int  ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
                             int datatype, void *scale);
-void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int size);
-int  ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
-void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int size);
+void ARMCII_Buf_finish_accv(void **orig_bufs, void **new_bufs, int count, int size);
+int  ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int size);
 
 void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale);
 

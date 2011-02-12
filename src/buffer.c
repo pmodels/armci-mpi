@@ -21,7 +21,7 @@
   * @param[in]  size      The size of the buffers (all are of the same size).
   * @return               Number of buffers that were moved.
   */
-int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
+int ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
   int num_moved = 0;
 
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
@@ -70,7 +70,7 @@ int ARMCII_Buf_put_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  count     Number of entries in the buffer list.
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
-void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int size) {
+void ARMCII_Buf_finish_putv(void **orig_bufs, void **new_bufs, int count, int size) {
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
     int i;
 
@@ -97,7 +97,7 @@ void ARMCII_Buf_put_finish(void **orig_bufs, void **new_bufs, int count, int siz
   * @param[in]  scale     Scaling constant to apply to each buffer.
   * @return               Number of buffers that were moved.
   */
-int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
+int ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
                             int datatype, void *scale) {
 
   void **new_bufs;
@@ -148,7 +148,7 @@ int ARMCII_Buf_acc_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  count     Number of entries in the buffer list.
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
-void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int size) {
+void ARMCII_Buf_finish_accv(void **orig_bufs, void **new_bufs, int count, int size) {
   int i;
 
   for (i = 0; i < count; i++) {
@@ -171,7 +171,7 @@ void ARMCII_Buf_acc_finish(void **orig_bufs, void **new_bufs, int count, int siz
   * @param[in]  size      The size of the buffers (all are of the same size).
   * @return               Number of buffers that were moved.
   */
-int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
+int ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, int size) {
   int num_moved = 0;
 
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
@@ -213,7 +213,7 @@ int ARMCII_Buf_get_prepare(void **orig_bufs, void ***new_bufs_ptr, int count, in
   * @param[in]  count     Number of entries in the buffer list.
   * @param[in]  size      The size of the buffers (all are of the same size).
   */
-void ARMCII_Buf_get_finish(void **orig_bufs, void **new_bufs, int count, int size) {
+void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int size) {
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
     int i;
 
