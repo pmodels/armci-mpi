@@ -1,19 +1,18 @@
 Things on the to do list:
 
-  * We can lock one target per window.  Adjust DLA engine to allow this.
+  * Add some support for ARMCI_SHR_BUF_METHOD=LOCK to strided and IOV
+    operations.
 
   * Add a check for MPI_Finalized() anywhere?  Could be expensive.
 
-  * IOV_METHOD = Onelock is safe for IOV accumulate and get even when the is overlap.  Safe is needed
-    for put or when the same allocation check fails.
+  * Add function entry checks to make sure ARMCI is initialized
+    (ARMCII_GLOBAL_STATE.initialized)
 
-  * Add function entry checks to make sure ARMCI is initialized (ARMCII_GLOBAL_STATE.initialized)
+  * ARMCI Message operations are not shared local buffer safe.  This is high
+    priority.
 
-  * ARMCI Message operations are not shared local buffer safe.  This is high priority.
-
-  * Be less dependent on C99.  Provide non-variadic macro versions of debug and error routines.
-
-  * Verify NWChem on GA on ARMCI-MPI on shared memory.
+  * Be less dependent on C99.  Provide non-variadic macro versions of debug and
+    error routines.
 
   * Look into invalid memory references that GA makes on the ghost cells
     examples.
@@ -21,9 +20,6 @@ Things on the to do list:
   * Buffer checking: What happens when the target is self and both the
     source and destination buffers are shared.  Is this case handled?
     Can we optimize it with a memcpy?
-
-  * Perform checking to detect ARMCI_Access_begin/end() usage errors.
-    * Automatically unlock or re-lock when needed
 
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
 
