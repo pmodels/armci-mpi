@@ -517,7 +517,7 @@ void mreg_dla_lock(mem_region_t *mreg) {
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
     mreg->lock_state = MREG_LOCK_DLA;
-    mreg->lock_target= ARMCI_GROUP_WORLD.rank;
+    mreg->lock_target= grp_proc;
   }
 
   ARMCII_Assert(mreg->lock_state == MREG_LOCK_DLA);
