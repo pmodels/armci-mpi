@@ -80,11 +80,6 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nranks);
 
-     if (nranks != 2) {
-         printf("Error: need exactly 2 processes\n");
-         MPI_Abort(MPI_COMM_WORLD, 1);
-     }
-
     ARMCI_Init_args(&argc, &argv);
 
     buffer = (double **) malloc(sizeof(double *) * nranks);
@@ -196,56 +191,61 @@ int main(int argc, char **argv)
 
                 ARMCI_Barrier();
 
-                for (i = 0; i < xdim; i++)
+                if (rank == 1) 
                 {
+                  for (i = 0; i < xdim; i++)
+                  {
                     for (j = 0; j < ydim; j++)
                     {
-                        if (*(buffer[rank] + i * MAX_XDIM + j) != ((1.0 + rank)
-                                + scaling * (1.0 + peer) * (ITERATIONS + SKIP)))
-                        {
-                            printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
-                                   i,
-                                   j,
-                                   ((1.0 + rank) + scaling * (1.0 + peer)),
-                                   *(buffer[rank] + i * MAX_YDIM + j));
-                            fflush(stdout);
-                            return -1;
-                        }
+                      if (*(buffer[rank] + i * MAX_XDIM + j) != ((1.0 + rank)
+                            + scaling * (1.0 + peer) * (ITERATIONS + SKIP)))
+                      {
+                        printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
+                            i,
+                            j,
+                            ((1.0 + rank) + scaling * (1.0 + peer)),
+                            *(buffer[rank] + i * MAX_YDIM + j));
+                        fflush(stdout);
+                        return -1;
+                      }
                     }
-                }
+                  }
 
-                for (i = 0; i < bufsize / sizeof(double); i++)
-                {
+                  for (i = 0; i < bufsize / sizeof(double); i++)
+                  {
                     *(buffer[rank] + i) = 1.0 + rank;
+                  }
                 }
 
                 ARMCI_Barrier();
 
                 ARMCI_Barrier();
 
-                for (i = 0; i < xdim; i++)
+                if (rank == 1) 
                 {
+                  for (i = 0; i < xdim; i++)
+                  {
                     for (j = 0; j < ydim; j++)
                     {
-                        if (*(buffer[rank] + i * MAX_XDIM + j) != ((1.0 + rank)
-                                + scaling * (1.0 + peer) * (ITERATIONS + SKIP)))
-                        {
-                            printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
-                                   i,
-                                   j,
-                                   ((1.0 + rank) + scaling * (1.0 + peer)),
-                                   *(buffer[rank] + i * MAX_YDIM + j));
-                            fflush(stdout);
-                            return -1;
-                        }
+                      if (*(buffer[rank] + i * MAX_XDIM + j) != ((1.0 + rank)
+                            + scaling * (1.0 + peer) * (ITERATIONS + SKIP)))
+                      {
+                        printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
+                            i,
+                            j,
+                            ((1.0 + rank) + scaling * (1.0 + peer)),
+                            *(buffer[rank] + i * MAX_YDIM + j));
+                        fflush(stdout);
+                        return -1;
+                      }
                     }
-                }
+                  }
 
-                for (i = 0; i < bufsize / sizeof(double); i++)
-                {
+                  for (i = 0; i < bufsize / sizeof(double); i++)
+                  {
                     *(buffer[rank] + i) = 1.0 + rank;
+                  }
                 }
-
                 ARMCI_Barrier();
 
             }
