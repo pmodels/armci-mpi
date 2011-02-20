@@ -7,7 +7,7 @@
 #define ITERATIONS 10
 
 int main(int argc, char **argv) {
-    int i, j, rank, nranks, peer, bufsize, errors;
+    int itr, i, j, rank, nranks, peer, bufsize, errors;
     double *buffer, *src_buf;
     MPI_Win buf_win;
 
@@ -30,9 +30,9 @@ int main(int argc, char **argv) {
 
     MPI_Win_create(buffer, bufsize, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &buf_win);
 
-    peer = (rank+1) % nranks;
+    peer = 0; //(rank+1) % nranks;
 
-    for (i = 0; i < ITERATIONS; i++) {
+    for (itr = 0; itr < ITERATIONS; itr++) {
 
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, peer, 0, buf_win);
 
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+#if 0
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, buf_win);
     for (i = errors = 0; i < XDIM; i++) {
       for (j = 0; j < YDIM; j++) {
@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
       }
     }
     MPI_Win_unlock(rank, buf_win);
+#endif
 
     MPI_Win_free(&buf_win);
     MPI_Free_mem(buffer);

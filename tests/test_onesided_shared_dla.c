@@ -39,13 +39,14 @@ int main(int argc, char ** argv) {
     buf     = buf_shared[rank];
     my_data = base_ptrs[rank];
 
-    ARMCI_Access_begin(buf);
-    ARMCI_Access_begin(my_data);
-
     if (rank == 0 && VERBOSE) printf("   - Testing one-sided get\n");
+    
+    ARMCI_Access_begin(buf);
 
     /*** Get from our right neighbor and verify correct data ***/
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank*test_iter;
+    ARMCI_Access_end(my_data);
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
 
@@ -58,61 +59,56 @@ int main(int argc, char ** argv) {
       }
     }
 
-    ARMCI_Access_end(my_data);
-    ARMCI_Access_end(buf);
     ARMCI_Barrier();
-    ARMCI_Access_begin(buf);
-    ARMCI_Access_begin(my_data);
 
     if (rank == 0 && VERBOSE) printf("   - Testing one-sided put\n");
 
     /*** Put to our left neighbor and verify correct data ***/
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank*test_iter;
+
     ARMCI_Put(buf, base_ptrs[(rank+nproc-1) % nproc], DATA_SZ, (rank+nproc-1) % nproc);
 
-    ARMCI_Access_end(my_data);
-    ARMCI_Access_end(buf);
     ARMCI_Barrier();
-    ARMCI_Access_begin(buf);
-    ARMCI_Access_begin(my_data);
 
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != ((rank+1) % nproc)*test_iter) {
         printf("%d: PUT expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
+    ARMCI_Access_end(my_data);
 
     ARMCI_Barrier();
 
     if (rank == 0 && VERBOSE) printf("   - Testing one-sided accumlate\n");
 
     /*** Accumulate to our left neighbor and verify correct data ***/
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank;
     
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank;
+    ARMCI_Access_end(my_data);
+
     ARMCI_Barrier();
 
     int scale = test_iter;
     ARMCI_Acc(ARMCI_ACC_INT, &scale, buf, base_ptrs[(rank+nproc-1) % nproc], DATA_SZ, (rank+nproc-1) % nproc);
 
-    ARMCI_Access_end(my_data);
-    ARMCI_Access_end(buf);
     ARMCI_Barrier();
-    ARMCI_Access_begin(buf);
-    ARMCI_Access_begin(my_data);
 
+    ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != rank + ((rank+1) % nproc)*test_iter) {
         printf("%d: ACC expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
+    ARMCI_Access_end(my_data);
+    
+    ARMCI_Access_end(buf);
 
     if (rank == 0 && VERBOSE) printf("   - Freeing shared buffers\n");
-
-    ARMCI_Access_end(my_data);
-    ARMCI_Access_end(buf);
 
     ARMCI_Free(my_data);
     ARMCI_Free(buf);
