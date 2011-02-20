@@ -70,7 +70,7 @@ int ARMCI_Init(void) {
 
   var = getenv("ARMCI_SHR_BUF_METHOD");
 
-  ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_LOCK;
+  ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
 
   if (var != NULL) {
     if (strcmp(var, "LOCK") == 0)
