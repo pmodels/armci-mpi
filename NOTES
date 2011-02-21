@@ -14,6 +14,9 @@ ARMCI groups:
    currently collective across the parent group (MPI-style).  In ARMCI-style it
    is collective across only the processes in the new group.
 
+   ARMCI groups cannot support shared allocation in MPI since creating an
+   MPI window requires a communicator.
+
  * Note: ARMCI-style groups are not ARMCI's default behavior, they must be
    explicitly enabled.  ARMCI's default behavior is to use MPI-style groups.
 
