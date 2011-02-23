@@ -122,7 +122,7 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   * @param[in] proc        Target process
   * @return                Zero on success, error code otherwise
   */
-int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
+int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int same_alloc, int proc) {
 
   MPI_Datatype type;
@@ -168,7 +168,7 @@ int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
 
 /** Safe implementation of the ARMCI IOV operation
   */
-int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
   
   int i;
@@ -222,7 +222,7 @@ int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count
 /** Optimized implementation of the ARMCI IOV operation that uses a single
   * lock/unlock pair.
   */
-int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
 
   int i;
@@ -275,7 +275,7 @@ int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_co
 /** Optimized implementation of the ARMCI IOV operation that uses an MPI
   * datatype to achieve a one-sided gather/scatter.
   */
-int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
 
     mem_region_t *mreg;

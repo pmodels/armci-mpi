@@ -82,14 +82,14 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels);
 
-int ARMCII_Iov_op_dispatch(int op, void **src, void **dst, int count, int size,
+int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int same_alloc, int proc);
 
-int ARMCII_Iov_op_safe(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
-int ARMCII_Iov_op_onelock(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
-int ARMCII_Iov_op_datatype(int op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 
 
