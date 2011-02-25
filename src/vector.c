@@ -373,6 +373,7 @@ int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
     int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
+    if (iov[v].bytes == 0) continue; // NOP //
 
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
@@ -401,6 +402,7 @@ int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
     int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
+    if (iov[v].bytes == 0) continue; // NOP //
 
     // overlapping = ARMCII_Iov_check_overlap(iov[v].src_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
@@ -430,6 +432,7 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
     int    overlapping, same_alloc;
 
     if (iov[v].ptr_array_len == 0) continue; // NOP //
+    if (iov[v].bytes == 0) continue; // NOP //
 
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
