@@ -1,5 +1,5 @@
-               ARMCI Over MPI RMW Implementation Notes
-               =======================================
+Implementation Notes:
+====================
 
 Direct access to local buffers:
 
@@ -7,23 +7,47 @@ Direct access to local buffers:
    directly, it must be through put/get.  Alternatively you can use the 
    new ARMCI_Access_begin/end() functions.
    
-
 ARMCI groups:
 
  * ARMCI-style groups are not currently supported.  Groups formation is
    currently collective across the parent group (MPI-style).  In ARMCI-style it
-   is collective across only the processes in the new group.
-
-   ARMCI groups cannot support shared allocation in MPI since creating an
-   MPI window requires a communicator.
-
- * Note: ARMCI-style groups are not ARMCI's default behavior, they must be
-   explicitly enabled.  ARMCI's default behavior is to use MPI-style groups.
-
+   is collective across only the processes in the new group.  ARMCI groups
+   cannot be implemented in MPI since shared allocation requires creating an
+   MPI window, which requires a communicator.  Note that ARMCI-style groups are
+   not ARMCI's default behavior, they must be explicitly enabled.  ARMCI's
+   default behavior is to use MPI-style groups.
 
 Progress semantics:
 
- * Most MPI implementations will require you to do something in order to enable
-   implicit the progress needed by ARMCI.  You'll need to set an environment
-   variable in most cases. MPICH_ASYNC_PROGRESS for MPICH2, something else for
-   MVAPICH2, DCMF_INTERRUPTS=1 for MPICH2-BG, etc.
+ * On some MPI implementations and networks you may need to enable implicit
+   progress.  In many cases this is done through an environment variable.  For
+   MPICH2: set MPICH_ASYNC_PROGRESS; for MVAPICH2 recompile with
+   --enable-async-progress and set MPICH_ASYNC_PROGRESS; set DCMF_INTERRUPTS=1
+   for MPICH2-BG; etc.
+
+
+Environment Variables:
+=====================
+
+ARMCI_IOV_METHOD = { AUTO (default), SAFE, ONELOCK, DTYPE }
+
+  Select the IO vector communication strategy: automatic; a "safe"
+  implementation that does lock/unlock around each operation; an implementation
+  that issues all operations within a single lock/unlock epoch; and an
+  implementation that generates datatypes for the origin and target and issues
+  a single operation using them (fastest).
+
+ARMCI_DEBUG_ALLOC
+
+  Turn on extra shared allocation debugging.
+
+ARMCI_DISABLE_IOV_CHECKS
+
+  Disable expensive IOV safety checks (recommended for performance).
+
+ARMCI_SHR_BUF_METHOD = { LOCK, COPY (default), NOGUARD }
+
+  ARMCI policy for managing shared origin buffers in communication operations:
+  lock the buffer (unsafe, but fast), copy the buffer (safe), or don't guard
+  the buffer - assume that the system is cache coherent and MPI supports
+  unlocked load/store.
