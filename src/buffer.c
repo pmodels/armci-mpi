@@ -38,7 +38,7 @@ int ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, i
 
       if (mreg != NULL) {
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(new_bufs[i] != NULL);
 
         mreg_dla_lock(mreg);
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
@@ -123,7 +123,7 @@ int ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, i
       // If the buffer wasn't copied, we should copy it into a private buffer
       if (new_bufs[i] == orig_bufs[i]) {
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(new_bufs[i] != NULL);
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
       }
       mreg_dla_unlock(mreg);
@@ -188,7 +188,7 @@ int ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, i
 
       if (mreg != NULL) {
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(new_bufs[i] != NULL);
         num_moved++;
       } else {
         new_bufs[i] = orig_bufs[i];
@@ -264,7 +264,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         int *scl_i;
         const int s = *((int*) scale);
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_i);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_i != NULL);
         scaled_data = scl_i;
         for (j = 0; j < nelem; j++)
           scl_i[j] = src_i[j]*s;
@@ -283,7 +283,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         long *scl_l;
         const long s = *((long*) scale);
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_l);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_l != NULL);
         scaled_data = scl_l;
         for (j = 0; j < nelem; j++)
           scl_l[j] = src_l[j]*s;
@@ -302,7 +302,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         float *scl_f;
         const float s = *((float*) scale);
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_f);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_f != NULL);
         scaled_data = scl_f;
         for (j = 0; j < nelem; j++)
           scl_f[j] = src_f[j]*s;
@@ -321,7 +321,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         double *scl_d;
         const double s = *((double*) scale);
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_d);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_d != NULL);
         scaled_data = scl_d;
         for (j = 0; j < nelem; j++)
           scl_d[j] = src_d[j]*s;
@@ -341,7 +341,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         const float s_r = ((float*)scale)[0];
         const float s_c = ((float*)scale)[1];
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_fc);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_fc != NULL);
         scaled_data = scl_fc;
         for (j = 0; j < nelem; j += 2) {
           // Complex multiplication: (a + bi)*(c + di)
@@ -364,7 +364,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         const double s_r = ((double*)scale)[0];
         const double s_c = ((double*)scale)[1];
         int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_dc);
-        ARMCII_Assert(ierr == MPI_SUCCESS);
+        ARMCII_Assert(scl_dc != NULL);
         scaled_data = scl_dc;
         for (j = 0; j < nelem; j += 2) {
           // Complex multiplication: (a + bi)*(c + di)

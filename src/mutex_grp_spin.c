@@ -117,7 +117,7 @@ armcix_mutex_grp_t ARMCIX_Create_mutexes_grp(int count) {
   ARMCII_Assert(grp != NULL);
 
   ierr = MPI_Alloc_mem(count*sizeof(long), MPI_INFO_NULL, &grp->base);
-  ARMCII_Assert(ierr == MPI_SUCCESS);
+  ARMCII_Assert(grp->base != NULL);
 
   grp->count = count;
 

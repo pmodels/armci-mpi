@@ -58,10 +58,12 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   // Allocate my slice and create the window
   alloc_slices[alloc_me].size = local_size;
 
-  if (local_size == 0)
+  if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
-  else
+  } else {
     MPI_Alloc_mem(local_size, MPI_INFO_NULL, &(alloc_slices[alloc_me].base));
+    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+  }
 
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
@@ -261,6 +263,7 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
   * @return           0 on success, non-zero on failure
   */
 int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  ARMCII_Assert_msg(src != NULL, "Invalid local address");
   return mreg_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
 
@@ -315,6 +318,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   * @return           0 on success, non-zero on failure
   */
 int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+  ARMCII_Assert_msg(dst != NULL, "Invalid local address");
   return mreg_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
 
@@ -370,6 +374,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   * @return             0 on success, non-zero on failure
   */
 int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
+  ARMCII_Assert_msg(src != NULL, "Invalid local address");
   return mreg_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
 }
 

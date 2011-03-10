@@ -91,10 +91,11 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
   */
 void *ARMCI_Malloc_local(int size) {
   void *buf;
+
   MPI_Alloc_mem(size, MPI_INFO_NULL, &buf);
+  ARMCII_Assert(buf != NULL);
 
   if (ARMCII_GLOBAL_STATE.debug_alloc) {
-    ARMCII_Assert(buf != NULL);
     ARMCII_Bzero(buf, size);
   }
 
