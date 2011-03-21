@@ -188,7 +188,7 @@ void ARMCIX_Unlock_grp(armcix_mutex_grp_t grp, int mutex, int world_proc) {
   ARMCII_Assert(buf[rank] == 0);
 
   /* Notify the next waiting process, starting to my right for fairness */
-  for (i = 0; i < nproc; i++) {
+  for (i = 1; i < nproc; i++) {
     int p = (rank + i) % nproc;
     if (buf[p] == 1) {
       ARMCII_Dbg_print(DEBUG_CAT_MUTEX, "notifying %d [proc = %d, mutex = %d]\n", p, proc, mutex);
