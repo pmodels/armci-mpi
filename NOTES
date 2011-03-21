@@ -51,3 +51,9 @@ ARMCI_SHR_BUF_METHOD = { LOCK, COPY (default), NOGUARD }
   lock the buffer (unsafe, but fast), copy the buffer (safe), or don't guard
   the buffer - assume that the system is cache coherent and MPI supports
   unlocked load/store.
+
+ARMCI_NO_MPI_BOTTOM
+
+  Disable the use of MPI_BOTTOM in datatypes.  This is a workaround for MPI
+  implementations that don't correctly handle MPI datatypes that are relative
+  to BOTTOM.
