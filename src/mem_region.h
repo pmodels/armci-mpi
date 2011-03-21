@@ -62,6 +62,5 @@ void mreg_unlock(mem_region_t *mreg, int proc);
 
 void mreg_dla_lock(mem_region_t *mreg);
 void mreg_dla_unlock(mem_region_t *mreg);
-int  mreg_dla_is_active(mem_region_t *mreg);
 
 #endif /* HAVE_MEM_REGION_H */

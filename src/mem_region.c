@@ -549,13 +549,3 @@ void mreg_dla_unlock(mem_region_t *mreg) {
     mreg->lock_state = MREG_LOCK_UNLOCKED;
   }
 }
-
-
-/** Query if DLA is active on the given window.
-  *
-  * @param[in] mreg     Memory region
-  * @return             Non-zero when DLA is active, zero otherwise.
-  */
-int mreg_dla_is_active(mem_region_t *mreg) {
-  return mreg->lock_state == MREG_LOCK_DLA;
-}
