@@ -38,6 +38,7 @@ typedef struct {
   int     initialized;          /* Has ARMCI been initialized?                          */
   int     debug_alloc;          /* Do extra debuggin on memory allocation               */
   int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
+  int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
 
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
   enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */
@@ -90,6 +91,8 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
 int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
+    MPI_Datatype type, int proc);
+int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 
 

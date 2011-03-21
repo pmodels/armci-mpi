@@ -153,13 +153,17 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
   // single lock.
 
   else if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DTYPE
-           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO  )
-    return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
+           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO  ) {
+    if (ARMCII_GLOBAL_STATE.no_mpi_bottom == 1) {
+      return ARMCII_Iov_op_datatype_no_bottom(op, src, dst, count, type_count, type, proc);
+    } else {
+      return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
+    }
 
-  else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK)
+  } else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK) {
     return ARMCII_Iov_op_onelock(op, src, dst, count, type_count, type, proc);
 
-  else {
+  } else {
     ARMCII_Error("unknown iov method (%d)\n", ARMCII_GLOBAL_STATE.iov_method);
     return 1;
   }
@@ -343,6 +347,99 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
         break;
       case ARMCII_OP_GET:
         mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        break;
+      default:
+        ARMCII_Error("unknown operation (%d)", op);
+        return 1;
+    }
+
+    mreg_unlock(mreg, proc);
+
+    MPI_Type_free(&type_loc);
+    MPI_Type_free(&type_rem);
+
+    return 0;
+}    
+
+
+/** Optimized implementation of the ARMCI IOV operation that uses an MPI
+  * datatype to achieve a one-sided gather/scatter.  Does not use MPI_BOTTOM.
+  */
+int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
+    MPI_Datatype type, int proc) {
+
+    mem_region_t *mreg;
+    MPI_Datatype  type_loc, type_rem;
+    MPI_Aint      disp_loc[count];
+    int           disp_rem[count];
+    int           block_len[count];
+    void         *dst_win_base;
+    int           dst_win_size, i, type_size;
+    void        **buf_rem, **buf_loc;
+    MPI_Aint      base_rem;
+    MPI_Aint      base_loc;
+    void         *base_loc_ptr;
+
+    switch(op) {
+      case ARMCII_OP_ACC:
+      case ARMCII_OP_PUT:
+        buf_rem = dst;
+        buf_loc = src;
+        break;
+      case ARMCII_OP_GET:
+        buf_rem = src;
+        buf_loc = dst;
+        break;
+      default:
+        ARMCII_Error("unknown operation (%d)", op);
+        return 1;
+    }
+
+    MPI_Type_size(type, &type_size);
+
+    mreg = mreg_lookup(buf_rem[0], proc);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
+
+    dst_win_base = mreg->slices[proc].base;
+    dst_win_size = mreg->slices[proc].size;
+
+    MPI_Get_address(dst_win_base, &base_rem);
+
+    /* Pick a base address for the start of the origin's datatype */
+    base_loc_ptr = buf_loc[0];
+    MPI_Get_address(base_loc_ptr, &base_loc);
+
+    for (i = 0; i < count; i++) {
+      MPI_Aint target_rem, target_loc;
+      MPI_Get_address(buf_loc[i], &target_loc);
+      MPI_Get_address(buf_rem[i], &target_rem);
+      disp_loc[i]  =  target_loc - base_loc;
+      disp_rem[i]  = (target_rem - base_rem)/type_size;
+      block_len[i] = elem_count;
+
+      ARMCII_Assert_msg((target_rem - base_rem) % type_size == 0, "Transfer size is not a multiple of type size");
+      ARMCII_Assert_msg(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size, "Invalid remote pointer");
+      ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
+    }
+
+    MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);
+    MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
+    //MPI_Type_indexed(count, block_len, disp_rem, type, &type_rem);
+
+    MPI_Type_commit(&type_loc);
+    MPI_Type_commit(&type_rem);
+
+    mreg_lock(mreg, proc);
+
+    switch(op) {
+      case ARMCII_OP_ACC:
+        mreg_accumulate_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        break;
+      case ARMCII_OP_PUT:
+        mreg_put_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        break;
+      case ARMCII_OP_GET:
+        mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, base_loc_ptr, 1, type_loc, proc);
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
