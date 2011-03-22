@@ -37,7 +37,7 @@ int ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, i
       mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
       if (mreg != NULL) {
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
 
         mreg_dla_lock(mreg);
@@ -122,7 +122,7 @@ int ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, i
     if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       // If the buffer wasn't copied, we should copy it into a private buffer
       if (new_bufs[i] == orig_bufs[i]) {
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
       }
@@ -187,7 +187,7 @@ int ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, i
       mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
       if (mreg != NULL) {
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
         num_moved++;
       } else {
@@ -263,7 +263,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         int *src_i = (int*) buf;
         int *scl_i;
         const int s = *((int*) scale);
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_i);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_i);
         ARMCII_Assert(scl_i != NULL);
         scaled_data = scl_i;
         for (j = 0; j < nelem; j++)
@@ -282,7 +282,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         long *src_l = (long*) buf;
         long *scl_l;
         const long s = *((long*) scale);
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_l);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_l);
         ARMCII_Assert(scl_l != NULL);
         scaled_data = scl_l;
         for (j = 0; j < nelem; j++)
@@ -301,7 +301,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         float *src_f = (float*) buf;
         float *scl_f;
         const float s = *((float*) scale);
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_f);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_f);
         ARMCII_Assert(scl_f != NULL);
         scaled_data = scl_f;
         for (j = 0; j < nelem; j++)
@@ -320,7 +320,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         double *src_d = (double*) buf;
         double *scl_d;
         const double s = *((double*) scale);
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_d);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_d);
         ARMCII_Assert(scl_d != NULL);
         scaled_data = scl_d;
         for (j = 0; j < nelem; j++)
@@ -340,7 +340,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         float *scl_fc;
         const float s_r = ((float*)scale)[0];
         const float s_c = ((float*)scale)[1];
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_fc);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_fc);
         ARMCII_Assert(scl_fc != NULL);
         scaled_data = scl_fc;
         for (j = 0; j < nelem; j += 2) {
@@ -363,7 +363,7 @@ void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale) {
         double *scl_dc;
         const double s_r = ((double*)scale)[0];
         const double s_c = ((double*)scale)[1];
-        int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_dc);
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &scl_dc);
         ARMCII_Assert(scl_dc != NULL);
         scaled_data = scl_dc;
         for (j = 0; j < nelem; j += 2) {

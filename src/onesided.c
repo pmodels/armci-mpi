@@ -148,7 +148,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   else {
     void *dst_buf;
 
-    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
+    MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
     ARMCII_Assert(dst_buf != NULL);
 
     mreg_lock(src_mreg, target);
@@ -218,7 +218,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   else {
     void *src_buf;
 
-    int ierr = MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
+    MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
     ARMCII_Assert(src_buf != NULL);
 
     mreg_dla_lock(src_mreg);
@@ -272,7 +272,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   if (   (src_buf == src) /* buf_prepare didn't make a copy */
       && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY || src_mreg == dst_mreg) )
   {
-    int ierr = MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
+    MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
     ARMCII_Assert(src_buf != NULL);
     ARMCI_Copy(src, src_buf, bytes);
   }
