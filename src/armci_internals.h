@@ -34,11 +34,15 @@ enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
 enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_LOCK, ARMCII_SHR_BUF_COPY, 
                                 ARMCII_SHR_BUF_NOGUARD };
 
+extern char ARMCII_Iov_methods_str[][10];
+extern char ARMCII_Shr_buf_methods_str[][10];
+
 typedef struct {
   int     initialized;          /* Has ARMCI been initialized?                          */
   int     debug_alloc;          /* Do extra debuggin on memory allocation               */
   int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
   int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
+  int     verbose;              /* ARMCI should produce extra status output             */
 
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
   enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */

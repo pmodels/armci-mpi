@@ -67,6 +67,8 @@ int ARMCI_Init(void) {
   if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
   var = getenv("ARMCI_NO_MPI_BOTTOM");
   if (var != NULL) ARMCII_GLOBAL_STATE.no_mpi_bottom = 1;
+  var = getenv("ARMCI_VERBOSE");
+  if (var != NULL) ARMCII_GLOBAL_STATE.verbose = 1;
 
   /* Shared buffer handling method */
 
@@ -85,13 +87,37 @@ int ARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
   }
 
+  /* NO_SEATBELTS Overrides some of the above options */
+
+#ifdef NO_SEATBELTS
+  ARMCII_GLOBAL_STATE.iov_checks_disabled = 0;
+#endif
+
   /* Create GOP operators */
 
   MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
   MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
 
-
   ARMCII_GLOBAL_STATE.initialized = 1;
+
+  if (ARMCII_GLOBAL_STATE.verbose) {
+    if (ARMCI_GROUP_WORLD.rank == 0) {
+      int major, minor;
+
+      MPI_Get_version(&major, &minor);
+
+      printf("ARMCI-MPI initialized with %d processes, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, major, minor);
+      printf("  IOV_METHOD     = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
+      printf("  SHR_BUF_METHOD = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
+      printf("  DEBUG_ALLOC    = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");
+      printf("  IOV_CHECKS     = %s\n", ARMCII_GLOBAL_STATE.iov_checks_disabled ? "FALSE" : "TRUE");
+      printf("  USE_MPI_BOTTOM = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom ? "FALSE" : "TRUE");
+      printf("\n");
+      fflush(NULL);
+    }
+
+    MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+  }
 
   return 0;
 }
