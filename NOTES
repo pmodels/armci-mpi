@@ -57,3 +57,7 @@ ARMCI_NO_MPI_BOTTOM
   Disable the use of MPI_BOTTOM in datatypes.  This is a workaround for MPI
   implementations that don't correctly handle MPI datatypes that are relative
   to BOTTOM.
+
+ARMCI_VERBOSE
+
+  Enable extra status output from ARMCI-MPI.
