@@ -22,13 +22,17 @@
 int ARMCI_Init(void) {
   char *var;
 
-  ARMCII_Assert_msg(!(ARMCII_GLOBAL_STATE.initialized), "ARMCI is already initialized");
+  /* ARMCI_Init is called multiple times in GA, hence this function 
+   *            must return success on subsequent invocations
+    ARMCII_Assert_msg(!(ARMCII_GLOBAL_STATE.initialized), "ARMCI is already initialized"); 
+   */
+  if (ARMCII_GLOBAL_STATE.initialized) return(0);
 
   /* Check for MPI initialization */
   {
     int mpi_is_init;
     MPI_Initialized(&mpi_is_init);
-    if (!mpi_is_init)
+    if (!mpi_is_init) 
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
