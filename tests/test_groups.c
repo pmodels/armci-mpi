@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     procs[i/2] = i;
   }
 
-  ARMCI_Group_create_child(i/2 + (nproc % 2 ? 1 : 0 ), procs, &g_odd, &g_world);
+  ARMCI_Group_create_child(i/2, procs, &g_odd, &g_world);
 
   if (me == 0) printf(" + Creating even group\n");
 
