@@ -23,15 +23,17 @@ int ARMCI_Init(void) {
   char *var;
 
   /* GA/TCGMSG end up calling ARMCI_Init() multiple times. */
-  if (ARMCII_GLOBAL_STATE.initialized) {
-    return 0
+  if (ARMCII_GLOBAL_STATE.init_count > 0) {
+    ARMCII_GLOBAL_STATE.init_count++;
+    return 0;
   }
 
   /* Check for MPI initialization */
   {
-    int mpi_is_init;
+    int mpi_is_init, mpi_is_fin;
     MPI_Initialized(&mpi_is_init);
-    if (!mpi_is_init) 
+    MPI_Finalized(&mpi_is_fin);
+    if (!mpi_is_init || mpi_is_fin) 
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
@@ -101,7 +103,7 @@ int ARMCI_Init(void) {
   MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
   MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
 
-  ARMCII_GLOBAL_STATE.initialized = 1;
+  ARMCII_GLOBAL_STATE.init_count++;
 
   if (ARMCII_GLOBAL_STATE.verbose) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
@@ -148,11 +150,16 @@ int ARMCI_Finalize(void) {
   int nfreed;
 
   /* GA/TCGMSG end up calling ARMCI_Finalize() multiple times. */
-  if (!ARMCII_GLOBAL_STATE.initialized) {
-    return 0
+  if (ARMCII_GLOBAL_STATE.init_count == 0) {
+    return 0;
   }
 
-  /* Free all remaining mem regions */
+  ARMCII_GLOBAL_STATE.init_count--;
+
+  /* Only finalize on the last matching call */
+  if (ARMCII_GLOBAL_STATE.init_count > 0) {
+    return 0;
+  }
 
   nfreed = mreg_destroy_all();
 
@@ -167,8 +174,6 @@ int ARMCI_Finalize(void) {
   ARMCI_Cleanup();
 
   MPI_Comm_free(&ARMCI_GROUP_WORLD.comm);
-
-  ARMCII_GLOBAL_STATE.initialized = 0;
 
   return 0;
 }

@@ -38,7 +38,7 @@ extern char ARMCII_Iov_methods_str[][10];
 extern char ARMCII_Shr_buf_methods_str[][10];
 
 typedef struct {
-  int     initialized;          /* Has ARMCI been initialized?                          */
+  int     init_count;           /* Number of times ARMCI_Init has been called           */
   int     debug_alloc;          /* Do extra debuggin on memory allocation               */
   int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
   int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
