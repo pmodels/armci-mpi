@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  procs = malloc(sizeof(int)* ( nproc/2 + nproc % 2 ? 1 : 0 ));
+  procs = malloc(sizeof(int) * ( nproc/2 + (nproc % 2 ? 1 : 0 )));
 
   if (me == 0) printf("ARMCI Group test starting on %d procs\n", nproc);
 
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     procs[i/2] = i;
   }
 
-  ARMCI_Group_create_child(i/2, procs, &g_odd, &g_world);
+  ARMCI_Group_create_child(i/2 + (nproc % 2 ? 1 : 0 ), procs, &g_odd, &g_world);
 
   if (me == 0) printf(" + Creating even group\n");
 

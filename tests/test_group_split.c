@@ -8,7 +8,6 @@
 
 int main(int argc, char **argv) {
   int          me, nproc;
-  int         *procs;
   ARMCI_Group  g_world, g_new;
 
   MPI_Init(&argc, &argv);
@@ -16,8 +15,6 @@ int main(int argc, char **argv) {
 
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-
-  procs = malloc(sizeof(int)* ( nproc/2 + nproc % 2 ? 1 : 0 ));
 
   if (me == 0) printf("ARMCI Group test starting on %d procs\n", nproc);
 
@@ -28,8 +25,6 @@ int main(int argc, char **argv) {
   ARMCIX_Group_split(&g_world, me%2, me, &g_new);
 
   ARMCI_Group_free(&g_new);
-
-  free(procs);
 
   ARMCI_Finalize();
   MPI_Finalize();
