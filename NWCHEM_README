@@ -1,0 +1,51 @@
+ARMCI_MPI_ROOT needs to be on a filesystem which is big enough to hold the NWChem source, which means not your home directory on e.g. Jaguar.
+
+mkdir $ARMCI_MPI_ROOT
+cd $ARMCI_MPI_ROOT
+svn co https://svn.pnl.gov/svn/nwchem nwchem-trunk # requires password if not cached
+# wait a very long time
+export NWCHEM_TOP=$ARMCI_MPI_ROOT/nwchem-trunk
+cd $NWCHEM_TOP/src/tools
+./get-tools # requires password if not cached
+rm -rf tcgmsg-mpi tcgmsg pario ma LinAlg global ga-4-3 ga++ examples doc config cca armci-portals armci # this is unnecessary clutter
+cd ga-dev
+mv armci armci-pnnl # or just delete it
+svn co https://svn.mcs.anl.gov/repos/armci-mpi/trunk armci-mpi
+ln -s armci-mpi armci
+cd armci
+# if necessary, build latest m4, automake, autoconf, libtool somewhere
+./autogen.sh
+
+# at this point, you should be done with the GA/ARMCI part
+
+cd $NWCHEM_TOP/src
+
+# comment out these lines from $NWCHEM_TOP/src/GNUmakefile:
+include ./tools/armci/config/makecoms.h  
+include ./tools/armci/config/makemp.h  
+
+# choose one of the following, depending on if you are on BGP or not
+export NWCHEM_TARGET=LINUX64 
+export NWCHEM_TARGET=BGP
+
+# even though ARMCI isn't using a native channel, this variable may have other side effects (NWChem buildsystem FAIL!)
+export ARMCI_NETWORK=DCMFMPI
+export ARMCI_NETWORK=GEMINI
+export ARMCI_NETWORK=OPENIB
+export ARMCI_NETWORK=PORTALS
+
+# we only care about SCF, DFT, MP2 and CC
+export NWCHEM_MODULES=qm
+
+# must use non-empty options on non-Cray systems, RTFM or just unset BLASOPT to use ultra-slow Netlib
+export BLASOPT=" "
+
+# BGP
+CC=mpixlc_r
+FC=mpixlf77_r
+# Cray
+CC=cc
+FC=ftn
+# IB
+CC=mpicc
+FC=ifort, pgf90, gfortran, etc.
