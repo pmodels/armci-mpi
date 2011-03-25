@@ -61,6 +61,7 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 /* Utility functions */
 
 void ARMCII_Bzero(void *buf, int size);
+int  ARMCII_Log2(int val);
 
 
 /* GOP Operators */
