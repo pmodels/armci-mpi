@@ -87,7 +87,7 @@ void ARMCII_Bzero(void *buf, int size) {
 }
 
 
-static const char log2_table[256] = 
+static const unsigned char log2_table[256] = 
     { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
       4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
       5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6,
@@ -103,39 +103,16 @@ static const char log2_table[256] =
 
 /** Calculate the base 2 logarithm of a given integer.
   */
-int ARMCII_Log2(int val) {
-  int lg;
+int ARMCII_Log2(unsigned int val) {
+  unsigned int v16, v8;
+  int lg = 0;
 
-  if (val <= 0) return -1;
+  if (val == 0) return -1;
 
-#ifdef BITWISE_LOG2
-  for (lg = -1; val > 0; lg++)
-    val = val >> 1;
-#else /* BYTEWISE (fast) LOG2 */
-  {
-    int q    = 0;
-    int last = 0;
-    int i;
-
-    lg = 0;
-
-    for (i = 0; i < sizeof(int); i++) {
-      const int byte = val & 0xFF;
-
-      if (byte == 0) {
-        q += 8;
-      } else {
-        last = byte;
-        lg  += 8 + q;
-        q    = 0;
-      }
-
-      val = val >> 8;
-    }
-
-    lg = lg - 8 + log2_table[last];
-  }
-#endif
+  if (v16 = val >> 16)
+    lg = (v8 = v16 >> 8) ? log2_table[v8] + 24 : log2_table[v16] + 16;
+  else
+    lg = (v8 = val >> 8) ? log2_table[v8] + 8 : log2_table[val];
 
   return lg;
 }
