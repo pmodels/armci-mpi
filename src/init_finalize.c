@@ -45,6 +45,17 @@ int ARMCI_Init(void) {
 
   ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
+  /* Check for debugging flags. */
+
+  var = getenv("ARMCI_DEBUG_ALLOC");
+  if (var != NULL) ARMCII_GLOBAL_STATE.debug_alloc = 1;
+  var = getenv("ARMCI_DISABLE_IOV_CHECKS");
+  if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
+  var = getenv("ARMCI_NO_MPI_BOTTOM");
+  if (var != NULL) ARMCII_GLOBAL_STATE.no_mpi_bottom = 1;
+  var = getenv("ARMCI_VERBOSE");
+  if (var != NULL) ARMCII_GLOBAL_STATE.verbose = 1;
+
   /* Set the IOV/strided transfer method */
 
   var = getenv("ARMCI_IOV_METHOD");
@@ -64,16 +75,20 @@ int ARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
-  /* Check for debugging flags. */
+  /* Set the IOV/strided transfer method */
 
-  var = getenv("ARMCI_DEBUG_ALLOC");
-  if (var != NULL) ARMCII_GLOBAL_STATE.debug_alloc = 1;
-  var = getenv("ARMCI_DISABLE_IOV_CHECKS");
-  if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
-  var = getenv("ARMCI_NO_MPI_BOTTOM");
-  if (var != NULL) ARMCII_GLOBAL_STATE.no_mpi_bottom = 1;
-  var = getenv("ARMCI_VERBOSE");
-  if (var != NULL) ARMCII_GLOBAL_STATE.verbose = 1;
+  var = getenv("ARMCI_STRIDED_METHOD");
+
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
+
+  if (var != NULL) {
+    if (strcmp(var, "IOV") == 0)
+      ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
+    else if (strcmp(var, "SUBARRAY") == 0)
+      ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_SUBARRAY;
+    else if (ARMCI_GROUP_WORLD.rank == 0)
+      ARMCII_Warning("Ignoring unknown value for ARMCI_STRIDED_METHOD (%s)\n", var);
+  }
 
   /* Shared buffer handling method */
 
@@ -95,7 +110,7 @@ int ARMCI_Init(void) {
   /* NO_SEATBELTS Overrides some of the above options */
 
 #ifdef NO_SEATBELTS
-  ARMCII_GLOBAL_STATE.iov_checks_disabled = 0;
+  ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
 #endif
 
   /* Create GOP operators */
@@ -112,6 +127,7 @@ int ARMCI_Init(void) {
       MPI_Get_version(&major, &minor);
 
       printf("ARMCI-MPI initialized with %d processes, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, major, minor);
+      printf("  STRIDED_METHOD = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD     = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
       printf("  SHR_BUF_METHOD = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
       printf("  DEBUG_ALLOC    = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");

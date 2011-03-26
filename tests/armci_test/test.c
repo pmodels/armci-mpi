@@ -324,6 +324,7 @@ void compare_patches(double eps, int ndim, double *patch1, int lo1[], int hi1[],
 			print_subscript("ERROR: a",ndim,subscr1,msg);
 			sprintf(msg,"%f\n",patch2[idx2]);
 			print_subscript(" b",ndim,subscr2,msg);
+                        printf("\nA = %f B = %f\n", patch1[idx1], patch2[idx2]);
                         fflush(stdout);
                         sleep(1);
                         ARMCI_Error("Bailing out",0);

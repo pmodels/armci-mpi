@@ -109,7 +109,7 @@ int ARMCII_Log2(unsigned int val) {
 
   if (val == 0) return -1;
 
-  if (v16 = val >> 16)
+  if ((v16 = val >> 16))
     lg = (v8 = v16 >> 8) ? log2_table[v8] + 24 : log2_table[v16] + 16;
   else
     lg = (v8 = val >> 8) ? log2_table[v8] + 8 : log2_table[val];

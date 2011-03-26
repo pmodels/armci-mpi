@@ -11,6 +11,7 @@
 global_state_t ARMCII_GLOBAL_STATE = { 0 };
 
 /** Enum strings */
+char ARMCII_Strided_methods_str[][10] = { "IOV", "SUBARRAY" };
 char ARMCII_Iov_methods_str[][10]     = { "AUTO", "SAFE", "ONELOCK", "DTYPE" };
 char ARMCII_Shr_buf_methods_str[][10] = { "LOCK", "COPY", "NOGUARD" };
 

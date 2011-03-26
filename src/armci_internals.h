@@ -28,12 +28,15 @@
 
 enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
 
+enum ARMCII_Strided_methods_e { ARMCII_STRIDED_IOV, ARMCII_STRIDED_SUBARRAY };
+
 enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
                             ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
 
 enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_LOCK, ARMCII_SHR_BUF_COPY, 
                                 ARMCII_SHR_BUF_NOGUARD };
 
+extern char ARMCII_Strided_methods_str[][10];
 extern char ARMCII_Iov_methods_str[][10];
 extern char ARMCII_Shr_buf_methods_str[][10];
 
@@ -44,6 +47,7 @@ typedef struct {
   int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
   int     verbose;              /* ARMCI should produce extra status output             */
 
+  enum ARMCII_Strided_methods_e strided_method;     /* IOV transfer method                  */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
   enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */
 } global_state_t;
@@ -61,7 +65,7 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 /* Utility functions */
 
 void ARMCII_Bzero(void *buf, int size);
-int  ARMCII_Log2(int val);
+int  ARMCII_Log2(unsigned int val);
 
 
 /* GOP Operators */
