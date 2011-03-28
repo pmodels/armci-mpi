@@ -12,7 +12,14 @@
 #include <debug.h>
 
 
-
+/** Convert an ARMCI strided access description into an MPI subarray datatype.
+  *
+  * @param[in]  stride_array    Array of strides
+  * @param[in]  count           Array of transfer counts
+  * @param[in]  stride_levels   Number of levels of striding
+  * @param[in]  old_type        Type of the data element described by count and stride_array
+  * @param[out] new_type        New MPI type for the given strided access
+  */
 void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
                              int stride_levels, MPI_Datatype old_type, MPI_Datatype *new_type)
 {
@@ -55,8 +62,6 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
 
     MPI_Type_create_subarray(stride_levels+1, sizes, subsizes, starts, MPI_ORDER_C, old_type, new_type);
   }
-
-  MPI_Type_commit(new_type);
 }
 
 
@@ -81,13 +86,53 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   int err;
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
-    mem_region_t *mreg;
+    void         *src_buf = NULL;
+    mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
-    ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, MPI_BYTE, &src_type);
+    /* Guard shared buffers: COPY */
+    if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
+
+      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
+
+      if (mreg_loc != NULL) {
+        int i, size;
+
+        for (i = 1, size = count[0]; i < stride_levels+1; i++)
+          size *= count[i];
+
+        MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
+        ARMCII_Assert(src_buf != NULL);
+
+        mreg_dla_lock(mreg_loc);
+        armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
+        mreg_dla_unlock(mreg_loc);
+
+        MPI_Type_contiguous(size, MPI_BYTE, &src_type);
+      }
+    }
+
+    /* Guard shared buffers: LOCK (unsafe) */
+    else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
+      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
+
+      if (mreg_loc != NULL)
+        mreg_dla_lock(mreg_loc);
+    }
+
+    /* else: NOGUARD */
+
+    /* If src_buf hasn't been assigned to a copy, it's safe to use the source buffer directly */
+    if (src_buf == NULL) { 
+        src_buf = src_ptr;
+        ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, MPI_BYTE, &src_type);
+    }
+
     ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, MPI_BYTE, &dst_type);
 
-    // TODO: Guard shared buffers
+    MPI_Type_commit(&src_type);
+    MPI_Type_commit(&dst_type);
+
     mreg = mreg_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
@@ -97,6 +142,12 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
+
+    if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK && mreg_loc != NULL)
+      mreg_dla_unlock(mreg_loc);
+
+    if (src_buf != src_ptr)
+      MPI_Free_mem(src_buf);
 
     err = 0;
 
@@ -140,6 +191,9 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, MPI_BYTE, &src_type);
     ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, MPI_BYTE, &dst_type);
+
+    MPI_Type_commit(&src_type);
+    MPI_Type_commit(&dst_type);
 
     // TODO: Guard shared buffers
     mreg = mreg_lookup(src_ptr, proc);
@@ -200,6 +254,9 @@ int ARMCI_AccS(int datatype, void *scale,
 
     ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, mpi_datatype, &src_type);
     ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, mpi_datatype, &dst_type);
+
+    MPI_Type_commit(&src_type);
+    MPI_Type_commit(&dst_type);
 
     // TODO: Handle scaling
     // TODO: Guard shared buffers
