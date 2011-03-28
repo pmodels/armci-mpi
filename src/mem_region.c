@@ -297,7 +297,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
     disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
-  MPI_Type_get_extent(dst_type, &lb, &extent);
+  MPI_Type_get_true_extent(dst_type, &lb, &extent);
   ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
@@ -352,7 +352,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
     disp = (int) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
-  MPI_Type_get_extent(src_type, &lb, &extent);
+  MPI_Type_get_true_extent(src_type, &lb, &extent);
   ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
@@ -408,7 +408,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
     disp = (int) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
-  MPI_Type_get_extent(dst_type, &lb, &extent);
+  MPI_Type_get_true_extent(dst_type, &lb, &extent);
   ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
