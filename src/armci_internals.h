@@ -47,7 +47,7 @@ typedef struct {
   int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
   int     verbose;              /* ARMCI should produce extra status output             */
 
-  enum ARMCII_Strided_methods_e strided_method;     /* IOV transfer method                  */
+  enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
   enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */
 } global_state_t;
