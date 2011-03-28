@@ -11,7 +11,6 @@
 #include <mem_region.h>
 #include <debug.h>
 
-#define STRIDED_LOCK_OUTER 1
 
 
 void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
@@ -30,8 +29,8 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
 
     ARMCII_Assert(count[0] % old_type_size == 0);
     MPI_Type_contiguous(elem_count, old_type, new_type);
-
   }
+
   /* Transfer is non-contiguous */
   else {
 
@@ -44,29 +43,15 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
     ARMCII_Assert(stride_array[0] % old_type_size == 0 && count[0] % old_type_size == 0);
 
     for (i = 1; i < stride_levels; i++) {
-      sizes   [stride_levels-i] = stride_array[i];
+      /* Convert strides into dimensions by dividing out contributions from lower dims */
+      sizes   [stride_levels-i] = stride_array[i]/stride_array[i-1];
       subsizes[stride_levels-i] = count[i];
+
+      ARMCII_Assert_msg(stride_array[i] % stride_array[i-1] == 0, "Invalid striding");
     }
 
     sizes   [0] = count[stride_levels];
     subsizes[0] = count[stride_levels];
-
-    if (ARMCI_GROUP_WORLD.rank == 0) {
-      printf("stride_arr = { %d", stride_array[0]);
-      for (i = 1; i < stride_levels; i++)
-        printf(", %d", stride_array[i]);
-      printf(" }  count = { %d", count[0]);
-      for (i = 1; i < stride_levels+1; i++)
-        printf(", %d", count[i]);
-      printf(" }\n");
-      printf("sizes      = { %d", sizes[0]);
-      for (i = 1; i < stride_levels+1; i++)
-        printf(", %d", sizes[i]);
-      printf(" }  subsizes = { %d", subsizes[0]);
-      for (i = 1; i < stride_levels+1; i++)
-        printf(", %d", subsizes[i]);
-      printf(" }\n");
-    }
 
     MPI_Type_create_subarray(stride_levels+1, sizes, subsizes, starts, MPI_ORDER_C, old_type, new_type);
   }
@@ -112,6 +97,9 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
+
+    err = 0;
+
   } else {
     armci_giov_t iov;
 
@@ -145,13 +133,36 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
   int err;
-  armci_giov_t iov;
 
-  ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-  err = ARMCI_GetV(&iov, 1, proc);
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
+    mem_region_t *mreg;
+    MPI_Datatype src_type, dst_type;
 
-  free(iov.src_ptr_array);
-  free(iov.dst_ptr_array);
+    ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, MPI_BYTE, &src_type);
+    ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, MPI_BYTE, &dst_type);
+
+    // TODO: Guard shared buffers
+    mreg = mreg_lookup(src_ptr, proc);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
+
+    mreg_lock(mreg, proc);
+    mreg_get_typed(mreg, src_ptr, 1, src_type, dst_ptr, 1, dst_type, proc);
+    mreg_unlock(mreg, proc);
+
+    MPI_Type_free(&src_type);
+    MPI_Type_free(&dst_type);
+
+    err = 0;
+
+  } else {
+    armci_giov_t iov;
+
+    ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
+    err = ARMCI_GetV(&iov, 1, proc);
+
+    free(iov.src_ptr_array);
+    free(iov.dst_ptr_array);
+  }
 
   return err;
 }
@@ -179,13 +190,40 @@ int ARMCI_AccS(int datatype, void *scale,
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
   int err;
-  armci_giov_t iov;
 
-  ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-  err = ARMCI_AccV(datatype, scale, &iov, 1, proc);
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
+    mem_region_t *mreg;
+    MPI_Datatype mpi_datatype, src_type, dst_type;
+    int          mpi_datatype_size;
 
-  free(iov.src_ptr_array);
-  free(iov.dst_ptr_array);
+    ARMCII_Acc_type_translate(datatype, &mpi_datatype, &mpi_datatype_size);
+
+    ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, mpi_datatype, &src_type);
+    ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, mpi_datatype, &dst_type);
+
+    // TODO: Handle scaling
+    // TODO: Guard shared buffers
+    mreg = mreg_lookup(dst_ptr, proc);
+    ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
+
+    mreg_lock(mreg, proc);
+    mreg_accumulate_typed(mreg, src_ptr, 1, src_type, dst_ptr, 1, dst_type, proc);
+    mreg_unlock(mreg, proc);
+
+    MPI_Type_free(&src_type);
+    MPI_Type_free(&dst_type);
+
+    err = 0;
+
+  } else {
+    armci_giov_t iov;
+
+    ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
+    err = ARMCI_AccV(datatype, scale, &iov, 1, proc);
+
+    free(iov.src_ptr_array);
+    free(iov.dst_ptr_array);
+  }
 
   return err;
 }
