@@ -18,6 +18,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_accs             \
                   tests/test_puts             \
                   tests/test_puts_gets        \
+                  tests/test_puts_gets_dla    \
                   tests/test_assert           \
                   tests/test_igop             \
                   # end
@@ -38,6 +39,7 @@ TESTS          += tests/test_onesided         \
                   tests/test_accs             \
                   tests/test_puts             \
                   tests/test_puts_gets        \
+                  tests/test_puts_gets_dla    \
                   tests/test_igop             \
                   # end
 
@@ -87,8 +89,6 @@ tests_ARMCI_AccS_latency_DEPENDENCIES = libarmci.la
 tests_test_groups_SOURCES = $(top_srcdir)/tests/test_groups.c
 tests_test_groups_LDADD = -larmci
 tests_test_groups_DEPENDENCIES = libarmci.la
-
-tests_test_group_split_SOURCES = $(top_srcdir)/tests/test_group_split.c
 tests_test_group_split_LDADD = -larmci
 tests_test_group_split_DEPENDENCIES = libarmci.la
 
@@ -107,6 +107,10 @@ tests_test_puts_DEPENDENCIES = libarmci.la
 tests_test_puts_gets_SOURCES = $(top_srcdir)/tests/test_puts_gets.c
 tests_test_puts_gets_LDADD = -larmci
 tests_test_puts_gets_DEPENDENCIES = libarmci.la
+
+tests_test_puts_gets_dla_SOURCES = $(top_srcdir)/tests/test_puts_gets_dla.c
+tests_test_puts_gets_dla_LDADD = -larmci
+tests_test_puts_gets_dla_DEPENDENCIES = libarmci.la
 
 tests_test_assert_SOURCES = $(top_srcdir)/tests/test_assert.c
 tests_test_assert_LDADD = -larmci
