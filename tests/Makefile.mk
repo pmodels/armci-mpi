@@ -16,6 +16,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_group_split      \
                   tests/test_malloc_group     \
                   tests/test_accs             \
+                  tests/test_accs_dla         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
@@ -37,6 +38,7 @@ TESTS          += tests/test_onesided         \
                   tests/test_group_split      \
                   tests/test_malloc_group     \
                   tests/test_accs             \
+                  tests/test_accs_dla         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
@@ -99,6 +101,10 @@ tests_test_malloc_group_DEPENDENCIES = libarmci.la
 tests_test_accs_SOURCES = $(top_srcdir)/tests/test_accs.c
 tests_test_accs_LDADD = -larmci
 tests_test_accs_DEPENDENCIES = libarmci.la
+
+tests_test_accs_dla_SOURCES = $(top_srcdir)/tests/test_accs_dla.c
+tests_test_accs_dla_LDADD = -larmci
+tests_test_accs_dla_DEPENDENCIES = libarmci.la
 
 tests_test_puts_SOURCES = $(top_srcdir)/tests/test_puts.c
 tests_test_puts_LDADD = -larmci
