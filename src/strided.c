@@ -85,7 +85,7 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   int err;
 
-  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
     mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
@@ -185,7 +185,7 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   int err;
 
-  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     mem_region_t *mreg;
     MPI_Datatype src_type, dst_type;
 
@@ -245,7 +245,7 @@ int ARMCI_AccS(int datatype, void *scale,
 
   int err;
 
-  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_SUBARRAY) {
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     mem_region_t *mreg;
     MPI_Datatype mpi_datatype, src_type, dst_type;
     int          mpi_datatype_size;

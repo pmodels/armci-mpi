@@ -61,3 +61,7 @@ ARMCI_NO_MPI_BOTTOM
 ARMCI_VERBOSE
 
   Enable extra status output from ARMCI-MPI.
+
+ARMCI_STRIDED_METHOD = { DIRECT, IOV (default) }
+
+  Select the method for processing strided operations.

@@ -84,8 +84,8 @@ int ARMCI_Init(void) {
   if (var != NULL) {
     if (strcmp(var, "IOV") == 0)
       ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
-    else if (strcmp(var, "SUBARRAY") == 0)
-      ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_SUBARRAY;
+    else if (strcmp(var, "DIRECT") == 0)
+      ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
     else if (ARMCI_GROUP_WORLD.rank == 0)
       ARMCII_Warning("Ignoring unknown value for ARMCI_STRIDED_METHOD (%s)\n", var);
   }
