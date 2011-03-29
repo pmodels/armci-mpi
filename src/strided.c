@@ -288,7 +288,7 @@ int ARMCI_AccS(int datatype, void *scale,
 
   int err;
 
-  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT && 0) {
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
     mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type, mpi_datatype;
@@ -316,8 +316,9 @@ int ARMCI_AccS(int datatype, void *scale,
       // Shoehorn the strided information into an IOV
       ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, src_ptr, src_stride_ar, count, stride_levels);
 
+      // TODO: High function call overhead here
       for (i = 0; i < iov.ptr_array_len; i++)
-        ARMCII_Buf_acc_scale(iov.src_ptr_array[i], ((uint8_t*)src_buf) + i*count[0], nelem*mpi_datatype_size, datatype, scale);
+        ARMCII_Buf_acc_scale(iov.src_ptr_array[i], ((uint8_t*)src_buf) + i*iov.bytes, iov.bytes, datatype, scale);
 
       free(iov.src_ptr_array);
       free(iov.dst_ptr_array);
