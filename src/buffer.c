@@ -254,9 +254,6 @@ void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int si
   * @return             Nonzero if scale is not the identity scale
   */
 int ARMCII_Buf_acc_is_scaled(int datatype, void *scale) {
-  int type_size;
-  MPI_Datatype type;
-
   switch (datatype) {
     case ARMCI_ACC_INT:
       if (*((int*)scale) == 1)
@@ -386,8 +383,14 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
         for (j = 0; j < nelem; j += 2) {
           // Complex multiplication: (a + bi)*(c + di)
+          const float src_fc_j   = src_fc[j];
+          const float src_fc_j_1 = src_fc[j+1];
+          /*
           scl_fc[j]   = src_fc[j]*s_r   - src_fc[j+1]*s_c;
           scl_fc[j+1] = src_fc[j+1]*s_r + src_fc[j]*s_c;
+          */
+          scl_fc[j]   = src_fc_j*s_r   - src_fc_j_1*s_c;
+          scl_fc[j+1] = src_fc_j_1*s_r + src_fc_j*s_c;
         }
       }
       break;
@@ -405,8 +408,14 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
         for (j = 0; j < nelem; j += 2) {
           // Complex multiplication: (a + bi)*(c + di)
+          const double src_dc_j   = src_dc[j];
+          const double src_dc_j_1 = src_dc[j+1];
+          /*
           scl_dc[j]   = src_dc[j]*s_r   - src_dc[j+1]*s_c;
           scl_dc[j+1] = src_dc[j+1]*s_r + src_dc[j]*s_c;
+          */
+          scl_dc[j]   = src_dc_j*s_r   - src_dc_j_1*s_c;
+          scl_dc[j+1] = src_dc_j_1*s_r + src_dc_j*s_c;
         }
       }
       break;
