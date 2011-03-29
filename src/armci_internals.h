@@ -115,6 +115,7 @@ void ARMCII_Buf_finish_accv(void **orig_bufs, void **new_bufs, int count, int si
 int  ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
 void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int size);
 
-void *ARMCII_Buf_prepare_acc(void *buf, int size, int datatype, void *scale);
+int  ARMCII_Buf_acc_is_scaled(int datatype, void *scale);
+void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale);
 
 #endif /* HAVE_ARMCI_INTERNALS_H */

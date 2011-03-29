@@ -249,7 +249,7 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
   */
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void  *src_buf;
-  int    count, type_size, src_is_locked = 0;
+  int    count, type_size, scaled, src_is_locked = 0;
   MPI_Datatype type;
   mem_region_t *src_mreg, *dst_mreg;
 
@@ -261,12 +261,20 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   /* Prepare the input data: Apply scaling if needed and acquire the DLA lock if
    * needed.  We hold the DLA lock if (src_buf == src && src_mreg != NULL). */
 
+  scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
+
   if (src_mreg && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
     mreg_dla_lock(src_mreg);
     src_is_locked = 1;
   }
 
-  src_buf = ARMCII_Buf_prepare_acc(src, bytes, datatype, scale);
+  if (scaled) {
+      MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
+      ARMCII_Assert(src_buf != NULL);
+      ARMCII_Buf_acc_scale(src, src_buf, bytes, datatype, scale);
+  } else {
+    src_buf = src;
+  }
 
   /* Check if we need to copy: user requested it or same mem region */
   if (   (src_buf == src) /* buf_prepare didn't make a copy */
