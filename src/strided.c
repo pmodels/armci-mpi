@@ -299,6 +299,7 @@ int ARMCI_AccS(int datatype, void *scale,
 
     /* Scale and copy if requested */
     if (scaled) {
+      armci_giov_t iov;
       int i, nelem;
 
       if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
@@ -311,9 +312,16 @@ int ARMCI_AccS(int datatype, void *scale,
       ARMCII_Assert(src_buf != NULL);
 
       if (mreg_loc != NULL) mreg_dla_lock(mreg_loc);
-      // TODO: Make this more efficient
-      armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
-      ARMCII_Buf_acc_scale(src_buf, src_buf, nelem*mpi_datatype_size, datatype, scale);
+
+      // Shoehorn the strided information into an IOV
+      ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, src_ptr, src_stride_ar, count, stride_levels);
+
+      for (i = 0; i < iov.ptr_array_len; i++)
+        ARMCII_Buf_acc_scale(iov.src_ptr_array[i], ((uint8_t*)src_buf) + i*count[0], nelem*mpi_datatype_size, datatype, scale);
+
+      free(iov.src_ptr_array);
+      free(iov.dst_ptr_array);
+
       if (mreg_loc != NULL) mreg_dla_unlock(mreg_loc);
 
       MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
