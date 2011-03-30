@@ -30,6 +30,17 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
 
   MPI_Type_size(old_type, &old_type_size);
 
+  /* Eliminate counts that don't count (all 1 counts at the end) */
+  for (i = stride_levels+1; i > 0 && stride_levels > 0 && count[i-1] == 1; i--)
+    stride_levels--;
+
+  /* A correct strided spec should me monotonic increasing and stride_array[i+1] should
+     be a multiple of stride_array[i]. */
+  if (stride_levels > 0) {
+    for (i = 1; i < stride_levels; i++)
+      ARMCII_Assert(stride_array[i] > stride_array[i-1] && stride_array[i] % stride_array[i-1] == 0);
+  }
+
   /* Test for a contiguous transfer */
   if (stride_levels == 0) {
     int elem_count = count[0]/old_type_size;
