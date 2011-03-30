@@ -38,7 +38,7 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
      be a multiple of stride_array[i]. */
   if (stride_levels > 0) {
     for (i = 1; i < stride_levels; i++)
-      ARMCII_Assert(stride_array[i] > stride_array[i-1] && stride_array[i] % stride_array[i-1] == 0);
+      ARMCII_Assert(stride_array[i] >= stride_array[i-1] && stride_array[i] % stride_array[i-1] == 0);
   }
 
   /* Test for a contiguous transfer */
