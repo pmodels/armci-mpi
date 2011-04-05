@@ -78,7 +78,8 @@ int ARMCI_Init(void) {
   /* Set the IOV/strided transfer method */
 
   var = getenv("ARMCI_IOV_ONELOCK_LIMIT");
-  ARMCII_GLOBAL_STATE.iov_onelock_limit = (unsigned int) atoi(var);
+  if (var) 
+    ARMCII_GLOBAL_STATE.iov_onelock_limit = (unsigned int) atoi(var);
 
   /* Set the IOV/strided transfer method */
 
