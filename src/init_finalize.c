@@ -77,6 +77,11 @@ int ARMCI_Init(void) {
 
   /* Set the IOV/strided transfer method */
 
+  var = getenv("ARMCI_IOV_ONELOCK_LIMIT");
+  ARMCII_GLOBAL_STATE.iov_onelock_limit = (unsigned int) atoi(var);
+
+  /* Set the IOV/strided transfer method */
+
   var = getenv("ARMCI_STRIDED_METHOD");
 
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
@@ -129,6 +134,16 @@ int ARMCI_Init(void) {
       printf("ARMCI-MPI initialized with %d processes, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, major, minor);
       printf("  STRIDED_METHOD = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD     = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
+
+      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK
+          || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
+      {
+        if (ARMCII_GLOBAL_STATE.iov_onelock_limit > 0)
+          printf("  ONELOCK_LIMIT  = %d\n", ARMCII_GLOBAL_STATE.iov_onelock_limit);
+        else
+          printf("  ONELOCK_LIMIT  = UNLIMITED\n");
+      }
+
       printf("  SHR_BUF_METHOD = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
       printf("  DEBUG_ALLOC    = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");
       printf("  IOV_CHECKS     = %s\n", ARMCII_GLOBAL_STATE.iov_checks_disabled ? "FALSE" : "TRUE");

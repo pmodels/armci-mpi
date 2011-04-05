@@ -41,11 +41,12 @@ extern char ARMCII_Iov_methods_str[][10];
 extern char ARMCII_Shr_buf_methods_str[][10];
 
 typedef struct {
-  int     init_count;           /* Number of times ARMCI_Init has been called           */
-  int     debug_alloc;          /* Do extra debuggin on memory allocation               */
-  int     iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
-  int     no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
-  int     verbose;              /* ARMCI should produce extra status output             */
+  int           init_count;           /* Number of times ARMCI_Init has been called           */
+  int           debug_alloc;          /* Do extra debuggin on memory allocation               */
+  int           iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
+  unsigned int  iov_onelock_limit;    /* Max number of ops per epoch for ONELOCK IOV method   */
+  int           no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
+  int           verbose;              /* ARMCI should produce extra status output             */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */

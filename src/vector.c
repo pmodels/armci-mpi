@@ -254,6 +254,15 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
   mreg_lock(mreg, proc);
 
   for (i = 0; i < count; i++) {
+
+    if (   ARMCII_GLOBAL_STATE.iov_onelock_limit > 0 
+        && i % ARMCII_GLOBAL_STATE.iov_onelock_limit == 0
+        && i > 0 )
+    {
+      mreg_unlock(mreg, proc);
+      mreg_lock(mreg, proc);
+    }
+
     switch(op) {
       case ARMCII_OP_PUT:
         mreg_put(mreg, src[i], dst[i], elem_count, proc);

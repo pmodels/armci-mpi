@@ -1,7 +1,11 @@
 Things on the to do list:
 
-  * Add some support for ARMCI_SHR_BUF_METHOD=LOCK to strided and IOV
-    operations.
+  * Delete SHR_BUF_METHOD=LOCK
+
+  * Rename ARMCII_Iov_op_onelock to op_batch that takes a batch size.  Replace
+    safe with a call to this function.
+
+  * Remove no_bottom.
 
   * Add a check for MPI_Finalized() anywhere?  Could be expensive.
 
