@@ -193,6 +193,7 @@ int main(int argc, char **argv)
 
                 if (rank == 1) 
                 {
+                  ARMCI_Access_begin(buffer[rank]);
                   for (i = 0; i < xdim; i++)
                   {
                     for (j = 0; j < ydim; j++)
@@ -215,6 +216,7 @@ int main(int argc, char **argv)
                   {
                     *(buffer[rank] + i) = 1.0 + rank;
                   }
+                  ARMCI_Access_end(buffer[rank]);
                 }
 
                 ARMCI_Barrier();
@@ -223,6 +225,8 @@ int main(int argc, char **argv)
 
                 if (rank == 1) 
                 {
+                  ARMCI_Access_begin(buffer[rank]);
+
                   for (i = 0; i < xdim; i++)
                   {
                     for (j = 0; j < ydim; j++)
@@ -245,6 +249,8 @@ int main(int argc, char **argv)
                   {
                     *(buffer[rank] + i) = 1.0 + rank;
                   }
+
+                  ARMCI_Access_end(buffer[rank]);
                 }
                 ARMCI_Barrier();
 
