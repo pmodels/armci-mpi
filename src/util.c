@@ -29,6 +29,17 @@ void ARMCI_Error(char *msg, int code) {
 void ARMCI_Barrier(void) {
   ARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+
+  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
+    mem_region_t *cur_mreg = mreg_list;
+
+    while (cur_mreg) {
+      mreg_dla_lock(cur_mreg);
+      mreg_dla_unlock(cur_mreg);
+
+      cur_mreg = cur_mreg->next;
+    }
+  }
 }
 
 /** Wait for remote completion on one-sided operations targeting process proc.

@@ -37,6 +37,11 @@ ARMCI_DEBUG_ALLOC
 
   Turn on extra shared allocation debugging.
 
+ARMCI_NO_FLUSH_BARRIERS
+
+  Don't do extra communication flusing in ARMCI_Barrier.  Extra flushes are
+  present to help make unsafe DLA safer.
+
 ARMCI_IOV_METHOD = { AUTO (default), SAFE, ONELOCK, DTYPE }
 
   Select the IO vector communication strategy: automatic; a "safe"
