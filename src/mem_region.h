@@ -31,7 +31,7 @@ typedef struct mem_region_s {
   enum mreg_lock_states_e lock_state;     /* State of the lock                                              */
   int                     lock_target;    /* Group (window) rank of the current target (if locked)          */
   int                     dla_lock_count; /* Access count on the DLA lock.  Can unlock when this reaches 0. */
-  armcix_mutex_grp_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
+  armcix_mutex_hdl_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
 
   struct mem_region_s *prev;
   struct mem_region_s *next;

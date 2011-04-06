@@ -98,7 +98,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   MPI_Group_free(&alloc_group);
 
   // Create the RMW mutex: Keeps RMW operations atomic wrt each other
-  mreg->rmw_mutex = ARMCIX_Create_mutexes_grp(1, group);
+  mreg->rmw_mutex = ARMCIX_Create_mutexes_hdl(1, group);
 
   // Append the new region onto the region list
   if (mreg_list == NULL) {
@@ -203,7 +203,7 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
     MPI_Free_mem(mreg->slices[world_me].base);
 
   free(mreg->slices);
-  ARMCIX_Destroy_mutexes_grp(mreg->rmw_mutex);
+  ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
 
   free(mreg);
 }

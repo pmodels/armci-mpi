@@ -18,7 +18,7 @@ libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
                       $(top_srcdir)/src/message.c       \
                       $(top_srcdir)/src/message_gop.c   \
 	              $(top_srcdir)/src/mutex.c         \
-                      $(top_srcdir)/src/mutex_grp_notify.c \
+                      $(top_srcdir)/src/mutex_hdl_queue.c \
 	              $(top_srcdir)/src/onesided.c      \
                       $(top_srcdir)/src/onesided_nb.c   \
 	              $(top_srcdir)/src/rmw.c           \

@@ -17,7 +17,7 @@
 
 int main(int argc, char ** argv) {
   int rank, nproc, i, j;
-  armcix_mutex_grp_t mgrp;
+  armcix_mutex_hdl_t mhdl;
   ARMCI_Group world_group;
 
   MPI_Init(&argc, &argv);
@@ -29,19 +29,19 @@ int main(int argc, char ** argv) {
   if (rank == 0) printf("Starting ARMCIX mutex test with %d processes\n", nproc);
 
   ARMCI_Group_get_world(&world_group);
-  mgrp = ARMCIX_Create_mutexes_grp(NUM_MUTEXES, &world_group);
+  mhdl = ARMCIX_Create_mutexes_hdl(NUM_MUTEXES, &world_group);
 
   for (i = 0; i < nproc; i++)
     for (j = 0; j < NUM_MUTEXES; j++) {
-      while (ARMCIX_Trylock_grp(mgrp, j, (rank+i)%nproc))
+      while (ARMCIX_Trylock_hdl(mhdl, j, (rank+i)%nproc))
         ;
-      ARMCIX_Unlock_grp(mgrp, j, (rank+i)%nproc);
+      ARMCIX_Unlock_hdl(mhdl, j, (rank+i)%nproc);
     }
 
   printf(" + %3d done\n", rank);
   fflush(NULL);
 
-  ARMCIX_Destroy_mutexes_grp(mgrp);
+  ARMCIX_Destroy_mutexes_hdl(mhdl);
 
   if (rank == 0) printf("Test complete: PASS.\n");
 

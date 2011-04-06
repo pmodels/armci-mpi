@@ -19,7 +19,7 @@
 /** This is the handle for the "default" group of mutexes used by the
   * standard ARMCI mutex API
   */
-static armcix_mutex_grp_t armci_mutex_grp = NULL;
+static armcix_mutex_hdl_t armci_mutex_hdl = NULL;
 
 
 /** Create ARMCI mutexes.  Collective.
@@ -27,12 +27,12 @@ static armcix_mutex_grp_t armci_mutex_grp = NULL;
   * @param[in] count Number of mutexes to create on the calling process
   */
 int ARMCI_Create_mutexes(int count) {
-  if (armci_mutex_grp != NULL)
+  if (armci_mutex_hdl != NULL)
     ARMCII_Error("attempted to create ARMCI mutexes multiple times");
 
-  armci_mutex_grp = ARMCIX_Create_mutexes_grp(count, &ARMCI_GROUP_WORLD);
+  armci_mutex_hdl = ARMCIX_Create_mutexes_hdl(count, &ARMCI_GROUP_WORLD);
 
-  if (armci_mutex_grp != NULL)
+  if (armci_mutex_hdl != NULL)
     return 0;
   else
     return 1;
@@ -44,11 +44,11 @@ int ARMCI_Create_mutexes(int count) {
 int ARMCI_Destroy_mutexes(void) {
   int err;
 
-  if (armci_mutex_grp == NULL)
+  if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to free unallocated ARMCI mutexes");
   
-  err = ARMCIX_Destroy_mutexes_grp(armci_mutex_grp);
-  armci_mutex_grp = NULL;
+  err = ARMCIX_Destroy_mutexes_hdl(armci_mutex_hdl);
+  armci_mutex_hdl = NULL;
 
   return err;
 }
@@ -60,10 +60,10 @@ int ARMCI_Destroy_mutexes(void) {
   * @param[in] proc  Target process for the lock operation
   */
 void ARMCI_Lock(int mutex, int proc) {
-  if (armci_mutex_grp == NULL)
+  if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to lock on unallocated ARMCI mutexes");
   
-  ARMCIX_Lock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Lock_hdl(armci_mutex_hdl, mutex, proc);
 }
 
 /** Unlock a mutex.
@@ -72,8 +72,8 @@ void ARMCI_Lock(int mutex, int proc) {
   * @param[in] proc  Target process for the unlock operation
   */
 void ARMCI_Unlock(int mutex, int proc) {
-  if (armci_mutex_grp == NULL)
+  if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to unlock on unallocated ARMCI mutexes");
   
-  ARMCIX_Unlock_grp(armci_mutex_grp, mutex, proc);
+  ARMCIX_Unlock_hdl(armci_mutex_hdl, mutex, proc);
 }
