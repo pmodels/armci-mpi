@@ -12,6 +12,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.11.1 color-tests parallel-tests])
 LT_PREREQ([2.2.6])
 
 ## Bug in libtool adds -O2 and -g by default
+if test ! -z "$MPICC" ; then
+   CC=$MPICC
+   export CC
+fi
 PAC_PUSH_FLAG(CFLAGS)
 AC_PROG_CC(mpicc)
 LT_INIT(disable-shared)
