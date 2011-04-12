@@ -19,7 +19,8 @@
 int main(int argc, char ** argv) {
   int    rank, nproc, thread_level;
   int    target_rank, xdim, ydim, test_iter;
-  int    stride[1], count[2], levels, scale;
+  int    stride[1], count[2], levels;
+  double scale;
   int   *buf;
   void **base_ptrs;
   ARMCI_Group grp_world;
