@@ -9,8 +9,8 @@
 #include <armcix.h>
 #endif
 
-#define MAX_DATA_SIZE   (1024*1024)
-#define NUM_ITERATIONS  ((data_size <= 2048) ? 4096 : ((data_size <= 16384) ? 512 : 128))
+#define MAX_DATA_SIZE   (1024*1024*16)
+#define NUM_ITERATIONS  ((data_size <= 2048) ? 4096 : ((data_size <= 16384) ? 1024 : 512))
 #define NUM_WARMUP_ITER 1 
 
 int main(int argc, char ** argv) {
@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
         "Get (MiB/s)", "Put (MiB/s)", "Acc (MiB/s)");
 
   for (target_rank = 1; rank == 0 && target_rank < nproc; target_rank++) {
-    for (data_size = sizeof(int); data_size <= MAX_DATA_SIZE; data_size *= 2) {
+    for (data_size = sizeof(double); data_size <= MAX_DATA_SIZE; data_size *= 2) {
       double t_get, t_put, t_acc;
 
       for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
@@ -73,15 +73,15 @@ int main(int argc, char ** argv) {
       t_put = (MPI_Wtime() - t_put)/NUM_ITERATIONS;
 
       for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
-        int scale = 1;
+        double scale = 1.0;
 
         if (test_iter == NUM_WARMUP_ITER)
           t_acc = MPI_Wtime();
 #ifdef NO_ACC
         int stride = 0;
-        ARMCI_AccS(ARMCI_ACC_INT, &scale, buf, &stride, base_ptrs[target_rank], &stride, &data_size, 0, target_rank);
+        ARMCI_AccS(ARMCI_ACC_DBL, &scale, buf, &stride, base_ptrs[target_rank], &stride, &data_size, 0, target_rank);
 #else
-        ARMCI_Acc(ARMCI_ACC_INT, &scale, buf, base_ptrs[target_rank], data_size, target_rank);
+        ARMCI_Acc(ARMCI_ACC_DBL, &scale, buf, base_ptrs[target_rank], data_size, target_rank);
 #endif
       }
       ARMCI_Fence(target_rank);
