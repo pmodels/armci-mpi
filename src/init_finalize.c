@@ -135,6 +135,9 @@ int ARMCI_Init(void) {
       MPI_Get_version(&major, &minor);
 
       printf("ARMCI-MPI initialized with %d processes, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, major, minor);
+#ifdef NO_SEATBELTS
+      printf("  NO_SEATBELTS      = EPIC SPEED\n");
+#endif
       printf("  STRIDED_METHOD    = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD        = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
