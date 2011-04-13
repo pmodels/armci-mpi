@@ -5,7 +5,7 @@
 
 #include <mpi.h>
 #include <armci.h>
-#ifndef NO_MODE_SET
+#ifdef MODE_SET
 #include <armcix.h>
 #endif
 
@@ -14,10 +14,15 @@
 #define NUM_WARMUP_ITER 1 
 
 int main(int argc, char ** argv) {
-  int    rank, nproc, test_iter, target_rank, data_size, thread_level;
+  int    rank, nproc, test_iter, target_rank, data_size;
+#ifdef MULTIPLE
+  inr    thread_level;
+#endif
   int   *buf;
   void **base_ptrs;
+#ifdef MODE_SET
   ARMCI_Group grp_world;
+#endif
 
 #ifdef MULTIPLE
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &thread_level);
@@ -37,7 +42,7 @@ int main(int argc, char ** argv) {
 
   memset(buf, rank, MAX_DATA_SIZE);
 
-#ifndef NO_MODE_SET
+#ifdef MODE_SET
   ARMCI_Group_get_default(&grp_world);
 
   if (getenv("ARMCIX_MODE_SET"))
