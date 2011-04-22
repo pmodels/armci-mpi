@@ -13,14 +13,16 @@
 
 #define ARMCI_MUTEX_TAG 100
 
+/* TODO: Make these all no-ops for sequential runs */
+
 /** Create a group of ARMCI mutexes.  Collective onthe ARMCI group.
   *
   * @param[in] count  Number of mutexes on the local process.
   * @param[in] pgroup ARMCI group on which to create mutexes
   * @return           Handle to the mutex group.
   */
-armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int count, ARMCI_Group *pgroup) {
-  int rank, nproc;
+armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int my_count, ARMCI_Group *pgroup) {
+  int rank, nproc, max_count, i;
   armcix_mutex_hdl_t hdl;
 
   hdl = malloc(sizeof(struct armcix_mutex_hdl_s));
@@ -31,19 +33,38 @@ armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int count, ARMCI_Group *pgroup) {
   MPI_Comm_rank(hdl->comm, &rank);
   MPI_Comm_size(hdl->comm, &nproc);
 
-  hdl->count = count;
+  hdl->my_count = my_count;
 
-  if (count > 0) {
-    MPI_Alloc_mem(nproc*count, MPI_INFO_NULL, &hdl->base);
-    ARMCII_Assert(hdl->base != NULL);
-    ARMCII_Bzero(hdl->base, nproc*count);
+  /* Find the max. count to determine how many windows we need. */
+  MPI_Allreduce(&my_count, &max_count, 1, MPI_INT, MPI_MAX, hdl->comm);
+  ARMCII_Assert_msg(max_count > 0, "Invalid number of mutexes");
 
+  hdl->max_count = max_count;
+  hdl->windows = malloc(sizeof(MPI_Win)*max_count);
+
+  if (my_count > 0) {
+    hdl->bases = malloc(sizeof(uint8_t*)*my_count);
   } else {
-    hdl->base = NULL;
+    hdl->bases = NULL;
   }
 
-  /* FIXME: We need multiple windows here: one for each mutex.  Otherwise performance will suffer. */
-  MPI_Win_create(hdl->base, nproc*count, 1, MPI_INFO_NULL, hdl->comm, &hdl->window);
+  /* We need multiple windows here: one for each mutex.  Otherwise
+     performance will suffer due to exclusive access epochs. */
+  for (i = 0; i < max_count; i++) {
+    int   size = 0;
+    void *base = NULL;
+
+    if (i < my_count) {
+      MPI_Alloc_mem(nproc, MPI_INFO_NULL, &hdl->bases[i]);
+      ARMCII_Assert(hdl->bases[i] != NULL);
+      ARMCII_Bzero(hdl->bases[i], nproc);
+
+      base = hdl->bases[i];
+      size = nproc;
+    }
+
+    MPI_Win_create(base, size, sizeof(uint8_t), MPI_INFO_NULL, hdl->comm, &hdl->windows[i]);
+  }
 
   return hdl;
 }
@@ -55,18 +76,23 @@ armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int count, ARMCI_Group *pgroup) {
   * @return        Zero on success, non-zero otherwise.
   */
 int ARMCIX_Destroy_mutexes_hdl(armcix_mutex_hdl_t hdl) {
-  int ret;
+  int i;
 
-  ret = MPI_Win_free(&hdl->window);
+  for (i = 0; i < hdl->max_count; i++) {
+    MPI_Win_free(&hdl->windows[i]);
+  }
+    
+  if (hdl->bases != NULL) {
+    for (i = 0; i < hdl->my_count; i++)
+      MPI_Free_mem(hdl->bases[i]);
 
-  if (hdl->base != NULL)
-    MPI_Free_mem(hdl->base);
+    free(hdl->bases);
+  }
 
   MPI_Comm_free(&hdl->comm);
-
   free(hdl);
 
-  return ret;
+  return 0;
 }
 
 
@@ -80,7 +106,7 @@ void ARMCIX_Lock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
   int       rank, nproc, already_locked, i, proc;
   uint8_t *buf;
 
-  ARMCII_Assert(mutex >= 0);
+  ARMCII_Assert(mutex >= 0 && mutex < hdl->max_count);
 
   MPI_Comm_rank(hdl->comm, &rank);
   MPI_Comm_size(hdl->comm, &nproc);
@@ -96,21 +122,21 @@ void ARMCIX_Lock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
 
   /* Get all data from the lock_buf, except the byte belonging to
    * me. Set the byte belonging to me to 1. */
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, hdl->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, hdl->windows[mutex]);
   
-  MPI_Put(&buf[rank], 1, MPI_BYTE, proc, (mutex*nproc) + rank, 1, MPI_BYTE, hdl->window);
+  MPI_Put(&buf[rank], 1, MPI_BYTE, proc, rank, 1, MPI_BYTE, hdl->windows[mutex]);
 
   /* Get data to the left of rank */
   if (rank > 0) {
-    MPI_Get(buf, rank, MPI_BYTE, proc, mutex*nproc, rank, MPI_BYTE, hdl->window);
+    MPI_Get(buf, rank, MPI_BYTE, proc, 0, rank, MPI_BYTE, hdl->windows[mutex]);
   }
 
   /* Get data to the right of rank */
   if (rank < nproc - 1) {
-    MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, mutex*nproc + rank + 1, nproc-1-rank, MPI_BYTE, hdl->window);
+    MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, rank + 1, nproc-1-rank, MPI_BYTE, hdl->windows[mutex]);
   }
   
-  MPI_Win_unlock(proc, hdl->window);
+  MPI_Win_unlock(proc, hdl->windows[mutex]);
 
   ARMCII_Assert(buf[rank] == 1);
 
@@ -138,7 +164,7 @@ void ARMCIX_Lock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
   * @return          0 on success, non-zero on failure
   */
 int ARMCIX_Trylock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
-  ARMCII_Assert(mutex >= 0 && mutex < hdl->count);
+  ARMCII_Assert(mutex >= 0 && mutex < hdl->max_count);
 
   ARMCIX_Lock_hdl(hdl, mutex, world_proc);
   return 0;
@@ -155,7 +181,7 @@ void ARMCIX_Unlock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
   int      rank, nproc, i, proc;
   uint8_t *buf;
 
-  ARMCII_Assert(mutex >= 0);
+  ARMCII_Assert(mutex >= 0 && mutex < hdl->max_count);
 
   MPI_Comm_rank(hdl->comm, &rank);
   MPI_Comm_size(hdl->comm, &nproc);
@@ -169,21 +195,21 @@ void ARMCIX_Unlock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
 
   /* Get all data from the lock_buf, except the byte belonging to
    * me. Set the byte belonging to me to 0. */
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, hdl->window);
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, proc, 0, hdl->windows[mutex]);
   
-  MPI_Put(&buf[rank], 1, MPI_BYTE, proc, (mutex*nproc) + rank, 1, MPI_BYTE, hdl->window);
+  MPI_Put(&buf[rank], 1, MPI_BYTE, proc, rank, 1, MPI_BYTE, hdl->windows[mutex]);
 
   /* Get data to the left of rank */
   if (rank > 0) {
-    MPI_Get(buf, rank, MPI_BYTE, proc, mutex*nproc, rank, MPI_BYTE, hdl->window);
+    MPI_Get(buf, rank, MPI_BYTE, proc, 0, rank, MPI_BYTE, hdl->windows[mutex]);
   }
 
   /* Get data to the right of rank */
   if (rank < nproc - 1) {
-    MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, mutex*nproc + rank + 1, nproc-1-rank, MPI_BYTE, hdl->window);
+    MPI_Get(&buf[rank+1], nproc-1-rank, MPI_BYTE, proc, rank + 1, nproc-1-rank, MPI_BYTE, hdl->windows[mutex]);
   }
   
-  MPI_Win_unlock(proc, hdl->window);
+  MPI_Win_unlock(proc, hdl->windows[mutex]);
 
   ARMCII_Assert(buf[rank] == 0);
 

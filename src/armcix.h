@@ -6,6 +6,13 @@
 #define _ARMCIX_H_
 
 #include <armci.h>
+#include <armciconf.h>
+
+#if   HAVE_STDINT_H
+#  include <stdint.h>
+#elif HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
 
 /** Access mode extensions: set the access mode for an ARMCI allocation,
   * enabling runtime layer optimizations.
@@ -31,10 +38,11 @@ int ARMCIX_Group_split(ARMCI_Group *parent, int color, int key, ARMCI_Group *new
   */
 
 struct armcix_mutex_hdl_s {
-  int      count;
-  MPI_Comm comm;
-  MPI_Win  window;
-  long    *base;
+  int        my_count;
+  int        max_count;
+  MPI_Comm   comm;
+  MPI_Win   *windows;
+  uint8_t  **bases;
 };
 
 typedef struct armcix_mutex_hdl_s * armcix_mutex_hdl_t;
