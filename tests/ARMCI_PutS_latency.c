@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
                     printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
                         i, j, expected, actual);
                     fflush(stdout);
-                    return -1;
+                    ARMCI_Error("Bailing out", 1);
                   }
                 }
               }
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
                     printf("Data validation failed at X: %d Y: %d Expected : %f Actual : %f \n",
                         i, j, expected, actual);
                     fflush(stdout);
-                    return -1;
+                    ARMCI_Error("Bailing out", 1);
                   }
                 }
               }

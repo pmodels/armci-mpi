@@ -207,7 +207,7 @@ int main(int argc, char **argv)
                             ((1.0 + rank) + scaling * (1.0 + peer)),
                             *(buffer[rank] + i * MAX_YDIM + j));
                         fflush(stdout);
-                        return -1;
+                        ARMCI_Error("Bailing out", 1);
                       }
                     }
                   }
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
                             ((1.0 + rank) + scaling * (1.0 + peer)),
                             *(buffer[rank] + i * MAX_YDIM + j));
                         fflush(stdout);
-                        return -1;
+                        ARMCI_Error("Bailing out", 1);
                       }
                     }
                   }
