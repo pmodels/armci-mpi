@@ -27,12 +27,15 @@ mem_region_t *mreg_list = NULL;
   * @return                Pointer to the memory region object.
   */
 mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
-  int           i;
+  int           i, aggregate_size;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
   MPI_Group     world_group, alloc_group;
   mem_region_t *mreg;
   mem_region_slice_t *alloc_slices, mreg_slice;
+
+  ARMCII_Assert(local_size >= 0);
+  ARMCII_Assert(group != NULL);
 
   MPI_Comm_rank(group->comm, &alloc_me);
   MPI_Comm_size(group->comm, &alloc_nproc);
@@ -55,7 +58,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   mreg->prev           = NULL;
   mreg->next           = NULL;
 
-  // Allocate my slice and create the window
+  /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
   if (local_size == 0) {
@@ -65,24 +68,42 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
   }
 
+  /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
     ARMCII_Bzero(alloc_slices[alloc_me].base, local_size);
   }
 
-  MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
-
-  // All-to-all on <base, size> to build up slices vector
+  /* All-to-all on <base, size> to build up slices vector */
   mreg_slice = alloc_slices[alloc_me];
   MPI_Allgather(  &mreg_slice, sizeof(mem_region_slice_t), MPI_BYTE,
                  alloc_slices, sizeof(mem_region_slice_t), MPI_BYTE, group->comm);
 
-  // Populate the base pointers array
+  /* Check for a global size 0 allocation */
+  for (i = aggregate_size = 0; i < alloc_nproc; i++) {
+    aggregate_size += alloc_slices[i].size;
+  }
+
+  /* Everyone asked for 0 bytes, return a NULL vector */
+  if (aggregate_size == 0) {
+    free(alloc_slices);
+    free(mreg->slices);
+    free(mreg);
+
+    for (i = 0; i < alloc_nproc; i++)
+      base_ptrs[i] = NULL;
+
+    return NULL;
+  }
+
+  MPI_Win_create(alloc_slices[alloc_me].base, local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
+
+  /* Populate the base pointers array */
   for (i = 0; i < alloc_nproc; i++)
     base_ptrs[i] = alloc_slices[i].base;
 
-  // We have to do lookup on global ranks, so shovel the contents of
-  // alloc_slices into the mreg->slices array which is indexed by global rank.
+  /* We have to do lookup on global ranks, so shovel the contents of
+     alloc_slices into the mreg->slices array which is indexed by global rank. */
   memset(mreg->slices, 0, sizeof(mem_region_slice_t)*world_nproc);
 
   MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
@@ -94,13 +115,14 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
     mreg->slices[world_rank] = alloc_slices[i];
   }
 
+  free(alloc_slices);
   MPI_Group_free(&world_group);
   MPI_Group_free(&alloc_group);
 
-  // Create the RMW mutex: Keeps RMW operations atomic wrt each other
+  /* Create the RMW mutex: Keeps RMW operations atomic wrt each other */
   mreg->rmw_mutex = ARMCIX_Create_mutexes_hdl(1, group);
 
-  // Append the new region onto the region list
+  /* Append the new region onto the region list */
   if (mreg_list == NULL) {
     mreg_list = mreg;
 
@@ -128,17 +150,17 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
   void *search_base;
   int   alloc_me, alloc_nproc;
   int   world_me, world_nproc;
-  MPI_Group world_group, alloc_group;
 
   MPI_Comm_rank(group->comm, &alloc_me);
   MPI_Comm_size(group->comm, &alloc_nproc);
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &world_me);
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
-  // All-to-all exchange of a <base address, proc> pair.  This is so that we
-  // can support passing NULL into ARMCI_Free() which is permitted when a
-  // process allocates 0 bytes.  Unfortunately, in this case we still need to
-  // identify the mem region and free it.
+  /* All-to-all exchange of a <base address, proc> pair.  This is so that we
+   * can support passing NULL into ARMCI_Free() which is permitted when a
+   * process allocates 0 bytes.  Unfortunately, in this case we still need to
+   * identify the mem region and free it.
+   */
 
   if (mreg == NULL)
     search_proc_in = -1;
@@ -147,28 +169,24 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
     search_base    = mreg->slices[world_me].base;
   }
 
-  // Collectively decide on who will provide the base address
+  /* Collectively decide on who will provide the base address */
   MPI_Allreduce(&search_proc_in, &search_proc_out, 1, MPI_INT, MPI_MAX, group->comm);
-  ARMCII_Assert_msg(search_proc_out != -1, 
-      "Could not locate the desired allocation"); // Somebody must pass in non-NULL
 
-  // Translate world rank to group rank
-  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
-  MPI_Comm_group(group->comm, &alloc_group);
+  /* Everyone passed NULL.  Nothing to free. */
+  if (search_proc_out < 0)
+    return;
 
-  MPI_Group_translate_ranks(world_group, 1, &search_proc_out, alloc_group, &search_proc_out_grp);
+  /* Translate world rank to group rank */
+  search_proc_out_grp = ARMCII_Translate_absolute_to_group(group->comm, search_proc_out);
 
-  MPI_Group_free(&world_group);
-  MPI_Group_free(&alloc_group);
-
-  // Broadcast the base address
+  /* Broadcast the base address */
   MPI_Bcast(&search_base, sizeof(void*), MPI_BYTE, search_proc_out_grp, group->comm);
 
-  // If we were passed NULL, look up the mem region using the <base, proc> pair
+  /* If we were passed NULL, look up the mem region using the <base, proc> pair */
   if (mreg == NULL)
     mreg = mreg_lookup(search_base, search_proc_out);
 
-  // If it's still not found, the user may have passed the wrong group
+  /* If it's still not found, the user may have passed the wrong group */
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
   switch (mreg->lock_state) {
@@ -182,7 +200,7 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
       ARMCII_Error("Unable to free locked memory region (%d)\n", mreg->lock_state);
   }
 
-  // Remove from the list of mem regions
+  /* Remove from the list of mem regions */
   if (mreg->prev == NULL) {
     ARMCII_Assert(mreg_list == mreg);
     mreg_list = mreg->next;
@@ -196,7 +214,7 @@ void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
       mreg->next->prev = mreg->prev;
   }
 
-  // Destroy the window and free all buffers
+  /* Destroy the window and free all buffers */
   MPI_Win_free(&mreg->window);
 
   if (mreg->slices[world_me].base != NULL)

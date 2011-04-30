@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
     if (rank == 0) printf(" + allocation %d\n", test_iter);
 
     base_ptrs[test_iter] = malloc(sizeof(void*)*nproc);
-    ARMCI_Malloc((void**)base_ptrs[test_iter], DATA_SZ);
+    ARMCI_Malloc((void**)base_ptrs[test_iter], (test_iter % 4 == 0) ? 0 : DATA_SZ);
   }
 
   ARMCI_Barrier();

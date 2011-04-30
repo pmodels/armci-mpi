@@ -52,8 +52,13 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
     char ptr_string[BUF_LEN];
     int  count = 0;
 
-    for (i = 0; i < mreg->nslices && count < BUF_LEN; i++)
-      count += snprintf(ptr_string+count, BUF_LEN-count, (i == mreg->nslices-1) ? "%p" : "%p ", base_ptrs[i]);
+    if (mreg == NULL) {
+      strncpy(ptr_string, "NULL", 5);
+    } else {
+      for (i = 0; i < mreg->nslices && count < BUF_LEN; i++)
+        count += snprintf(ptr_string+count, BUF_LEN-count, 
+            (i == mreg->nslices-1) ? "%p" : "%p ", base_ptrs[i]);
+    }
 
     ARMCII_Dbg_print(DEBUG_CAT_ALLOC, "base ptrs [%s]\n", ptr_string);
 #undef BUF_LEN
