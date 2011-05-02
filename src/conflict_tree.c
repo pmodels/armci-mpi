@@ -303,7 +303,7 @@ void ctree_print(ctree_t root) {
     for (i = 1, idx = 0; i < 32-1 && i < root->height; i++)
       idx += sprintf(s+idx, "\t");
     
-    printf("%10p:%s[%p, %p] p=%p h=%d\n", root, s, root->lo, root->hi, root->parent, root->height);
+    printf("%10p:%s[%p, %p] p=%p h=%d\n", (void*)root, s, root->lo, root->hi, (void*)(root->parent), root->height);
 
     ctree_print(root->right);
   }
