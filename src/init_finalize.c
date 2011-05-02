@@ -105,9 +105,7 @@ int ARMCI_Init(void) {
   ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
 
   if (var != NULL) {
-    if (strcmp(var, "LOCK") == 0)
-      ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_LOCK;
-    else if (strcmp(var, "COPY") == 0)
+    if (strcmp(var, "COPY") == 0)
       ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
     else if (strcmp(var, "NOGUARD") == 0)
       ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_NOGUARD;

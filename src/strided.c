@@ -101,7 +101,7 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
-    /* Guard shared buffers: COPY */
+    /* COPY: Guard shared buffers */
     if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
       mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
 
@@ -122,18 +122,8 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
 
-    /* Guard shared buffers: LOCK (unsafe) */
-    else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
-      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-
-      if (mreg_loc != NULL)
-        mreg_dla_lock(mreg_loc);
-    }
-
-    /* else: NOGUARD */
-
-    /* If src_buf hasn't been assigned to a copy, the strided source buffer is going to
-       be used directly. */
+    /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
+     * buffer is going to be used directly. */
     if (src_buf == NULL) { 
         src_buf = src_ptr;
         ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, MPI_BYTE, &src_type);
@@ -154,10 +144,8 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
-    if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK && mreg_loc != NULL)
-      mreg_dla_unlock(mreg_loc);
-
-    else if (src_buf != src_ptr)
+    /* COPY: Free temporary buffer */
+    if (src_buf != src_ptr)
       MPI_Free_mem(src_buf);
 
     err = 0;
@@ -201,7 +189,7 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
-    /* Guard shared buffers: COPY */
+    /* COPY: Guard shared buffers */
     if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
       mreg_loc = mreg_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
 
@@ -218,18 +206,8 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
 
-    /* Guard shared buffers: LOCK (unsafe) */
-    else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
-      mreg_loc = mreg_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
-
-      if (mreg_loc != NULL)
-        mreg_dla_lock(mreg_loc);
-    }
-
-    /* else: NOGUARD */
-
-    /* If dst_buf hasn't been assigned to a copy, the strided source buffer is going to
-       be used directly. */
+    /* NOGUARD: If dst_buf hasn't been assigned to a copy, the strided source
+     * buffer is going to be used directly. */
     if (dst_buf == NULL) { 
         dst_buf = dst_ptr;
         ARMCII_Strided_to_dtype(dst_stride_ar, count, stride_levels, MPI_BYTE, &dst_type);
@@ -247,10 +225,8 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
     mreg_unlock(mreg, proc);
 
-    if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK && mreg_loc != NULL)
-      mreg_dla_unlock(mreg_loc);
-
-    else if (dst_buf != dst_ptr) {
+    /* COPY: Finish the transfer */
+    if (dst_buf != dst_ptr) {
       mreg_dla_lock(mreg_loc);
       armci_read_strided(dst_ptr, stride_levels, dst_stride_ar, count, dst_buf);
       mreg_dla_unlock(mreg_loc);
@@ -303,12 +279,12 @@ int ARMCI_AccS(int datatype, void *scale,
     void         *src_buf = NULL;
     mem_region_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type, mpi_datatype;
-    int          scaled, mpi_datatype_size, locked = 0;
+    int          scaled, mpi_datatype_size;
 
     ARMCII_Acc_type_translate(datatype, &mpi_datatype, &mpi_datatype_size);
     scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
-    /* Scale and copy if requested */
+    /* SCALE: copy and scale if requested */
     if (scaled) {
       armci_giov_t iov;
       int i, nelem;
@@ -324,10 +300,9 @@ int ARMCI_AccS(int datatype, void *scale,
 
       if (mreg_loc != NULL) mreg_dla_lock(mreg_loc);
 
-      // Shoehorn the strided information into an IOV
+      /* Shoehorn the strided information into an IOV */
       ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, src_ptr, src_stride_ar, count, stride_levels);
 
-      // TODO: High function call overhead here
       for (i = 0; i < iov.ptr_array_len; i++)
         ARMCII_Buf_acc_scale(iov.src_ptr_array[i], ((uint8_t*)src_buf) + i*iov.bytes, iov.bytes, datatype, scale);
 
@@ -339,7 +314,7 @@ int ARMCI_AccS(int datatype, void *scale,
       MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
     }
 
-    /* Guard shared buffers: COPY */
+    /* COPY: Guard shared buffers */
     else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
       mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
 
@@ -360,20 +335,8 @@ int ARMCI_AccS(int datatype, void *scale,
       }
     }
 
-    /* Guard shared buffers: LOCK (unsafe) */
-    else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
-      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-
-      if (mreg_loc != NULL) {
-        mreg_dla_lock(mreg_loc);
-        locked = 1;
-      }
-    }
-
-    /* else: NOGUARD */
-
-    /* If src_buf hasn't been assigned to a copy, the strided source buffer is going to
-       be used directly. */
+    /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
+     * buffer is going to be used directly. */
     if (src_buf == NULL) { 
         src_buf = src_ptr;
         ARMCII_Strided_to_dtype(src_stride_ar, count, stride_levels, mpi_datatype, &src_type);
@@ -401,10 +364,8 @@ int ARMCI_AccS(int datatype, void *scale,
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
-    if (locked)
-      mreg_dla_unlock(mreg_loc);
-
-    else if (src_buf != src_ptr)
+    /* COPY/SCALE: Free temp buffer */
+    if (src_buf != src_ptr)
       MPI_Free_mem(src_buf);
 
     err = 0;

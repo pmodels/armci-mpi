@@ -133,15 +133,6 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
     mreg_unlock(src_mreg, target);
   }
 
-  /* Origin and target buffers are in separate windows */
-  else if (src_mreg != dst_mreg && ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
-    mreg_dla_lock(dst_mreg);
-    mreg_lock(src_mreg, target);
-    mreg_get(src_mreg, src, dst, size, target);
-    mreg_unlock(src_mreg, target);
-    mreg_dla_unlock(dst_mreg);
-  }
-
   /* COPY: Either origin and target buffers are in the same window and we can't
    * lock the same window twice (MPI semantics) or the user has requested
    * always-copy mode. */
@@ -201,15 +192,6 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
     mreg_lock(dst_mreg, target);
     mreg_put(dst_mreg, src, dst, size, target);
     mreg_unlock(dst_mreg, target);
-  }
-
-  /* Origin and target buffers are in separate windows */
-  else if (src_mreg != dst_mreg && ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_LOCK) {
-    mreg_dla_lock(src_mreg);
-    mreg_lock(dst_mreg, target);
-    mreg_put(dst_mreg, src, dst, size, target);
-    mreg_unlock(dst_mreg, target);
-    mreg_dla_unlock(src_mreg);
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't

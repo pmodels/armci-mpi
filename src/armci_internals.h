@@ -33,8 +33,7 @@ enum ARMCII_Strided_methods_e { ARMCII_STRIDED_IOV, ARMCII_STRIDED_DIRECT };
 enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
                             ARMCII_IOV_ONELOCK, ARMCII_IOV_DTYPE };
 
-enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_LOCK, ARMCII_SHR_BUF_COPY, 
-                                ARMCII_SHR_BUF_NOGUARD };
+enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_COPY, ARMCII_SHR_BUF_NOGUARD };
 
 extern char ARMCII_Strided_methods_str[][10];
 extern char ARMCII_Iov_methods_str[][10];
