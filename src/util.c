@@ -31,14 +31,7 @@ void ARMCI_Barrier(void) {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 
   if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
-    mem_region_t *cur_mreg = mreg_list;
-
-    while (cur_mreg) {
-      mreg_dla_lock(cur_mreg);
-      mreg_dla_unlock(cur_mreg);
-
-      cur_mreg = cur_mreg->next;
-    }
+    ARMCII_Flush_local();
   }
 }
 

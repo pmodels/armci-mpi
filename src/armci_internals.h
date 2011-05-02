@@ -69,6 +69,9 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 void ARMCII_Bzero(void *buf, int size);
 int  ARMCII_Log2(unsigned int val);
 
+/* Synchronization */
+
+void ARMCII_Flush_local(void);
 
 /* GOP Operators */
 

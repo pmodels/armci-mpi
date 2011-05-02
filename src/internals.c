@@ -6,6 +6,7 @@
 #include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
+#include <mem_region.h>
 
 /** ARMCI Internal global state */
 global_state_t ARMCII_GLOBAL_STATE = { 0 };
@@ -96,4 +97,18 @@ void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *
     }
 
     MPI_Type_size(*mpi_type, type_size);
+}
+
+
+/** Synchronize all public and private windows.
+  */
+void ARMCII_Flush_local(void) {
+  mem_region_t *cur_mreg = mreg_list;
+
+  while (cur_mreg) {
+    mreg_dla_lock(cur_mreg);
+    mreg_dla_unlock(cur_mreg);
+
+    cur_mreg = cur_mreg->next;
+  }
 }
