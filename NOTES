@@ -59,7 +59,7 @@ ARMCI_IOV_ONELOCK_LIMIT = { 0 (default), 1, ... }
   Set the maximum number of one-sided operations per epoch for the ONELOCK IOV
   method.  Zero (default) is unlimited.
   
-ARMCI_SHR_BUF_METHOD = { LOCK, COPY (default), NOGUARD }
+ARMCI_SHR_BUF_METHOD = { COPY (default), NOGUARD }
 
   ARMCI policy for managing shared origin buffers in communication operations:
   lock the buffer (unsafe, but fast), copy the buffer (safe), or don't guard
