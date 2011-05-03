@@ -65,9 +65,9 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
 
   ARMCII_Assert(group->comm == mreg->group.comm);
 
-  ARMCII_Assert_msg(mreg->lock_state != MREG_LOCK_DLA,
+  ARMCII_Assert_msg(mreg->lock_state != GMR_LOCK_DLA,
       "Cannot change the access mode; window is locked for local access.");
-  ARMCII_Assert_msg(mreg->lock_state == MREG_LOCK_UNLOCKED,
+  ARMCII_Assert_msg(mreg->lock_state == GMR_LOCK_UNLOCKED,
       "Cannot change the access mode on a window that is locked.");
 
   // Wait for all processes to complete any outstanding communication before we

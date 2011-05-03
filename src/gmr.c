@@ -53,7 +53,7 @@ gmr_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
   mreg->group          = *group; /* FIXME: Do we need to dup here? */
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
-  mreg->lock_state     = MREG_LOCK_UNLOCKED;
+  mreg->lock_state     = GMR_LOCK_UNLOCKED;
   mreg->dla_lock_count = 0;
   mreg->prev           = NULL;
   mreg->next           = NULL;
@@ -190,9 +190,9 @@ void mreg_destroy(gmr_t *mreg, ARMCI_Group *group) {
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
   switch (mreg->lock_state) {
-    case MREG_LOCK_UNLOCKED:
+    case GMR_LOCK_UNLOCKED:
       break;
-    case MREG_LOCK_DLA:
+    case GMR_LOCK_DLA:
       ARMCII_Warning("Releasing direct local access before freeing shared allocation\n");
       mreg_dla_unlock(mreg);
       break;
@@ -316,7 +316,7 @@ int mreg_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
@@ -371,7 +371,7 @@ int mreg_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   // Perform checks
   MPI_Type_get_true_extent(src_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
@@ -427,7 +427,7 @@ int mreg_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != MREG_LOCK_UNLOCKED);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
@@ -449,13 +449,13 @@ void mreg_lock(gmr_t *mreg, int proc) {
   int lock_assert, lock_mode;
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED || mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED || mreg->lock_state == GMR_LOCK_DLA);
 
   /* Check for active DLA and suspend if needed */
-  if (mreg->lock_state == MREG_LOCK_DLA) {
+  if (mreg->lock_state == GMR_LOCK_DLA) {
     ARMCII_Assert(grp_me == mreg->lock_target);
     MPI_Win_unlock(mreg->lock_target, mreg->window);
-    mreg->lock_state = MREG_LOCK_DLA_SUSP;
+    mreg->lock_state = GMR_LOCK_DLA_SUSP;
   }
 
   if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
@@ -480,9 +480,9 @@ void mreg_lock(gmr_t *mreg, int proc) {
   MPI_Win_lock(lock_mode, grp_proc, lock_assert, mreg->window);
 
   if (lock_mode == MPI_LOCK_EXCLUSIVE)
-    mreg->lock_state = MREG_LOCK_EXCLUSIVE;
+    mreg->lock_state = GMR_LOCK_EXCLUSIVE;
   else
-    mreg->lock_state = MREG_LOCK_SHARED;
+    mreg->lock_state = GMR_LOCK_SHARED;
 
   mreg->lock_target = grp_proc;
 }
@@ -499,23 +499,23 @@ void mreg_unlock(gmr_t *mreg, int proc) {
   int grp_me   = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_EXCLUSIVE || mreg->lock_state == MREG_LOCK_SHARED);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED);
   ARMCII_Assert(mreg->lock_target == grp_proc);
 
   /* Check if DLA is suspended and needs to be resumed */
   if (mreg->dla_lock_count > 0) {
 
-    if (mreg->lock_state != MREG_LOCK_EXCLUSIVE || mreg->lock_target != grp_me) {
+    if (mreg->lock_state != GMR_LOCK_EXCLUSIVE || mreg->lock_target != grp_me) {
       MPI_Win_unlock(grp_proc, mreg->window);
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_me, 0, mreg->window); // FIXME: NOCHECK here?
     }
 
-    mreg->lock_state = MREG_LOCK_DLA;
+    mreg->lock_state = GMR_LOCK_DLA;
     mreg->lock_target= grp_me;
   }
   else {
     MPI_Win_unlock(grp_proc, mreg->window);
-    mreg->lock_state = MREG_LOCK_UNLOCKED;
+    mreg->lock_state = GMR_LOCK_UNLOCKED;
   }
 }
 
@@ -530,20 +530,20 @@ void mreg_dla_lock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED || mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED || mreg->lock_state == GMR_LOCK_DLA);
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not allowed in the current access mode");
 
   if (mreg->dla_lock_count == 0) {
-    ARMCII_Assert(mreg->lock_state == MREG_LOCK_UNLOCKED);
+    ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, grp_proc, 0, mreg->window);
 
-    mreg->lock_state = MREG_LOCK_DLA;
+    mreg->lock_state = GMR_LOCK_DLA;
     mreg->lock_target= grp_proc;
   }
 
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_DLA);
   mreg->dla_lock_count++;
 }
 
@@ -556,7 +556,7 @@ void mreg_dla_unlock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
-  ARMCII_Assert(mreg->lock_state == MREG_LOCK_DLA);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_DLA);
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not allowed in the current access mode");
 
@@ -564,6 +564,6 @@ void mreg_dla_unlock(gmr_t *mreg) {
 
   if (mreg->dla_lock_count == 0) {
     MPI_Win_unlock(grp_proc, mreg->window);
-    mreg->lock_state = MREG_LOCK_UNLOCKED;
+    mreg->lock_state = GMR_LOCK_UNLOCKED;
   }
 }

@@ -11,11 +11,11 @@
 #include <armcix.h>
 
 enum gmr_lock_states_e { 
-  MREG_LOCK_UNLOCKED,    /* Mem region is unlocked */
-  MREG_LOCK_EXCLUSIVE,   /* Mem region is locked for exclusive access */
-  MREG_LOCK_SHARED,      /* Mem region is locked for shared (non-conflicting) access */
-  MREG_LOCK_DLA,         /* Mem region is locked for Direct Local Access */
-  MREG_LOCK_DLA_SUSP     /* Mem region is unlocked and DLA is suspended */
+  GMR_LOCK_UNLOCKED,    /* Mem region is unlocked */
+  GMR_LOCK_EXCLUSIVE,   /* Mem region is locked for exclusive access */
+  GMR_LOCK_SHARED,      /* Mem region is locked for shared (non-conflicting) access */
+  GMR_LOCK_DLA,         /* Mem region is locked for Direct Local Access */
+  GMR_LOCK_DLA_SUSP     /* Mem region is unlocked and DLA is suspended */
 };
 
 typedef struct {

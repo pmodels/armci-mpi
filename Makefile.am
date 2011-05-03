@@ -14,7 +14,7 @@ libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
                       $(top_srcdir)/src/groups.c        \
                       $(top_srcdir)/src/internals.c     \
 	              $(top_srcdir)/src/malloc.c        \
-                      $(top_srcdir)/src/mem_region.c    \
+                      $(top_srcdir)/src/gmr.c           \
                       $(top_srcdir)/src/message.c       \
                       $(top_srcdir)/src/message_gop.c   \
 	              $(top_srcdir)/src/mutex.c         \
