@@ -10,7 +10,7 @@
 #include <debug.h>
 #include <armci.h>
 #include <armci_internals.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 
 /** Allocate a shared memory segment.  Collective.
@@ -43,7 +43,7 @@ int ARMCI_Free(void *ptr) {
   */
 int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
-  mem_region_t *mreg;
+  gmr_t *mreg;
  
   mreg = mreg_create(size, base_ptrs, group);
 
@@ -73,7 +73,7 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   * @param[in] ptr Pointer to the local patch of the allocation
   */
 int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   if (ptr != NULL) {
     mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);

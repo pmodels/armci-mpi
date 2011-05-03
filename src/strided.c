@@ -8,7 +8,7 @@
 
 #include <armci.h>
 #include <armci_internals.h>
-#include <mem_region.h>
+#include <gmr.h>
 #include <debug.h>
 
 
@@ -98,7 +98,7 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
-    mem_region_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
     /* COPY: Guard shared buffers */
@@ -186,7 +186,7 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *dst_buf = NULL;
-    mem_region_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
     /* COPY: Guard shared buffers */
@@ -277,7 +277,7 @@ int ARMCI_AccS(int datatype, void *scale,
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
-    mem_region_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *mreg_loc = NULL;
     MPI_Datatype src_type, dst_type, mpi_datatype;
     int          scaled, mpi_datatype_size;
 

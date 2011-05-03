@@ -10,7 +10,7 @@
 #include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 
 /** Declare the start of a local access epoch.  This allows direct access to
@@ -19,7 +19,7 @@
   * @param[in] ptr Pointer to the allocation that will be accessed directly 
   */
 void ARMCI_Access_begin(void *ptr) {
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
@@ -40,7 +40,7 @@ void ARMCI_Access_begin(void *ptr) {
   * @param[in] ptr Pointer to the allocation that was accessed directly 
   */
 void ARMCI_Access_end(void *ptr) {
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
@@ -58,7 +58,7 @@ void ARMCI_Access_end(void *ptr) {
   * @return             Zero upon success, error code otherwise.
   */
 int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
@@ -86,7 +86,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   * @return             Current access mode.
   */
 int ARMCIX_Mode_get(void *ptr) {
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
@@ -104,7 +104,7 @@ int ARMCIX_Mode_get(void *ptr) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  mem_region_t *src_mreg, *dst_mreg;
+  gmr_t *src_mreg, *dst_mreg;
 
   src_mreg = mreg_lookup(src, target);
   dst_mreg = mreg_lookup(dst, ARMCI_GROUP_WORLD.rank);
@@ -165,7 +165,7 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
   * @return           0 on success, non-zero on failure
   */
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  mem_region_t *src_mreg, *dst_mreg;
+  gmr_t *src_mreg, *dst_mreg;
 
   src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
   dst_mreg = mreg_lookup(dst, target);
@@ -233,7 +233,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   void  *src_buf;
   int    count, type_size, scaled, src_is_locked = 0;
   MPI_Datatype type;
-  mem_region_t *src_mreg, *dst_mreg;
+  gmr_t *src_mreg, *dst_mreg;
 
   src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
   dst_mreg = mreg_lookup(dst, proc);

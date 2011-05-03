@@ -7,7 +7,7 @@
 
 #include <armci.h>
 #include <armci_internals.h>
-#include <mem_region.h>
+#include <gmr.h>
 #include <debug.h>
 
 
@@ -29,7 +29,7 @@
   */
 int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   int           is_long;
-  mem_region_t *mreg;
+  gmr_t *mreg;
 
   mreg = mreg_lookup(prem, proc);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");

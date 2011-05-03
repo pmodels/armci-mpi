@@ -10,7 +10,7 @@
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 
 /** Initialize ARMCI.  MPI must be initialized before this can be called.  It

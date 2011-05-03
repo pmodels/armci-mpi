@@ -10,7 +10,7 @@
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 
 /** Fatal error, print the message and abort the program with the provided

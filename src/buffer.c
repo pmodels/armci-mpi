@@ -7,7 +7,7 @@
 
 #include <armci.h>
 #include <armci_internals.h>
-#include <mem_region.h>
+#include <gmr.h>
 #include <debug.h>
 
 
@@ -34,7 +34,7 @@ int ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, i
     for (i = 0; i < count; i++) {
       // Check if the source buffer is within a shared region.  If so, copy it
       // into a private buffer.
-      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+      gmr_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
       if (mreg != NULL) {
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
@@ -109,7 +109,7 @@ int ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, i
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
   for (i = 0; i < count; i++) {
-    mem_region_t *mreg;
+    gmr_t *mreg;
 
     // Check if the source buffer is within a shared region.
     mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
@@ -197,7 +197,7 @@ int ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, i
     for (i = 0; i < count; i++) {
       // Check if the destination buffer is within a shared region.  If not, create
       // a temporary private buffer to hold the result.
-      mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+      gmr_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
       if (mreg != NULL) {
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
@@ -232,7 +232,7 @@ void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int si
 
     for (i = 0; i < count; i++) {
       if (orig_bufs[i] != new_bufs[i]) {
-        mem_region_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+        gmr_t *mreg = mreg_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
         ARMCII_Assert(mreg != NULL);
 
         mreg_dla_lock(mreg);

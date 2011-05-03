@@ -8,7 +8,7 @@
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 #ifndef NO_USE_CTREE
 #include <conflict_tree.h>
@@ -80,7 +80,7 @@ int ARMCII_Iov_check_overlap(void **ptrs, int count, int size) {
   */
 int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   int i;
-  mem_region_t *mreg;
+  gmr_t *mreg;
   void *base, *extent;
 
   if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 1;
@@ -178,7 +178,7 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
   int i;
 
   for (i = 0; i < count; i++) {
-    mem_region_t *mreg;
+    gmr_t *mreg;
     void *shr_ptr;
 
     switch(op) {
@@ -230,7 +230,7 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
     MPI_Datatype type, int proc) {
 
   int i;
-  mem_region_t *mreg;
+  gmr_t *mreg;
   void *shr_ptr;
 
   switch(op) {
@@ -291,7 +291,7 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
 
-    mem_region_t *mreg;
+    gmr_t *mreg;
     MPI_Datatype  type_loc, type_rem;
     MPI_Aint      disp_loc[count];
     int           disp_rem[count];
@@ -377,7 +377,7 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
 
-    mem_region_t *mreg;
+    gmr_t *mreg;
     MPI_Datatype  type_loc, type_rem;
     MPI_Aint      disp_loc[count];
     int           disp_rem[count];

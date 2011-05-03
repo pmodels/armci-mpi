@@ -11,12 +11,12 @@
 #include <armcix.h>
 #include <armci_internals.h>
 #include <debug.h>
-#include <mem_region.h>
+#include <gmr.h>
 
 
 /** Linked list of shared memory regions.
   */
-mem_region_t *mreg_list = NULL;
+gmr_t *mreg_list = NULL;
 
 
 /** Create a distributed shared memory region. Collective on ARMCI group.
@@ -26,13 +26,13 @@ mem_region_t *mreg_list = NULL;
   * @param[in]  group      Group on which to perform allocation.
   * @return                Pointer to the memory region object.
   */
-mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
+gmr_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) {
   int           i, aggregate_size;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
   MPI_Group     world_group, alloc_group;
-  mem_region_t *mreg;
-  mem_region_slice_t *alloc_slices, mreg_slice;
+  gmr_t        *mreg;
+  gmr_slice_t  *alloc_slices, mreg_slice;
 
   ARMCII_Assert(local_size >= 0);
   ARMCII_Assert(group != NULL);
@@ -42,15 +42,15 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &world_me);
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
-  mreg = malloc(sizeof(mem_region_t));
+  mreg = malloc(sizeof(gmr_t));
   ARMCII_Assert(mreg != NULL);
 
-  mreg->slices = malloc(sizeof(mem_region_slice_t)*world_nproc);
+  mreg->slices = malloc(sizeof(gmr_slice_t)*world_nproc);
   ARMCII_Assert(mreg->slices != NULL);
-  alloc_slices = malloc(sizeof(mem_region_slice_t)*alloc_nproc);
+  alloc_slices = malloc(sizeof(gmr_slice_t)*alloc_nproc);
   ARMCII_Assert(alloc_slices != NULL);
 
-  mreg->group          = *group;
+  mreg->group          = *group; /* FIXME: Do we need to dup here? */
   mreg->nslices        = world_nproc;
   mreg->access_mode    = ARMCIX_MODE_ALL;
   mreg->lock_state     = MREG_LOCK_UNLOCKED;
@@ -76,8 +76,8 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
 
   /* All-to-all on <base, size> to build up slices vector */
   mreg_slice = alloc_slices[alloc_me];
-  MPI_Allgather(  &mreg_slice, sizeof(mem_region_slice_t), MPI_BYTE,
-                 alloc_slices, sizeof(mem_region_slice_t), MPI_BYTE, group->comm);
+  MPI_Allgather(  &mreg_slice, sizeof(gmr_slice_t), MPI_BYTE,
+                 alloc_slices, sizeof(gmr_slice_t), MPI_BYTE, group->comm);
 
   /* Check for a global size 0 allocation */
   for (i = aggregate_size = 0; i < alloc_nproc; i++) {
@@ -104,7 +104,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
 
   /* We have to do lookup on global ranks, so shovel the contents of
      alloc_slices into the mreg->slices array which is indexed by global rank. */
-  memset(mreg->slices, 0, sizeof(mem_region_slice_t)*world_nproc);
+  memset(mreg->slices, 0, sizeof(gmr_slice_t)*world_nproc);
 
   MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
   MPI_Comm_group(group->comm, &alloc_group);
@@ -127,7 +127,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
     mreg_list = mreg;
 
   } else {
-    mem_region_t *parent = mreg_list;
+    gmr_t *parent = mreg_list;
 
     while (parent->next != NULL)
       parent = parent->next;
@@ -145,7 +145,7 @@ mem_region_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group) 
   * @param[in] ptr   Pointer within range of the segment (e.g. base pointer).
   * @param[in] group Group on which to perform the free.
   */
-void mreg_destroy(mem_region_t *mreg, ARMCI_Group *group) {
+void mreg_destroy(gmr_t *mreg, ARMCI_Group *group) {
   int   search_proc_in, search_proc_out, search_proc_out_grp;
   void *search_base;
   int   alloc_me, alloc_nproc;
@@ -248,8 +248,8 @@ int mreg_destroy_all(void) {
   * @param[in] proc Process on which the data lives.
   * @return         Pointer to the mem region object.
   */
-mem_region_t *mreg_lookup(void *ptr, int proc) {
-  mem_region_t *mreg;
+gmr_t *mreg_lookup(void *ptr, int proc) {
+  gmr_t *mreg;
 
   mreg = mreg_list;
 
@@ -280,7 +280,7 @@ mem_region_t *mreg_lookup(void *ptr, int proc) {
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+int mreg_put(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
   return mreg_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
@@ -299,7 +299,7 @@ int mreg_put(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @param[in] proc      Absolute process id of target process
   * @return              0 on success, non-zero on failure
   */
-int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int mreg_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int disp, grp_proc;
@@ -335,7 +335,7 @@ int mreg_put_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
+int mreg_get(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   ARMCII_Assert_msg(dst != NULL, "Invalid local address");
   return mreg_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
@@ -354,7 +354,7 @@ int mreg_get(mem_region_t *mreg, void *src, void *dst, int size, int proc) {
   * @param[in] proc      Absolute process id of target process
   * @return              0 on success, non-zero on failure
   */
-int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int mreg_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int disp, grp_proc;
@@ -391,7 +391,7 @@ int mreg_get_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype sr
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
+int mreg_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
   return mreg_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
 }
@@ -410,7 +410,7 @@ int mreg_accumulate(mem_region_t *mreg, void *src, void *dst, int count, MPI_Dat
   * @param[in] proc      Absolute process id of target process
   * @return              0 on success, non-zero on failure
   */
-int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int mreg_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int disp, grp_proc;
@@ -443,7 +443,7 @@ int mreg_accumulate_typed(mem_region_t *mreg, void *src, int src_count, MPI_Data
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-void mreg_lock(mem_region_t *mreg, int proc) {
+void mreg_lock(gmr_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   int grp_me   = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
   int lock_assert, lock_mode;
@@ -494,7 +494,7 @@ void mreg_lock(mem_region_t *mreg, int proc) {
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-void mreg_unlock(mem_region_t *mreg, int proc) {
+void mreg_unlock(gmr_t *mreg, int proc) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, proc);
   int grp_me   = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
@@ -526,7 +526,7 @@ void mreg_unlock(mem_region_t *mreg, int proc) {
   * @param[in] mode     Lock mode (exclusive, shared, etc...)
   * @return             0 on success, non-zero on failure
   */
-void mreg_dla_lock(mem_region_t *mreg) {
+void mreg_dla_lock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
@@ -552,7 +552,7 @@ void mreg_dla_lock(mem_region_t *mreg) {
   *
   * @param[in] mreg     Memory region
   */
-void mreg_dla_unlock(mem_region_t *mreg) {
+void mreg_dla_unlock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(mreg->group.comm, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
