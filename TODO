@@ -1,34 +1,53 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Things on the to do list:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  * Delete SHR_BUF_METHOD=LOCK
+  * Add buffer guarding to ARMCI message operations.
 
-  * Rename ARMCII_Iov_op_onelock to op_batch that takes a batch size.  Replace
-    safe with a call to this function.
+  * Add upper limit to shared buffer copy size and do flow control.  May be
+    most useful for strided as a first cut.
 
-  * Remove no_bottom.
+  * Rename IOV methods: CONSRV, BATCHED, DIRECT
 
-  * Add a check for MPI_Finalized() anywhere?  Could be expensive.
+  * New defaults: STRIDED=DIRECT, SHR_BUF=COPY
+
+  * Allow setting defaults in configure step.
+
+  * Passive target microbenchmarks: target sleeps on a shared file update.
+
+  * Breakpoint optimization to shift from IOV->BATCHED to DIRECT.
+
+  * Remove no_bottom?
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Older to do items:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * Add a check for ARMCII_Initialized()?
+     + (ARMCII_GLOBAL_STATE.active && MPI_Initialized && !MPI_Finalized())
 
   * Add function entry checks to make sure ARMCI is initialized
     (ARMCII_GLOBAL_STATE.initialized)
 
-  * ARMCI Message operations are not shared local buffer safe.  This is high
-    priority.
-
-  * Be less dependent on C99.  Provide non-variadic macro versions of debug and
-    error routines.
+  * Remove C99 dependence
+     + Provide non-variadic macro versions of debug and error routines.
 
   * Look into invalid memory references that GA makes on the ghost cells
     examples.
-
-  * Buffer checking: What happens when the target is self and both the
-    source and destination buffers are shared.  Is this case handled?
-    Can we optimize it with a memcpy?
 
   * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
 
   * Implement remaining functions marked TODO in message.h
 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Things that need performance tuning:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   * Non-blocking operations
+
+  * Buffer checking: What happens when the target is self and both the
+    source and destination buffers are shared.  Is this case handled?
+    Can we optimize it with a memcpy?
+
