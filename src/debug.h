@@ -36,15 +36,15 @@ void    ARMCII_Assert_fail(const char *expr, const char *msg, const char *file, 
 
 #ifdef NO_SEATBELTS
 #define DEBUG_CAT_ENABLED(X) 0
-#define ARMCII_Dbg_print(CAT,FMT,...) ((void)0)
+#define ARMCII_Dbg_print(CAT,...) ((void)0)
 #else
 #define DEBUG_CAT_ENABLED(X) (DEBUG_CATS_ENABLED & (X))
 void    ARMCII_Dbg_print_impl(const char *func, const char *format, ...);
-#define ARMCII_Dbg_print(CAT,FMT,...) do { if (DEBUG_CAT_ENABLED(CAT)) ARMCII_Dbg_print_impl(__func__,FMT, ## __VA_ARGS__); } while (0)
+#define ARMCII_Dbg_print(CAT,...) do { if (DEBUG_CAT_ENABLED(CAT)) ARMCII_Dbg_print_impl(__func__,__VA_ARGS__); } while (0)
 #endif /* NO_SEATBELTS */
 
 
-#define ARMCII_Error(MSG,...) ARMCII_Error_impl(__FILE__,__LINE__,__func__,MSG, ## __VA_ARGS__)
+#define ARMCII_Error(...) ARMCII_Error_impl(__FILE__,__LINE__,__func__,__VA_ARGS__)
 void    ARMCII_Error_impl(const char *file, const int line, const char *func, const char *msg, ...);
 void    ARMCII_Warning(const char *fmt, ...);
 
