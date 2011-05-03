@@ -39,28 +39,28 @@ typedef struct gmr_s {
   int                     nslices;
 } gmr_t;
 
-extern gmr_t *mreg_list;
+extern gmr_t *gmr_list;
 
-gmr_t *mreg_create(int local_size, void **base_ptrs, ARMCI_Group *group);
-void   mreg_destroy(gmr_t *mreg, ARMCI_Group *group);
-int    mreg_destroy_all(void);
-gmr_t *mreg_lookup(void *ptr, int proc);
+gmr_t *gmr_create(int local_size, void **base_ptrs, ARMCI_Group *group);
+void   gmr_destroy(gmr_t *mreg, ARMCI_Group *group);
+int    gmr_destroy_all(void);
+gmr_t *gmr_lookup(void *ptr, int proc);
 
-int mreg_get(gmr_t *mreg, void *src, void *dst, int size, int target);
-int mreg_put(gmr_t *mreg, void *src, void *dst, int size, int target);
-int mreg_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
+int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int target);
+int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int target);
+int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
 
-int mreg_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
-int mreg_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
-int mreg_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 
-void mreg_lock(gmr_t *mreg, int proc);
-void mreg_unlock(gmr_t *mreg, int proc);
+void gmr_lock(gmr_t *mreg, int proc);
+void gmr_unlock(gmr_t *mreg, int proc);
 
-void mreg_dla_lock(gmr_t *mreg);
-void mreg_dla_unlock(gmr_t *mreg);
+void gmr_dla_lock(gmr_t *mreg);
+void gmr_dla_unlock(gmr_t *mreg);
 
 #endif /* HAVE_GMR_H */

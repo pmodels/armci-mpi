@@ -85,12 +85,12 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
 
   if (ARMCII_GLOBAL_STATE.iov_checks_disabled) return 1;
 
-  mreg = mreg_lookup(ptrs[0], proc);
+  mreg = gmr_lookup(ptrs[0], proc);
 
   /* If local, all must be local */
   if (mreg == NULL) {
     for (i = 1; i < count; i++) {
-      mreg = mreg_lookup(ptrs[i], proc);
+      mreg = gmr_lookup(ptrs[i], proc);
       if (mreg != NULL)
         return 0;
     }
@@ -196,27 +196,27 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
         return 1;
     }
 
-    mreg = mreg_lookup(shr_ptr, proc);
+    mreg = gmr_lookup(shr_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-    mreg_lock(mreg, proc);
+    gmr_lock(mreg, proc);
 
     switch(op) {
       case ARMCII_OP_PUT:
-        mreg_put(mreg, src[i], dst[i], elem_count, proc);
+        gmr_put(mreg, src[i], dst[i], elem_count, proc);
         break;
       case ARMCII_OP_GET:
-        mreg_get(mreg, src[i], dst[i], elem_count, proc);
+        gmr_get(mreg, src[i], dst[i], elem_count, proc);
         break;
       case ARMCII_OP_ACC:
-        mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
         return 1;
     }
 
-    mreg_unlock(mreg, proc);
+    gmr_unlock(mreg, proc);
   }
 
   return 0;
@@ -248,10 +248,10 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
       return 1;
   }
 
-  mreg = mreg_lookup(shr_ptr, proc);
+  mreg = gmr_lookup(shr_ptr, proc);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  mreg_lock(mreg, proc);
+  gmr_lock(mreg, proc);
 
   for (i = 0; i < count; i++) {
 
@@ -259,19 +259,19 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
         && i % ARMCII_GLOBAL_STATE.iov_onelock_limit == 0
         && i > 0 )
     {
-      mreg_unlock(mreg, proc);
-      mreg_lock(mreg, proc);
+      gmr_unlock(mreg, proc);
+      gmr_lock(mreg, proc);
     }
 
     switch(op) {
       case ARMCII_OP_PUT:
-        mreg_put(mreg, src[i], dst[i], elem_count, proc);
+        gmr_put(mreg, src[i], dst[i], elem_count, proc);
         break;
       case ARMCII_OP_GET:
-        mreg_get(mreg, src[i], dst[i], elem_count, proc);
+        gmr_get(mreg, src[i], dst[i], elem_count, proc);
         break;
       case ARMCII_OP_ACC:
-        mreg_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
@@ -279,7 +279,7 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
     }
   }
 
-  mreg_unlock(mreg, proc);
+  gmr_unlock(mreg, proc);
 
   return 0;
 }
@@ -318,7 +318,7 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     MPI_Type_size(type, &type_size);
 
-    mreg = mreg_lookup(buf_rem[0], proc);
+    mreg = gmr_lookup(buf_rem[0], proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
     dst_win_base = mreg->slices[proc].base;
@@ -345,24 +345,24 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
 
-    mreg_lock(mreg, proc);
+    gmr_lock(mreg, proc);
 
     switch(op) {
       case ARMCII_OP_ACC:
-        mreg_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         break;
       case ARMCII_OP_PUT:
-        mreg_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         break;
       case ARMCII_OP_GET:
-        mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
         return 1;
     }
 
-    mreg_unlock(mreg, proc);
+    gmr_unlock(mreg, proc);
 
     MPI_Type_free(&type_loc);
     MPI_Type_free(&type_rem);
@@ -406,7 +406,7 @@ int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst
 
     MPI_Type_size(type, &type_size);
 
-    mreg = mreg_lookup(buf_rem[0], proc);
+    mreg = gmr_lookup(buf_rem[0], proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
     dst_win_base = mreg->slices[proc].base;
@@ -438,24 +438,24 @@ int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
 
-    mreg_lock(mreg, proc);
+    gmr_lock(mreg, proc);
 
     switch(op) {
       case ARMCII_OP_ACC:
-        mreg_accumulate_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_accumulate_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         break;
       case ARMCII_OP_PUT:
-        mreg_put_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_put_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         break;
       case ARMCII_OP_GET:
-        mreg_get_typed(mreg, MPI_BOTTOM, 1, type_rem, base_loc_ptr, 1, type_loc, proc);
+        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, base_loc_ptr, 1, type_loc, proc);
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
         return 1;
     }
 
-    mreg_unlock(mreg, proc);
+    gmr_unlock(mreg, proc);
 
     MPI_Type_free(&type_loc);
     MPI_Type_free(&type_rem);

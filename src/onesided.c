@@ -21,13 +21,13 @@
 void ARMCI_Access_begin(void *ptr) {
   gmr_t *mreg;
 
-  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not permitted in the current access mode");
 
-  mreg_dla_lock(mreg);
+  gmr_dla_lock(mreg);
 }
 
 
@@ -42,10 +42,10 @@ void ARMCI_Access_begin(void *ptr) {
 void ARMCI_Access_end(void *ptr) {
   gmr_t *mreg;
 
-  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  mreg_dla_unlock(mreg);
+  gmr_dla_unlock(mreg);
 }
 
 
@@ -60,7 +60,7 @@ void ARMCI_Access_end(void *ptr) {
 int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
   gmr_t *mreg;
 
-  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   ARMCII_Assert(group->comm == mreg->group.comm);
@@ -88,7 +88,7 @@ int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
 int ARMCIX_Mode_get(void *ptr) {
   gmr_t *mreg;
 
-  mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
   return mreg->access_mode;
@@ -106,31 +106,31 @@ int ARMCIX_Mode_get(void *ptr) {
 int ARMCI_Get(void *src, void *dst, int size, int target) {
   gmr_t *src_mreg, *dst_mreg;
 
-  src_mreg = mreg_lookup(src, target);
-  dst_mreg = mreg_lookup(dst, ARMCI_GROUP_WORLD.rank);
+  src_mreg = gmr_lookup(src, target);
+  dst_mreg = gmr_lookup(dst, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert_msg(src_mreg != NULL, "Invalid remote pointer");
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank) {
     if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
-      if (dst_mreg) mreg_dla_lock(dst_mreg);
-      mreg_dla_lock(src_mreg);
+      if (dst_mreg) gmr_dla_lock(dst_mreg);
+      gmr_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
     if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
-      if (dst_mreg) mreg_dla_unlock(dst_mreg);
-      mreg_dla_unlock(src_mreg);
+      if (dst_mreg) gmr_dla_unlock(dst_mreg);
+      gmr_dla_unlock(src_mreg);
     }
   }
 
   /* Origin buffer is private */
   else if (dst_mreg == NULL || ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) {
-    mreg_lock(src_mreg, target);
-    mreg_get(src_mreg, src, dst, size, target);
-    mreg_unlock(src_mreg, target);
+    gmr_lock(src_mreg, target);
+    gmr_get(src_mreg, src, dst, size, target);
+    gmr_unlock(src_mreg, target);
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
@@ -142,14 +142,14 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
     MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
     ARMCII_Assert(dst_buf != NULL);
 
-    mreg_lock(src_mreg, target);
-    mreg_get(src_mreg, src, dst_buf, size, target);
-    mreg_unlock(src_mreg, target);
+    gmr_lock(src_mreg, target);
+    gmr_get(src_mreg, src, dst_buf, size, target);
+    gmr_unlock(src_mreg, target);
 
-    mreg_dla_lock(dst_mreg);
+    gmr_dla_lock(dst_mreg);
     ARMCI_Copy(dst_buf, dst, size);
     MPI_Free_mem(dst_buf);
-    mreg_dla_unlock(dst_mreg);
+    gmr_dla_unlock(dst_mreg);
   }
 
   return 0;
@@ -167,31 +167,31 @@ int ARMCI_Get(void *src, void *dst, int size, int target) {
 int ARMCI_Put(void *src, void *dst, int size, int target) {
   gmr_t *src_mreg, *dst_mreg;
 
-  src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
-  dst_mreg = mreg_lookup(dst, target);
+  src_mreg = gmr_lookup(src, ARMCI_GROUP_WORLD.rank);
+  dst_mreg = gmr_lookup(dst, target);
 
   ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank) {
     if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
-      mreg_dla_lock(dst_mreg);
-      if (src_mreg) mreg_dla_lock(src_mreg);
+      gmr_dla_lock(dst_mreg);
+      if (src_mreg) gmr_dla_lock(src_mreg);
     }
 
     ARMCI_Copy(src, dst, size);
     
     if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
-      mreg_dla_unlock(dst_mreg);
-      if (src_mreg) mreg_dla_unlock(src_mreg);
+      gmr_dla_unlock(dst_mreg);
+      if (src_mreg) gmr_dla_unlock(src_mreg);
     }
   }
 
   /* Origin buffer is private */
   else if (src_mreg == NULL || ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) {
-    mreg_lock(dst_mreg, target);
-    mreg_put(dst_mreg, src, dst, size, target);
-    mreg_unlock(dst_mreg, target);
+    gmr_lock(dst_mreg, target);
+    gmr_put(dst_mreg, src, dst, size, target);
+    gmr_unlock(dst_mreg, target);
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
@@ -203,13 +203,13 @@ int ARMCI_Put(void *src, void *dst, int size, int target) {
     MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
     ARMCII_Assert(src_buf != NULL);
 
-    mreg_dla_lock(src_mreg);
+    gmr_dla_lock(src_mreg);
     ARMCI_Copy(src, src_buf, size);
-    mreg_dla_unlock(src_mreg);
+    gmr_dla_unlock(src_mreg);
 
-    mreg_lock(dst_mreg, target);
-    mreg_put(dst_mreg, src_buf, dst, size, target);
-    mreg_unlock(dst_mreg, target);
+    gmr_lock(dst_mreg, target);
+    gmr_put(dst_mreg, src_buf, dst, size, target);
+    gmr_unlock(dst_mreg, target);
 
     MPI_Free_mem(src_buf);
   }
@@ -235,8 +235,8 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   MPI_Datatype type;
   gmr_t *src_mreg, *dst_mreg;
 
-  src_mreg = mreg_lookup(src, ARMCI_GROUP_WORLD.rank);
-  dst_mreg = mreg_lookup(dst, proc);
+  src_mreg = gmr_lookup(src, ARMCI_GROUP_WORLD.rank);
+  dst_mreg = gmr_lookup(dst, proc);
 
   ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
 
@@ -246,7 +246,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
   if (src_mreg && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
-    mreg_dla_lock(src_mreg);
+    gmr_dla_lock(src_mreg);
     src_is_locked = 1;
   }
 
@@ -269,7 +269,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   /* Unlock early if src_buf is a copy */
   if (src_buf != src && src_is_locked) {
-    mreg_dla_unlock(src_mreg);
+    gmr_dla_unlock(src_mreg);
     src_is_locked = 0;
   }
 
@@ -281,12 +281,12 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  mreg_lock(dst_mreg, proc);
-  mreg_accumulate(dst_mreg, src_buf, dst, count, type, proc);
-  mreg_unlock(dst_mreg, proc);
+  gmr_lock(dst_mreg, proc);
+  gmr_accumulate(dst_mreg, src_buf, dst, count, type, proc);
+  gmr_unlock(dst_mreg, proc);
 
   if (src_is_locked) {
-    mreg_dla_unlock(src_mreg);
+    gmr_dla_unlock(src_mreg);
     src_is_locked = 0;
   }
 

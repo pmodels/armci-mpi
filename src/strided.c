@@ -98,14 +98,14 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
-    gmr_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *gmr_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
     /* COPY: Guard shared buffers */
     if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
-      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
+      gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
 
-      if (mreg_loc != NULL) {
+      if (gmr_loc != NULL) {
         int i, size;
 
         for (i = 1, size = count[0]; i < stride_levels+1; i++)
@@ -114,9 +114,9 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
         MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
         ARMCII_Assert(src_buf != NULL);
 
-        mreg_dla_lock(mreg_loc);
+        gmr_dla_lock(gmr_loc);
         armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
-        mreg_dla_unlock(mreg_loc);
+        gmr_dla_unlock(gmr_loc);
 
         MPI_Type_contiguous(size, MPI_BYTE, &src_type);
       }
@@ -134,12 +134,12 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     MPI_Type_commit(&src_type);
     MPI_Type_commit(&dst_type);
 
-    mreg = mreg_lookup(dst_ptr, proc);
+    mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    mreg_lock(mreg, proc);
-    mreg_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-    mreg_unlock(mreg, proc);
+    gmr_lock(mreg, proc);
+    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_unlock(mreg, proc);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -186,14 +186,14 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *dst_buf = NULL;
-    gmr_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *gmr_loc = NULL;
     MPI_Datatype src_type, dst_type;
 
     /* COPY: Guard shared buffers */
     if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
-      mreg_loc = mreg_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
+      gmr_loc = gmr_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
 
-      if (mreg_loc != NULL) {
+      if (gmr_loc != NULL) {
         int i, size;
 
         for (i = 1, size = count[0]; i < stride_levels+1; i++)
@@ -218,18 +218,18 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     MPI_Type_commit(&src_type);
     MPI_Type_commit(&dst_type);
 
-    mreg = mreg_lookup(src_ptr, proc);
+    mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    mreg_lock(mreg, proc);
-    mreg_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
-    mreg_unlock(mreg, proc);
+    gmr_lock(mreg, proc);
+    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
+    gmr_unlock(mreg, proc);
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
-      mreg_dla_lock(mreg_loc);
+      gmr_dla_lock(gmr_loc);
       armci_read_strided(dst_ptr, stride_levels, dst_stride_ar, count, dst_buf);
-      mreg_dla_unlock(mreg_loc);
+      gmr_dla_unlock(gmr_loc);
       MPI_Free_mem(dst_buf);
     }
 
@@ -277,7 +277,7 @@ int ARMCI_AccS(int datatype, void *scale,
 
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     void         *src_buf = NULL;
-    gmr_t *mreg, *mreg_loc = NULL;
+    gmr_t *mreg, *gmr_loc = NULL;
     MPI_Datatype src_type, dst_type, mpi_datatype;
     int          scaled, mpi_datatype_size;
 
@@ -290,7 +290,7 @@ int ARMCI_AccS(int datatype, void *scale,
       int i, nelem;
 
       if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
-        mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
+        gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
 
       for (i = 1, nelem = count[0]/mpi_datatype_size; i < stride_levels+1; i++)
         nelem *= count[i];
@@ -298,7 +298,7 @@ int ARMCI_AccS(int datatype, void *scale,
       MPI_Alloc_mem(nelem*mpi_datatype_size, MPI_INFO_NULL, &src_buf);
       ARMCII_Assert(src_buf != NULL);
 
-      if (mreg_loc != NULL) mreg_dla_lock(mreg_loc);
+      if (gmr_loc != NULL) gmr_dla_lock(gmr_loc);
 
       /* Shoehorn the strided information into an IOV */
       ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, src_ptr, src_stride_ar, count, stride_levels);
@@ -309,16 +309,16 @@ int ARMCI_AccS(int datatype, void *scale,
       free(iov.src_ptr_array);
       free(iov.dst_ptr_array);
 
-      if (mreg_loc != NULL) mreg_dla_unlock(mreg_loc);
+      if (gmr_loc != NULL) gmr_dla_unlock(gmr_loc);
 
       MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
     }
 
     /* COPY: Guard shared buffers */
     else if (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
-      mreg_loc = mreg_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
+      gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
 
-      if (mreg_loc != NULL) {
+      if (gmr_loc != NULL) {
         int i, nelem;
 
         for (i = 1, nelem = count[0]/mpi_datatype_size; i < stride_levels+1; i++)
@@ -327,9 +327,9 @@ int ARMCI_AccS(int datatype, void *scale,
         MPI_Alloc_mem(nelem*mpi_datatype_size, MPI_INFO_NULL, &src_buf);
         ARMCII_Assert(src_buf != NULL);
 
-        mreg_dla_lock(mreg_loc);
+        gmr_dla_lock(gmr_loc);
         armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
-        mreg_dla_unlock(mreg_loc);
+        gmr_dla_unlock(gmr_loc);
 
         MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
       }
@@ -354,12 +354,12 @@ int ARMCI_AccS(int datatype, void *scale,
 
     ARMCII_Assert(src_size == dst_size);
 
-    mreg = mreg_lookup(dst_ptr, proc);
+    mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    mreg_lock(mreg, proc);
-    mreg_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-    mreg_unlock(mreg, proc);
+    gmr_lock(mreg, proc);
+    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_unlock(mreg, proc);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);

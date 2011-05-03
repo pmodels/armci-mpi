@@ -103,11 +103,11 @@ void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *
 /** Synchronize all public and private windows.
   */
 void ARMCII_Flush_local(void) {
-  gmr_t *cur_mreg = mreg_list;
+  gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
-    mreg_dla_lock(cur_mreg);
-    mreg_dla_unlock(cur_mreg);
+    gmr_dla_lock(cur_mreg);
+    gmr_dla_unlock(cur_mreg);
 
     cur_mreg = cur_mreg->next;
   }

@@ -45,7 +45,7 @@ int ARMCI_Malloc_group(void **base_ptrs, int size, ARMCI_Group *group) {
   int i;
   gmr_t *mreg;
  
-  mreg = mreg_create(size, base_ptrs, group);
+  mreg = gmr_create(size, base_ptrs, group);
 
   if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000
@@ -76,14 +76,14 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
   gmr_t *mreg;
 
   if (ptr != NULL) {
-    mreg = mreg_lookup(ptr, ARMCI_GROUP_WORLD.rank);
+    mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
   } else {
     ARMCII_Dbg_print(DEBUG_CAT_ALLOC, "given NULL\n");
     mreg = NULL;
   }
 
-  mreg_destroy(mreg, group);
+  gmr_destroy(mreg, group);
 
   return 0;
 }

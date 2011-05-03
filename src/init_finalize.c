@@ -197,7 +197,7 @@ int ARMCI_Finalize(void) {
     return 0;
   }
 
-  nfreed = mreg_destroy_all();
+  nfreed = gmr_destroy_all();
 
   if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
     ARMCII_Warning("Freed %d leaked allocations\n", nfreed);
