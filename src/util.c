@@ -120,3 +120,29 @@ int ARMCII_Log2(unsigned int val) {
 
   return lg;
 }
+
+
+/** Retrieve the value of a boolean environment variable.
+  */
+int ARMCII_Getenv_bool(char *varname) {
+  char *var = getenv(varname);
+  return var != NULL;
+}
+
+
+/** Retrieve the value of a environment variable.
+  */
+char *ARMCII_Getenv(char *varname) {
+  return getenv(varname);
+}
+
+
+/** Retrieve the value of an integer environment variable.
+  */
+int ARMCII_Getenv_int(char *varname, int default_value) {
+  char *var = getenv("ARMCI_IOV_BATCHED_LIMIT");
+  if (var) 
+    return atoi(var);
+  else
+    return default_value;
+}

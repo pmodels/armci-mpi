@@ -139,11 +139,11 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
     ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   }
 
-  // SAFE CASE: If remote pointers overlap or remote pointers correspond to
+  // CONSERVATIVE CASE: If remote pointers overlap or remote pointers correspond to
   // multiple allocations, use the safe implementation to avoid invalid MPI
   // use.
 
-  if (overlapping || !same_alloc || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_SAFE) {
+  if (overlapping || !same_alloc || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_CONSRV) {
     if (overlapping) ARMCII_Warning("IOV remote buffers overlap\n");
     if (!same_alloc) ARMCII_Warning("IOV remote buffers are not within the same allocation\n");
     return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
@@ -152,7 +152,7 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
   // OPTIMIZED CASE: It's safe for us to issue all the operations under a
   // single lock.
 
-  else if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DTYPE
+  else if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT
            || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO  ) {
     if (ARMCII_GLOBAL_STATE.no_mpi_bottom == 1) {
       return ARMCII_Iov_op_datatype_no_bottom(op, src, dst, count, type_count, type, proc);

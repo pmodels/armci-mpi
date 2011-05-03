@@ -30,8 +30,8 @@ enum ARMCII_Op_e { ARMCII_OP_PUT, ARMCII_OP_GET, ARMCII_OP_ACC };
 
 enum ARMCII_Strided_methods_e { ARMCII_STRIDED_IOV, ARMCII_STRIDED_DIRECT };
 
-enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_SAFE,
-                            ARMCII_IOV_BATCHED, ARMCII_IOV_DTYPE };
+enum ARMCII_Iov_methods_e { ARMCII_IOV_AUTO, ARMCII_IOV_CONSRV,
+                            ARMCII_IOV_BATCHED, ARMCII_IOV_DIRECT };
 
 enum ARMCII_Shr_buf_methods_e { ARMCII_SHR_BUF_COPY, ARMCII_SHR_BUF_NOGUARD };
 
@@ -44,7 +44,7 @@ typedef struct {
   int           debug_alloc;          /* Do extra debuggin on memory allocation               */
   int           debug_flush_barriers; /* Flush all windows on a barrier                       */
   int           iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
-  unsigned int  iov_batched_limit;    /* Max number of ops per epoch for BATCHED IOV method   */
+  int           iov_batched_limit;    /* Max number of ops per epoch for BATCHED IOV method   */
   int           no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
   int           verbose;              /* ARMCI should produce extra status output             */
 
@@ -65,8 +65,11 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 
 /* Utility functions */
 
-void ARMCII_Bzero(void *buf, int size);
-int  ARMCII_Log2(unsigned int val);
+void  ARMCII_Bzero(void *buf, int size);
+int   ARMCII_Log2(unsigned int val);
+int   ARMCII_Getenv_bool(char *varname);
+char *ARMCII_Getenv(char *varname);
+int   ARMCII_Getenv_int(char *varname, int default_value);
 
 /* Synchronization */
 

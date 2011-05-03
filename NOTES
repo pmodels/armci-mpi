@@ -1,5 +1,9 @@
-Implementation Notes:
-====================
+                    ARMCI on MPI-RMA Implementation Notes
+                       James Dinan <dinan@mcs.anl.gov>
+
+===============================================================================
+ARMCI-MPI Errata
+===============================================================================
 
 Direct access to local buffers:
 
@@ -25,9 +29,13 @@ Progress semantics:
    --enable-async-progress and set MPICH_ASYNC_PROGRESS; set DCMF_INTERRUPTS=1
    for MPICH2-BG; etc.
 
-
+===============================================================================
 Environment Variables:
-=====================
+===============================================================================
+
+ -------------------
+: Debugging Options :
+ -------------------
 
 ARMCI_VERBOSE
 
@@ -42,23 +50,10 @@ ARMCI_NO_FLUSH_BARRIERS
   Don't do extra communication flusing in ARMCI_Barrier.  Extra flushes are
   present to help make unsafe DLA safer.
 
-ARMCI_IOV_METHOD = { AUTO (default), SAFE, ONELOCK, DTYPE }
+ --------------------------
+: Shared Buffer Protection :
+ --------------------------
 
-  Select the IO vector communication strategy: automatic; a "safe"
-  implementation that does lock/unlock around each operation; an implementation
-  that issues all operations within a single lock/unlock epoch; and an
-  implementation that generates datatypes for the origin and target and issues
-  a single operation using them (fastest).
-
-ARMCI_DISABLE_IOV_CHECKS
-
-  Disable expensive IOV safety checks (recommended for performance).
-
-ARMCI_IOV_ONELOCK_LIMIT = { 0 (default), 1, ... }
-
-  Set the maximum number of one-sided operations per epoch for the ONELOCK IOV
-  method.  Zero (default) is unlimited.
-  
 ARMCI_SHR_BUF_METHOD = { COPY (default), NOGUARD }
 
   ARMCI policy for managing shared origin buffers in communication operations:
@@ -66,11 +61,36 @@ ARMCI_SHR_BUF_METHOD = { COPY (default), NOGUARD }
   the buffer - assume that the system is cache coherent and MPI supports
   unlocked load/store.
 
-ARMCI_NO_MPI_BOTTOM
+ --------------------
+: I/O Vector Options :
+ --------------------
+
+ARMCI_IOV_METHOD = { AUTO (default), CONSRV, BATCHED, DIRECT }
+
+  Select the IO vector communication strategy: automatic; a "conservative"
+  implementation that does lock/unlock around each operation; an implementation
+  that issues batches of operations within a single lock/unlock epoch; and a
+  direct implementation that generates datatypes for the origin and target and
+  issues a single operation using them (fastest).
+
+ARMCI_IOV_DISABLE_CHECKS
+
+  Disable expensive IOV safety checks (recommended for performance).
+
+ARMCI_IOV_BATCHED_LIMIT = { 0 (default), 1, ... }
+
+  Set the maximum number of one-sided operations per epoch for the BATCHED IOV
+  method.  Zero (default) is unlimited.
+  
+ARMCI_IOV_NO_MPI_BOTTOM
 
   Disable the use of MPI_BOTTOM in datatypes.  This is a workaround for MPI
   implementations that don't correctly handle MPI datatypes that are relative
   to BOTTOM.
+
+ -----------------
+: Strided Options :
+ -----------------
 
 ARMCI_STRIDED_METHOD = { DIRECT, IOV (default) }
 

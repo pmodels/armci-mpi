@@ -45,49 +45,45 @@ int ARMCI_Init(void) {
 
   ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
-  /* Check for debugging flags. */
+  /* Check for debugging flags */
 
-  var = getenv("ARMCI_DEBUG_ALLOC");
-  if (var != NULL) ARMCII_GLOBAL_STATE.debug_alloc = 1;
-  var = getenv("ARMCI_NO_FLUSH_BARRIERS");
-  ARMCII_GLOBAL_STATE.debug_flush_barriers = (var == NULL) ? 1 : 0;
-  var = getenv("ARMCI_DISABLE_IOV_CHECKS");
-  if (var != NULL) ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
-  var = getenv("ARMCI_NO_MPI_BOTTOM");
-  if (var != NULL) ARMCII_GLOBAL_STATE.no_mpi_bottom = 1;
-  var = getenv("ARMCI_VERBOSE");
-  if (var != NULL) ARMCII_GLOBAL_STATE.verbose = 1;
+  ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC");
+  ARMCII_GLOBAL_STATE.debug_flush_barriers = ARMCII_Getenv_bool("ARMCI_NO_FLUSH_BARRIERS") ? 1 : 0;
+  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE");
 
-  /* Set the IOV/strided transfer method */
+  /* Check for IOV flags */
 
-  var = getenv("ARMCI_IOV_METHOD");
+  ARMCII_GLOBAL_STATE.iov_checks_disabled  = ARMCII_Getenv_bool("ARMCI_IOV_DISABLE_CHECKS");
+  ARMCII_GLOBAL_STATE.no_mpi_bottom        = ARMCII_Getenv_bool("ARMCI_IOV_NO_MPI_BOTTOM");
+  ARMCII_GLOBAL_STATE.iov_batched_limit    = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
+
+  if (ARMCII_GLOBAL_STATE.iov_batched_limit < 0) {
+    ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_BATCHED_LIMIT (%d)\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
+    ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
+  }
+
+  var = ARMCII_Getenv("ARMCI_IOV_METHOD");
 
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
 
   if (var != NULL) {
     if (strcmp(var, "AUTO") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
-    else if (strcmp(var, "SAFE") == 0)
-      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_SAFE;
+    else if (strcmp(var, "CONSRV") == 0)
+      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_CONSRV;
     else if (strcmp(var, "BATCHED") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
-    else if (strcmp(var, "DTYPE") == 0)
-      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DTYPE;
+    else if (strcmp(var, "DIRECT") == 0)
+      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
     else if (ARMCI_GROUP_WORLD.rank == 0)
       ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
-  /* Set the IOV/strided transfer method */
+  /* Check for Strided flags */
 
-  var = getenv("ARMCI_IOV_BATCHED_LIMIT");
-  if (var) 
-    ARMCII_GLOBAL_STATE.iov_batched_limit = (unsigned int) atoi(var);
+  var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
 
-  /* Set the IOV/strided transfer method */
-
-  var = getenv("ARMCI_STRIDED_METHOD");
-
-  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
 
   if (var != NULL) {
     if (strcmp(var, "IOV") == 0)
@@ -100,7 +96,7 @@ int ARMCI_Init(void) {
 
   /* Shared buffer handling method */
 
-  var = getenv("ARMCI_SHR_BUF_METHOD");
+  var = ARMCII_Getenv("ARMCI_SHR_BUF_METHOD");
 
   ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
 
@@ -132,27 +128,32 @@ int ARMCI_Init(void) {
 
       MPI_Get_version(&major, &minor);
 
-      printf("ARMCI-MPI initialized with %d processes, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, major, minor);
+      printf("ARMCI-MPI initialized with %d process%s, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
 #ifdef NO_SEATBELTS
-      printf("  NO_SEATBELTS      = EPIC SPEED\n");
+      printf("  NO_SEATBELTS        = ENABLED\n");
 #endif
-      printf("  STRIDED_METHOD    = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
-      printf("  IOV_METHOD        = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
+      printf("  STRIDED_METHOD      = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
+      printf("  IOV_METHOD          = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
       if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED
           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
       {
         if (ARMCII_GLOBAL_STATE.iov_batched_limit > 0)
-          printf("  IOV_BATCHED_LIMIT = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
+          printf("  IOV_BATCHED_LIMIT   = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
         else
-          printf("  IOV_BATCHED_LIMIT = UNLIMITED\n");
+          printf("  IOV_BATCHED_LIMIT   = UNLIMITED\n");
       }
 
-      printf("  SHR_BUF_METHOD    = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
-      printf("  DEBUG_ALLOC       = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");
-      printf("  NO_FLUSH_BARRIERS = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers ? "FALSE" : "TRUE");
-      printf("  IOV_CHECKS        = %s\n", ARMCII_GLOBAL_STATE.iov_checks_disabled ? "FALSE" : "TRUE");
-      printf("  USE_MPI_BOTTOM    = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom ? "FALSE" : "TRUE");
+      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT
+          || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
+      {
+        printf("  IOV_NO_MPI_BOTTOM   = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom ? "TRUE" : "FALSE");
+      }
+
+      printf("  IOV_DISABLE_CHECKS  = %s\n", ARMCII_GLOBAL_STATE.iov_checks_disabled ? "TRUE" : "FALSE");
+      printf("  SHR_BUF_METHOD      = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
+      printf("  DEBUG_ALLOC         = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");
+      printf("  NO_FLUSH_BARRIERS   = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers ? "FALSE" : "TRUE");
       printf("\n");
       fflush(NULL);
     }
