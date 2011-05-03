@@ -69,8 +69,8 @@ int ARMCI_Init(void) {
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
     else if (strcmp(var, "SAFE") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_SAFE;
-    else if (strcmp(var, "ONELOCK") == 0)
-      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_ONELOCK;
+    else if (strcmp(var, "BATCHED") == 0)
+      ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
     else if (strcmp(var, "DTYPE") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DTYPE;
     else if (ARMCI_GROUP_WORLD.rank == 0)
@@ -79,9 +79,9 @@ int ARMCI_Init(void) {
 
   /* Set the IOV/strided transfer method */
 
-  var = getenv("ARMCI_IOV_ONELOCK_LIMIT");
+  var = getenv("ARMCI_IOV_BATCHED_LIMIT");
   if (var) 
-    ARMCII_GLOBAL_STATE.iov_onelock_limit = (unsigned int) atoi(var);
+    ARMCII_GLOBAL_STATE.iov_batched_limit = (unsigned int) atoi(var);
 
   /* Set the IOV/strided transfer method */
 
@@ -139,13 +139,13 @@ int ARMCI_Init(void) {
       printf("  STRIDED_METHOD    = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD        = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
-      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK
+      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED
           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
       {
-        if (ARMCII_GLOBAL_STATE.iov_onelock_limit > 0)
-          printf("  ONELOCK_LIMIT     = %d\n", ARMCII_GLOBAL_STATE.iov_onelock_limit);
+        if (ARMCII_GLOBAL_STATE.iov_batched_limit > 0)
+          printf("  IOV_BATCHED_LIMIT = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
         else
-          printf("  ONELOCK_LIMIT     = UNLIMITED\n");
+          printf("  IOV_BATCHED_LIMIT = UNLIMITED\n");
       }
 
       printf("  SHR_BUF_METHOD    = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);

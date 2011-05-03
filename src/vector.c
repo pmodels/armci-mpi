@@ -160,8 +160,8 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
       return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
     }
 
-  } else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_ONELOCK) {
-    return ARMCII_Iov_op_onelock(op, src, dst, count, type_count, type, proc);
+  } else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED) {
+    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc);
 
   } else {
     ARMCII_Error("unknown iov method (%d)\n", ARMCII_GLOBAL_STATE.iov_method);
@@ -226,7 +226,7 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
 /** Optimized implementation of the ARMCI IOV operation that uses a single
   * lock/unlock pair.
   */
-int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
+int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
 
   int i;
@@ -255,8 +255,8 @@ int ARMCII_Iov_op_onelock(enum ARMCII_Op_e op, void **src, void **dst, int count
 
   for (i = 0; i < count; i++) {
 
-    if (   ARMCII_GLOBAL_STATE.iov_onelock_limit > 0 
-        && i % ARMCII_GLOBAL_STATE.iov_onelock_limit == 0
+    if (   ARMCII_GLOBAL_STATE.iov_batched_limit > 0 
+        && i % ARMCII_GLOBAL_STATE.iov_batched_limit == 0
         && i > 0 )
     {
       gmr_unlock(mreg, proc);
