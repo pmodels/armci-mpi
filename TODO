@@ -7,17 +7,11 @@ Things on the to do list:
   * Add upper limit to shared buffer copy size and do flow control.  May be
     most useful for strided as a first cut.
 
-  * Rename IOV methods: CONSRV, BATCHED, DIRECT
-
-  * New defaults: STRIDED=DIRECT, SHR_BUF=COPY
-
   * Allow setting defaults in configure step.
 
   * Passive target microbenchmarks: target sleeps on a shared file update.
 
   * Breakpoint optimization to shift from IOV->BATCHED to DIRECT.
-
-  * Remove no_bottom?
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
