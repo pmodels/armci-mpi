@@ -142,6 +142,16 @@ if test "$safety_enabled" = "no"; then
    AC_DEFINE(NO_SEATBELTS,1,[Defined when safety checks are disabled])
 fi
 
+## ARMCI Groups
+AC_ARG_ENABLE(armci-group, AC_HELP_STRING([--enable-armci-group],[Enable ARMCI subset-collective group formation]),
+                 [ armci_group_enabled=$enableval ],
+                 [ armci_group_enabled=no ])
+AC_MSG_CHECKING(whether ARMCI subset-collective group formation is enabled)
+AC_MSG_RESULT($armci_group_enabled)
+if test "$armci_group_enabled" = "yes"; then
+   AC_DEFINE(ARMCI_GROUP,1,[Defined when ARMCI subset-collective group formation is enabled])
+fi
+
 ## Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)
 AC_SUBST(DOXYGEN)
