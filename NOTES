@@ -11,16 +11,6 @@ Direct access to local buffers:
    directly, it must be through put/get.  Alternatively you can use the 
    new ARMCI_Access_begin/end() functions.
    
-ARMCI groups:
-
- * ARMCI-style groups are not currently supported.  Groups formation is
-   currently collective across the parent group (MPI-style).  In ARMCI-style it
-   is collective across only the processes in the new group.  ARMCI groups
-   cannot be implemented in MPI since shared allocation requires creating an
-   MPI window, which requires a communicator.  Note that ARMCI-style groups are
-   not ARMCI's default behavior, they must be explicitly enabled.  ARMCI's
-   default behavior is to use MPI-style groups.
-
 Progress semantics:
 
  * On some MPI implementations and networks you may need to enable implicit

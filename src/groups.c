@@ -30,6 +30,7 @@ void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out) {
   ARMCI_Group_create_child(grp_size, pid_list, group_out, &ARMCI_GROUP_DEFAULT);
 }
 
+#ifndef ARMCI_GROUP
 
 /** Create an ARMCI group that contains a subset of the nodes in the parent
   * group. Collective across parent group.
@@ -76,13 +77,101 @@ void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_gr
   MPI_Group_free(&mpi_grp_child);
 }
 
+#else /* ARMCI_GROUP */
+
+/** Create an ARMCI group that contains a subset of the nodes in the parent
+  * group. Collective across parent group.
+  *
+  * @param[in]  grp_size         Number of entries in pid_list.
+  * @param[in]  pid_list         Sorted list of process ids that will be in the new group.
+  * @param[out] armci_grp_out    The new ARMCI group, only valid on group members.
+  * @param[in]  armci_grp_parent The parent of the new ARMCI group.
+  */
+void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
+    ARMCI_Group *armci_grp_parent) {
+
+  const int INTERCOMM_TAG = 42;
+  int       i, grp_me, me, nproc, merge_size;
+  MPI_Comm  pgroup, inter_pgroup;
+
+  if (DEBUG_CAT_ENABLED(DEBUG_CAT_GROUPS)) {
+#define BUF_LEN 1000
+    char string[BUF_LEN];
+    int  i, count = 0;
+
+    for (i = 0; i < grp_size && count < BUF_LEN; i++)
+      count += snprintf(string+count, BUF_LEN-count, (i == grp_size-1) ? "%d" : "%d ", pid_list[i]);
+
+    ARMCII_Dbg_print(DEBUG_CAT_GROUPS, "%d procs [%s]\n", grp_size, string);
+#undef BUF_LEN
+  }
+
+  me    = armci_grp_parent->rank;
+  nproc = armci_grp_parent->size;
+
+  /* CHECK: If I'm not a member, return COMM_NULL */
+  grp_me = -1;
+  for (i = 0; i < grp_size; i++) {
+    if (pid_list[i] == me) {
+      grp_me = i;
+      break;
+    }
+  }
+
+  if (grp_me < 0) {
+    armci_grp_out->comm = MPI_COMM_NULL;
+    armci_grp_out->size = 0;
+    armci_grp_out->rank = -1;
+    return;
+  }
+
+  /* CASE: Group size 1 */
+  else if (grp_size == 1 && pid_list[0] == me) {
+    MPI_Comm_dup(MPI_COMM_SELF, &armci_grp_out->comm);
+    armci_grp_out->size = 1;
+    armci_grp_out->rank = 0;
+    return;
+  }
+
+  pgroup = MPI_COMM_SELF;
+
+  /* Recursively merge adjacent groups until only one group remains.  */
+  for (merge_size = 1; merge_size < grp_size; merge_size *= 2) {
+    int      gid        = grp_me / merge_size;
+    MPI_Comm pgroup_old = pgroup;
+
+    if (gid % 2 == 0) {
+      /* Check if right partner doesn't exist */
+      if ((gid+1)*merge_size >= grp_size)
+        continue;
+
+      MPI_Intercomm_create(pgroup, 0, armci_grp_parent->comm, pid_list[(gid+1)*merge_size], INTERCOMM_TAG, &inter_pgroup);
+      MPI_Intercomm_merge(inter_pgroup, 0 /* LOW */, &pgroup);
+    } else {
+      MPI_Intercomm_create(pgroup, 0, armci_grp_parent->comm, pid_list[(gid-1)*merge_size], INTERCOMM_TAG, &inter_pgroup);
+      MPI_Intercomm_merge(inter_pgroup, 1 /* HIGH */, &pgroup);
+    }
+
+    MPI_Comm_free(&inter_pgroup);
+    if (pgroup_old != MPI_COMM_SELF) MPI_Comm_free(&pgroup_old);
+  }
+
+  armci_grp_out->comm = pgroup;
+
+  MPI_Comm_size(armci_grp_out->comm, &armci_grp_out->size);
+  MPI_Comm_rank(armci_grp_out->comm, &armci_grp_out->rank);
+}
+
+#endif /* ARMCI_GROUP */
 
 /** Free an ARMCI group.  Collective across group.
   *
   * @param[in] group The group to be freed
   */
 void ARMCI_Group_free(ARMCI_Group *group) {
-  MPI_Comm_free(&group->comm);
+  if (group->comm != MPI_COMM_NULL)
+    MPI_Comm_free(&group->comm);
+
   group->rank = -1;
   group->size = 0;
 }
