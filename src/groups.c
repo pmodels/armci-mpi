@@ -19,7 +19,7 @@ ARMCI_Group ARMCI_GROUP_DEFAULT = {0};
 
 
 /** Create an ARMCI group that contains a subset of the nodes in the current
-  * default group.  Collective.
+  * default group.  Collective across the default group.
   *
   * @param[in]  grp_size         Number of entries in pid_list.
   * @param[in]  pid_list         List of process ids that will be in the new group.
