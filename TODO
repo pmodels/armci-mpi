@@ -2,6 +2,9 @@
 Things on the to do list:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  * Cache the rank translation table for non-world groups.  Translation to
+    absolute and vice versa.
+
   * Make ARMCI_GROUP formation safe with respect to other communication.
     Inside of each ARMCI group, we can store a duplicate communicator for
     control messages.
