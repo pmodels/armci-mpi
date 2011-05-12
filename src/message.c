@@ -339,8 +339,10 @@ void armci_msg_sel_scope(int scope, void *x, int n, char* op, int type, int cont
   MPI_Comm    sel_comm;
   sel_data_t *data_in, *data_out;
 
+  /*
   printf("[%d] armci_msg_sel_scope(scope=%d, x=%p, n=%d, op=%s, type=%d, contribute=%d)\n",
       ARMCI_GROUP_WORLD.rank, scope, x, n, op, type, contribute);
+  */
 
   /* Determine the scope of the collective operation */
   if (scope == SCOPE_ALL || scope == SCOPE_MASTERS)
