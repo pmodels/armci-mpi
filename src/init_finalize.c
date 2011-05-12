@@ -48,7 +48,7 @@ int ARMCI_Init(void) {
   /* Check for debugging flags */
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC");
-  ARMCII_GLOBAL_STATE.debug_flush_barriers = ARMCII_Getenv_bool("ARMCI_NO_FLUSH_BARRIERS") ? 1 : 0;
+  ARMCII_GLOBAL_STATE.debug_flush_barriers = ARMCII_Getenv_bool("ARMCI_NO_FLUSH_BARRIERS") ? 0 : 1;
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE");
 
   /* Check for IOV flags */
