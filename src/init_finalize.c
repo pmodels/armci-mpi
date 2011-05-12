@@ -120,6 +120,9 @@ int ARMCI_Init(void) {
   MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
   MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
 
+  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &MPI_SELMIN_OP);
+  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &MPI_SELMAX_OP);
+
   ARMCII_GLOBAL_STATE.init_count++;
 
   if (ARMCII_GLOBAL_STATE.verbose) {
@@ -207,6 +210,9 @@ int ARMCI_Finalize(void) {
 
   MPI_Op_free(&MPI_ABSMIN_OP);
   MPI_Op_free(&MPI_ABSMAX_OP);
+
+  MPI_Op_free(&MPI_SELMIN_OP);
+  MPI_Op_free(&MPI_SELMAX_OP);
 
   ARMCI_Cleanup();
 

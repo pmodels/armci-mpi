@@ -215,8 +215,160 @@ void armci_msg_bintree(int scope, int *root, int *up, int *left, int *right) {
 }
 
 
-/** I have no idea what this does.  It's needed by GA.  TODO: Copy-pasted in copypaste.c
+/** Data packet for a select operation.  Data entry is a struct from GA's
+  * runtime where the first element is a value and later parts are indices of
+  * the element in the GA.
+  */
+typedef struct {
+  int     contribute;
+  int     type;
+  uint8_t data[1];
+} sel_data_t;
+
+
+/** Select operations to be used in allreduce.
+  */
+MPI_Op MPI_SELMIN_OP;
+MPI_Op MPI_SELMAX_OP;
+
+
+/** Min operator for armci_msg_sel
+  */
+void ARMCII_Msg_sel_min_op(void *data_in, void *data_inout, int *len, MPI_Datatype *datatype) {
+  sel_data_t *sd_1, *sd_2;
+
+  sd_1 = (sel_data_t*) data_in;
+  sd_2 = (sel_data_t*) data_inout;
+
+  if (sd_1->contribute && !sd_2->contribute) {
+    ARMCI_Copy(data_in, data_inout, *len);
+  }
+  
+  else if (sd_1->contribute && sd_2->contribute) {
+
+#define MSG_SEL_MIN_OP(X,Y,LEN,TYPE)                                      \
+  do {                                                                    \
+    if (*(TYPE*)((sel_data_t*)X)->data < *(TYPE*)((sel_data_t*)Y)->data)  \
+      ARMCI_Copy(X, Y, LEN);                                              \
+  } while (0)
+
+    switch (sd_1->type) {
+      case ARMCI_INT:
+        MSG_SEL_MIN_OP(data_in, data_inout, *len, int);
+        break;
+      case ARMCI_LONG:
+        MSG_SEL_MIN_OP(data_in, data_inout, *len, long);
+        break;
+      case ARMCI_LONG_LONG:
+        MSG_SEL_MIN_OP(data_in, data_inout, *len, long long);
+        break;
+      case ARMCI_FLOAT:
+        MSG_SEL_MIN_OP(data_in, data_inout, *len, float);
+        break;
+      case ARMCI_DOUBLE:
+        MSG_SEL_MIN_OP(data_in, data_inout, *len, double);
+        break;
+      default:
+        ARMCII_Error("Invalid data type (%d)", sd_1->type);
+    }
+
+#undef MSG_SEL_MIN_OP
+  }
+
+  /* else: no need to copy, data_inout already contains what we want to return */
+}
+
+
+/** Min operator for armci_msg_sel
+  */
+void ARMCII_Msg_sel_max_op(void *data_in, void *data_inout, int *len, MPI_Datatype *datatype) {
+  sel_data_t *sd_1, *sd_2;
+
+  sd_1 = (sel_data_t*) data_in;
+  sd_2 = (sel_data_t*) data_inout;
+
+  if (sd_1->contribute && !sd_2->contribute) {
+    ARMCI_Copy(data_in, data_inout, *len);
+  }
+  
+  else if (sd_1->contribute && sd_2->contribute) {
+
+#define MSG_SEL_MAX_OP(X,Y,LEN,TYPE)                                      \
+  do {                                                                    \
+    if (*(TYPE*)((sel_data_t*)X)->data > *(TYPE*)((sel_data_t*)Y)->data)  \
+      ARMCI_Copy(X, Y, LEN);                                              \
+  } while (0)
+
+    switch (sd_1->type) {
+      case ARMCI_INT:
+        MSG_SEL_MAX_OP(data_in, data_inout, *len, int);
+        break;
+      case ARMCI_LONG:
+        MSG_SEL_MAX_OP(data_in, data_inout, *len, long);
+        break;
+      case ARMCI_LONG_LONG:
+        MSG_SEL_MAX_OP(data_in, data_inout, *len, long long);
+        break;
+      case ARMCI_FLOAT:
+        MSG_SEL_MAX_OP(data_in, data_inout, *len, float);
+        break;
+      case ARMCI_DOUBLE:
+        MSG_SEL_MAX_OP(data_in, data_inout, *len, double);
+        break;
+      default:
+        ARMCII_Error("Invalid data type (%d)", sd_1->type);
+    }
+
+#undef MSG_SEL_MIN_OP
+  }
+
+  /* else: no need to copy, data_inout already contains what we want to return */
+}
+
+
+/** Collective index selection reduce operation.
   */
 void armci_msg_sel(void *x, int n, char *op, int type, int contribute) {
   armci_msg_sel_scope(SCOPE_ALL, x, n, op, type, contribute);
+}
+
+
+/** Collective index selection reduce operation (scoped).
+  */
+void armci_msg_sel_scope(int scope, void *x, int n, char* op, int type, int contribute) {
+  MPI_Comm    sel_comm;
+  sel_data_t *data_in, *data_out;
+
+  printf("[%d] armci_msg_sel_scope(scope=%d, x=%p, n=%d, op=%s, type=%d, contribute=%d)\n",
+      ARMCI_GROUP_WORLD.rank, scope, x, n, op, type, contribute);
+
+  /* Determine the scope of the collective operation */
+  if (scope == SCOPE_ALL || scope == SCOPE_MASTERS)
+    sel_comm = ARMCI_GROUP_WORLD.comm;
+  else
+    sel_comm = MPI_COMM_SELF;
+
+  data_in  = malloc(sizeof(sel_data_t)+n-1);
+  data_out = malloc(sizeof(sel_data_t)+n-1);
+
+  ARMCII_Assert(data_in != NULL && data_out != NULL);
+
+  data_in->contribute = contribute;
+  data_in->type       = type;
+
+  if (contribute)
+    ARMCI_Copy(x, data_in->data, n);
+
+  if (strncmp(op, "min", 3) == 0) {
+    MPI_Allreduce(data_in, data_out, sizeof(sel_data_t)+n-1, MPI_BYTE, MPI_SELMIN_OP, sel_comm);
+  } else if (strncmp(op, "max", 3) == 0) {
+    MPI_Allreduce(data_in, data_out, sizeof(sel_data_t)+n-1, MPI_BYTE, MPI_SELMAX_OP, sel_comm);
+  } else {
+      ARMCII_Error("Invalid operation (%s)", op);
+  }
+
+  ARMCI_Copy(data_out->data, x, n);
+
+  free(data_in);
+  free(data_out);
 }

@@ -60,6 +60,8 @@ extern ARMCI_Group    ARMCI_GROUP_WORLD;
 extern ARMCI_Group    ARMCI_GROUP_DEFAULT;
 extern MPI_Op         MPI_ABSMIN_OP;
 extern MPI_Op         MPI_ABSMAX_OP;
+extern MPI_Op         MPI_SELMIN_OP;
+extern MPI_Op         MPI_SELMAX_OP;
 extern global_state_t ARMCII_GLOBAL_STATE;
   
 
@@ -80,6 +82,8 @@ void ARMCII_Flush_local(void);
 void ARMCII_Absmin_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 void ARMCII_Absmax_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 void ARMCII_Absv_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
+void ARMCII_Msg_sel_min_op(void *data_in, void *data_inout, int *len, MPI_Datatype *datatype);
+void ARMCII_Msg_sel_max_op(void *data_in, void *data_inout, int *len, MPI_Datatype *datatype);
 
 
 /* Translate between ARMCI and MPI ranks */
