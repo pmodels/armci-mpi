@@ -9,7 +9,7 @@
 #include <armcix.h>
 #endif
 
-#define MAX_DATA_SIZE   (1024*1024*16)
+#define MAX_DATA_SIZE   (1024*128*16)
 #define NUM_ITERATIONS  ((data_size <= 2048) ? 4096 : ((data_size <= 16384) ? 1024 : 512))
 #define NUM_WARMUP_ITER 1 
 
