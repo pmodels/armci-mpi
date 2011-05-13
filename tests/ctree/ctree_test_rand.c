@@ -7,7 +7,7 @@
 #include <time.h>
 #include <conflict_tree.h>
 
-#define NELT 10000
+#define NELT 1000
 
 uint8_t *data[NELT];
 
