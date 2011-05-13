@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 #ifndef _CONFLICT_TREE_H
 #define _CONFLICT_TREE_H
 
