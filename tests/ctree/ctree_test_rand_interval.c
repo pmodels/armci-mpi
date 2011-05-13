@@ -11,7 +11,7 @@
 #define MAX(X,Y) ((X) > (Y) ? X : Y)
 
 #define MAX_INTVL 1000
-#define NELT      10000
+#define NELT      1000
 
 uint8_t *data[NELT][2];
 
