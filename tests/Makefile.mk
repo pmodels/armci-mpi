@@ -126,9 +126,5 @@ tests_test_igop_SOURCES = $(top_srcdir)/tests/test_igop.c
 tests_test_igop_LDADD = -larmci
 tests_test_igop_DEPENDENCIES = libarmci.la
 
-include tests/armci_test/Makefile.mk
-include tests/cg/Makefile.mk
-include tests/lu/Makefile.mk
-include tests/transp1D/Makefile.mk
 include tests/non-blocking/Makefile.mk
 include tests/ctree/Makefile.mk

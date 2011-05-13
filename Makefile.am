@@ -47,6 +47,7 @@ TESTS_ENVIRONMENT = $(MPIEXEC)
 
 include benchmarks/Makefile.mk
 include tests/Makefile.mk
+include tests-contrib/Makefile.mk
 
 .PHONY: checkprogs
 checkprogs: $(check_PROGRAMS)
