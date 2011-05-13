@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /** ARMCI Mutex RMW Test -- James Dinan <dinan@mcs.anl.gov>
   * 
   * A mutex and shared integer live on process 0.  All processes lock, add a

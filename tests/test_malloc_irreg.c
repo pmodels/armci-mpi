@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /** ARMCI Irregular memory allocation test -- James Dinan <dinan@mcs.anl.gov>
   * 
   * Perform a series of allocations where all processes but one give zero bytes

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /** ARMCI Mutex test -- James Dinan <dinan@mcs.anl.gov>
   * 
   * All processes create N mutexes then lock+unlock all mutexes on all

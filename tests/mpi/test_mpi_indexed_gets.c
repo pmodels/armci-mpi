@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /* One-Sided MPI 2-D Strided Get Test
  *
  * Author: James Dinan <dinan@mcs.anl.gov> 

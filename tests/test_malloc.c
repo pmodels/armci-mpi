@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2010. See COPYRIGHT in top-level directory.
+ */
+
 /** ARMCI Malloc test -- James Dinan <dinan@mcs.anl.gov>
   * 
   * Perform a pile of allocations and then free them.
