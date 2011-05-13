@@ -18,3 +18,4 @@ include tests-contrib/armci_test/Makefile.mk
 include tests-contrib/cg/Makefile.mk
 include tests-contrib/lu/Makefile.mk
 include tests-contrib/transp1D/Makefile.mk
+include tests-contrib/non-blocking/Makefile.mk
