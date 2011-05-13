@@ -129,3 +129,7 @@ tests_test_igop_LDADD = -larmci
 tests_test_igop_DEPENDENCIES = libarmci.la
 
 include tests/ctree/Makefile.mk
+
+if CONTRIB_TESTS_EXIST
+include tests/contrib/Makefile.mk
+endif

@@ -152,6 +152,14 @@ if test "$armci_group_enabled" = "yes"; then
    AC_DEFINE(ARMCI_GROUP,1,[Defined when ARMCI subset-collective group formation is enabled])
 fi
 
+## Check if contrib tests are included
+if test -d "tests/contrib" ; then
+  CONTRIB_TESTS_EXIST=true
+else
+  CONTRIB_TESTS_EXIST=false
+fi
+AM_CONDITIONAL(CONTRIB_TESTS_EXIST, [ test x$CONTRIB_TESTS_EXIST = xtrue ])
+
 ## Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)
 AC_SUBST(DOXYGEN)
