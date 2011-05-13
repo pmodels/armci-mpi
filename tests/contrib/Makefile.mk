@@ -4,17 +4,22 @@
 
 check_PROGRAMS += \
                   tests/contrib/armci-perf         \
+                  tests/contrib/armci-test         \
                   # end
 
 TESTS          += \
                   tests/contrib/armci-perf         \
+                  tests/contrib/armci-test         \
                   # end
 
 tests_contrib_armci_perf_SOURCES = $(top_srcdir)/tests/contrib/armci-perf.c
 tests_contrib_armci_perf_LDADD = -larmci -lm
 tests_contrib_armci_perf_DEPENDENCIES = libarmci.la
 
-include tests/contrib/armci_test/Makefile.mk
+tests_contrib_armci_test_SOURCES = $(top_srcdir)/tests/contrib/armci-test.c
+tests_contrib_armci_test_LDADD = -larmci -lm
+tests_contrib_armci_test_DEPENDENCIES = libarmci.la
+
 include tests/contrib/cg/Makefile.mk
 include tests/contrib/lu/Makefile.mk
 include tests/contrib/transp1D/Makefile.mk
