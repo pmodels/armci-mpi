@@ -2,6 +2,8 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
+include tests/mpi/Makefile.mk
+
 check_PROGRAMS += tests/test_onesided         \
                   tests/test_onesided_shared  \
                   tests/test_onesided_shared_dla \

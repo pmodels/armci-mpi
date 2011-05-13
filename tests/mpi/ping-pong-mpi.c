@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     snd_buf[i] = 1;
   }
 
-  for (target = 1; target < nproc; target++) {
+  for (target = 1; target < /*nproc*/ 2; target++) {
     if (me == 0) printf("\n========== Process pair: %d and %d ==========\n\n", 0, target);
 
     for (msg_length = 1; msg_length <= MAX_SIZE; msg_length *= 2) {
