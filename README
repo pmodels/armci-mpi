@@ -96,7 +96,7 @@ ARMCI_IOV_METHOD = { AUTO (default), CONSRV, BATCHED, DIRECT }
   implementation that does lock/unlock around each operation; an implementation
   that issues batches of operations within a single lock/unlock epoch; and a
   direct implementation that generates datatypes for the origin and target and
-  issues a single operation using them (fastest).
+  issues a single operation using them.
 
 ARMCI_IOV_DISABLE_CHECKS
 
