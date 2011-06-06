@@ -93,6 +93,24 @@ int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
 
 /* I/O Vector data management and implementation */
 
+/** ARMCI IOV Iterator 
+  */
+typedef struct {
+  /* Strided Representation */
+  void *src;
+  void *dst;
+  int   stride_levels;
+
+  int  *base_ptr;
+  int  *src_stride_ar;
+  int  *dst_stride_ar;
+  int  *count;
+
+  /* Iterator State */
+  int   was_contiguous;
+  int  *idx;
+} armcii_iov_iter_t;
+
 void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *type, int *type_size);
 
 int  ARMCII_Iov_check_overlap(void **ptrs, int count, int size);
@@ -114,6 +132,14 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
     MPI_Datatype type, int proc);
 int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
+
+armcii_iov_iter_t *ARMCII_Strided_to_iov_iter(
+               void *src_ptr, int src_stride_ar[/*stride_levels*/],
+               void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+               int count[/*stride_levels+1*/], int stride_levels);
+void ARMCII_Iov_iter_free(armcii_iov_iter_t *it);
+int  ARMCII_Iov_iter_has_next(armcii_iov_iter_t *it);
+int  ARMCII_Iov_iter_next(armcii_iov_iter_t *it, void **src, void **dst);
 
 
 /* Shared to private buffer management routines */
