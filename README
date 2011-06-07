@@ -37,6 +37,21 @@ The following MPI implementations are known to fail with ARMCI-MPI:
  - OpenMPI
 
 ===============================================================================
+The ARMCI-MPI Test Suite
+===============================================================================
+
+ARMCI-MPI includes a set of testing and benchmark programs located under tests/
+and benchmarks/.  These programs can be compiled and run via:
+
+$ make check MPIEXEC="mpiexec -n 4"
+
+The MPIEXEC variable is optional and is used to override the default MPI launch
+command.  If you want only to build the test suite, the following target can be
+used:
+
+$ make checkprogs
+
+===============================================================================
 ARMCI-MPI Errata
 ===============================================================================
 
