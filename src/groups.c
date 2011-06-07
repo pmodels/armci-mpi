@@ -30,17 +30,16 @@ void ARMCI_Group_create(int grp_size, int *pid_list, ARMCI_Group *group_out) {
   ARMCI_Group_create_child(grp_size, pid_list, group_out, &ARMCI_GROUP_DEFAULT);
 }
 
-#ifndef ARMCI_GROUP
 
 /** Create an ARMCI group that contains a subset of the nodes in the parent
-  * group. Collective across parent group.
+  * group. Collective across output group.
   *
   * @param[in]  grp_size         Number of entries in pid_list.
   * @param[in]  pid_list         List of process ids that will be in the new group.
   * @param[out] armci_grp_out    The new ARMCI group, only valid on group members.
   * @param[in]  armci_grp_parent The parent of the new ARMCI group.
   */
-void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
+static inline void ARMCI_Group_create_child_collective(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
     ARMCI_Group *armci_grp_parent) {
 
   MPI_Group mpi_grp_parent;
@@ -77,17 +76,16 @@ void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_gr
   MPI_Group_free(&mpi_grp_child);
 }
 
-#else /* ARMCI_GROUP */
 
 /** Create an ARMCI group that contains a subset of the nodes in the parent
-  * group. Collective across parent group.
+  * group. Collective across output group.
   *
   * @param[in]  grp_size         Number of entries in pid_list.
   * @param[in]  pid_list         Sorted list of process ids that will be in the new group.
   * @param[out] armci_grp_out    The new ARMCI group, only valid on group members.
   * @param[in]  armci_grp_parent The parent of the new ARMCI group.
   */
-void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
+static inline void ARMCI_Group_create_child_noncollective(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
     ARMCI_Group *armci_grp_parent) {
 
   const int INTERCOMM_TAG = 42;
@@ -162,7 +160,24 @@ void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_gr
   MPI_Comm_rank(armci_grp_out->comm, &armci_grp_out->rank);
 }
 
-#endif /* ARMCI_GROUP */
+
+/** Create an ARMCI group that contains a subset of the nodes in the parent
+  * group. Collective.
+  *
+  * @param[in]  grp_size         Number of entries in pid_list.
+  * @param[in]  pid_list         Sorted list of process ids that will be in the new group.
+  * @param[out] armci_grp_out    The new ARMCI group, only valid on group members.
+  * @param[in]  armci_grp_parent The parent of the new ARMCI group.
+  */
+void ARMCI_Group_create_child(int grp_size, int *pid_list, ARMCI_Group *armci_grp_out,
+    ARMCI_Group *armci_grp_parent) {
+
+  if (ARMCII_GLOBAL_STATE.noncollective_groups)
+    ARMCI_Group_create_child_noncollective(grp_size, pid_list, armci_grp_out, armci_grp_parent);
+  else
+    ARMCI_Group_create_child_collective(grp_size, pid_list, armci_grp_out, armci_grp_parent);
+}
+
 
 /** Free an ARMCI group.  Collective across group.
   *

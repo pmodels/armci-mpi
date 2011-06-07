@@ -46,6 +46,7 @@ typedef struct {
   int           iov_checks_disabled;  /* Disable IOV same allocation and overlapping checks   */
   int           iov_batched_limit;    /* Max number of ops per epoch for BATCHED IOV method   */
   int           no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
+  int           noncollective_groups; /* Use noncollective group creation algorithm           */
   int           verbose;              /* ARMCI should produce extra status output             */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */

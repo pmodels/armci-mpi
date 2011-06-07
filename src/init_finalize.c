@@ -45,15 +45,30 @@ int ARMCI_Init(void) {
 
   ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
+  /* Set defaults */
+#ifdef ARMCI_GROUP
+  ARMCII_GLOBAL_STATE.noncollective_groups = 1;
+#endif
+#ifdef NO_SEATBELTS
+  ARMCII_GLOBAL_STATE.iov_checks_disabled  = 1;
+#endif
+
   /* Check for debugging flags */
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC");
   ARMCII_GLOBAL_STATE.debug_flush_barriers = ARMCII_Getenv_bool("ARMCI_NO_FLUSH_BARRIERS") ? 0 : 1;
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE");
 
+  /* Group formation options */
+
+  if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS"))
+    ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS");
+
   /* Check for IOV flags */
 
-  ARMCII_GLOBAL_STATE.iov_checks_disabled  = ARMCII_Getenv_bool("ARMCI_IOV_DISABLE_CHECKS");
+  if (ARMCII_Getenv("ARMCI_IOV_DISABLE_CHECKS"))
+    ARMCII_GLOBAL_STATE.iov_checks_disabled  = ARMCII_Getenv_bool("ARMCI_IOV_DISABLE_CHECKS");
+
   ARMCII_GLOBAL_STATE.no_mpi_bottom        = ARMCII_Getenv_bool("ARMCI_IOV_NO_MPI_BOTTOM");
   ARMCII_GLOBAL_STATE.iov_batched_limit    = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
@@ -109,12 +124,6 @@ int ARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
   }
 
-  /* NO_SEATBELTS Overrides some of the above options */
-
-#ifdef NO_SEATBELTS
-  ARMCII_GLOBAL_STATE.iov_checks_disabled = 1;
-#endif
-
   /* Create GOP operators */
 
   MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
@@ -155,6 +164,7 @@ int ARMCI_Init(void) {
 
       printf("  IOV_DISABLE_CHECKS  = %s\n", ARMCII_GLOBAL_STATE.iov_checks_disabled ? "TRUE" : "FALSE");
       printf("  SHR_BUF_METHOD      = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
+      printf("  NONCOLLECTIVE_GROUPS= %s\n", ARMCII_GLOBAL_STATE.noncollective_groups ? "TRUE" : "FALSE");
       printf("  DEBUG_ALLOC         = %s\n", ARMCII_GLOBAL_STATE.debug_alloc ? "TRUE" : "FALSE");
       printf("  NO_FLUSH_BARRIERS   = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers ? "FALSE" : "TRUE");
       printf("\n");

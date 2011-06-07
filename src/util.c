@@ -139,7 +139,15 @@ int ARMCII_Log2(unsigned int val) {
   */
 int ARMCII_Getenv_bool(char *varname) {
   char *var = getenv(varname);
-  return var != NULL;
+
+  if (var == NULL)
+    return 0;
+  
+  if (var[0] == 'T' || var[0] == 't' || var[0] == '1' || var[0] == 'y' || var[0] == 'Y')
+    return 1;
+
+  else
+    return 0;
 }
 
 
