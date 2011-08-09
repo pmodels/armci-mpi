@@ -88,10 +88,10 @@ ARMCI_DEBUG_ALLOC (boolean)
 
   Turn on extra shared allocation debugging.
 
-ARMCI_NO_FLUSH_BARRIERS (boolean)
+ARMCI_FLUSH_BARRIERS (boolean)
 
-  Don't do extra communication flushing in ARMCI_Barrier.  Extra flushes are
-  present to help make unsafe DLA safer.
+  Enable/disable extra communication flushing in ARMCI_Barrier.  Extra flushes
+  are present to help make unsafe DLA safer.
 
  --------------------------
 : Noncollective Groups     :
@@ -125,9 +125,10 @@ ARMCI_IOV_METHOD = { AUTO (default), CONSRV, BATCHED, DIRECT }
   direct implementation that generates datatypes for the origin and target and
   issues a single operation using them.
 
-ARMCI_IOV_DISABLE_CHECKS (boolean)
+ARMCI_IOV_CHECKS (boolean)
 
-  Disable expensive IOV safety checks (recommended for performance).
+  Enable (expensive) IOV safety/debugging checks (not recommended for
+  performance runs).
 
 ARMCI_IOV_BATCHED_LIMIT = { 0 (default), 1, ... }
 

@@ -137,11 +137,11 @@ int ARMCII_Log2(unsigned int val) {
 
 /** Retrieve the value of a boolean environment variable.
   */
-int ARMCII_Getenv_bool(char *varname) {
+int ARMCII_Getenv_bool(char *varname, int default_value) {
   char *var = getenv(varname);
 
   if (var == NULL)
-    return 0;
+    return default_value;
   
   if (var[0] == 'T' || var[0] == 't' || var[0] == '1' || var[0] == 'y' || var[0] == 'Y')
     return 1;
