@@ -37,20 +37,12 @@ int ARMCI_Init(void) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
-  /* Setup groups and communicators */
-
-  MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
-  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.rank);
-  MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.size);
-
-  ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
-
   /* Set defaults */
 #ifdef ARMCI_GROUP
   ARMCII_GLOBAL_STATE.noncollective_groups = 1;
 #endif
 #ifdef NO_SEATBELTS
-  ARMCII_GLOBAL_STATE.iov_checks_disabled  = 1;
+  ARMCII_GLOBAL_STATE.iov_checks           = 0;
 #endif
 
   /* Check for debugging flags */
@@ -121,6 +113,17 @@ int ARMCI_Init(void) {
     else if (ARMCI_GROUP_WORLD.rank == 0)
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
   }
+
+  /* Setup groups and communicators */
+
+  MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
+  MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.rank);
+  MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &ARMCI_GROUP_WORLD.size);
+
+  if (ARMCII_GLOBAL_STATE.noncollective_groups)
+    MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.noncoll_pgroup_comm);
+
+  ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
   /* Create GOP operators */
 
@@ -225,6 +228,9 @@ int ARMCI_Finalize(void) {
   ARMCI_Cleanup();
 
   MPI_Comm_free(&ARMCI_GROUP_WORLD.comm);
+
+  if (ARMCII_GLOBAL_STATE.noncollective_groups)
+    MPI_Comm_free(&ARMCI_GROUP_WORLD.noncoll_pgroup_comm);
 
   return 0;
 }
