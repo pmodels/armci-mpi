@@ -1,16 +1,13 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Things on the to do list:
+High priority:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * Finish implementation of IOV iterators.
 
   * Cache the rank translation table for non-world groups.  Translation to
     absolute and vice versa.
 
   * Add buffer guarding to ARMCI message operations.
-
-  * Add upper limit to shared buffer copy size and do flow control.  May be
-    most useful for strided as a first cut.
-
-  * Allow setting defaults in configure step.
 
   * Passive target microbenchmarks: target sleeps on a shared file update.
 
@@ -18,8 +15,17 @@ Things on the to do list:
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Older to do items:
+Low priority:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * Buffer checking: What happens when the target is self and both the
+    source and destination buffers are shared.  Is this case handled?
+    Can we optimize it with a memcpy?
+
+  * Add upper limit to shared buffer copy size and do flow control.  May be
+    most useful for strided as a first cut.
+
+  * Allow setting defaults in configure step.
 
   * Add a check for ARMCII_Initialized()?
      + (ARMCII_GLOBAL_STATE.active && MPI_Initialized && !MPI_Finalized())
@@ -33,18 +39,5 @@ Older to do items:
   * Look into invalid memory references that GA makes on the ghost cells
     examples.
 
-  * get rid of copypaste.c - re-implement armci_msg_sel? (NGA_Select_elem)
-
   * Implement remaining functions marked TODO in message.h
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Things that need performance tuning:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  * Non-blocking operations
-
-  * Buffer checking: What happens when the target is self and both the
-    source and destination buffers are shared.  Is this case handled?
-    Can we optimize it with a memcpy?
 
