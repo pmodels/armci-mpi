@@ -7,11 +7,15 @@ High priority:
   * Cache the rank translation table for non-world groups.  Translation to
     absolute and vice versa.
 
-  * Add buffer guarding to ARMCI message operations.
+  * Add buffer guarding to ARMCI message and collective operations.
 
   * Passive target microbenchmarks: target sleeps on a shared file update.
 
   * Breakpoint optimization to shift from IOV->BATCHED to DIRECT.
+
+  * GA Non-CC: ARMCI_Access and access modes extension
+
+  * Remove NO_BOTTOM workaround
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
