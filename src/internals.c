@@ -55,6 +55,8 @@ int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
   int       group_rank;
   MPI_Group world_group, sub_group;
 
+  ARMCII_Assert(world_rank >= 0 && world_rank < ARMCI_GROUP_WORLD.size);
+
   /* Check if group is the world group */
   if (group->comm == ARMCI_GROUP_WORLD.comm)
     group_rank = world_rank;
