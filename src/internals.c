@@ -55,18 +55,30 @@ int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
   int       group_rank;
   MPI_Group world_group, sub_group;
 
+  /* Check if group is the world group */
   if (group->comm == ARMCI_GROUP_WORLD.comm)
-    return world_rank;
+    group_rank = world_rank;
 
-  MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
-  MPI_Comm_group(group->comm, &sub_group);
+  /* Check for translation cache */
+  else if (group->grp_to_abs != NULL)
+    group_rank = group->grp_to_abs[world_rank];
 
-  MPI_Group_translate_ranks(world_group, 1, &world_rank, sub_group, &group_rank);
+  else {
+    /* Translate the rank */
+    MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
+    MPI_Comm_group(group->comm, &sub_group);
 
-  MPI_Group_free(&world_group);
-  MPI_Group_free(&sub_group);
+    MPI_Group_translate_ranks(world_group, 1, &world_rank, sub_group, &group_rank);
 
-  return group_rank == MPI_UNDEFINED ? -1 : group_rank;
+    MPI_Group_free(&world_group);
+    MPI_Group_free(&sub_group);
+  }
+
+  /* Check if translation failed */
+  if (group_rank == MPI_UNDEFINED)
+    return -1;
+  else
+    return group_rank;
 }
 
 
