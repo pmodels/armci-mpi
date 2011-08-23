@@ -53,6 +53,7 @@ int ARMCI_Init(void) {
 
   /* Group formation options */
 
+  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 0);
   if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS"))
     ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS", 0);
 
@@ -143,31 +144,32 @@ int ARMCI_Init(void) {
 
       printf("ARMCI-MPI initialized with %d process%s, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
 #ifdef NO_SEATBELTS
-      printf("  NO_SEATBELTS         = ENABLED\n");
+      printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
-      printf("  STRIDED_METHOD       = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
-      printf("  IOV_METHOD           = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
+      printf("  STRIDED_METHOD         = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
+      printf("  IOV_METHOD             = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
       if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED
           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
       {
         if (ARMCII_GLOBAL_STATE.iov_batched_limit > 0)
-          printf("  IOV_BATCHED_LIMIT    = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
+          printf("  IOV_BATCHED_LIMIT      = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
         else
-          printf("  IOV_BATCHED_LIMIT    = UNLIMITED\n");
+          printf("  IOV_BATCHED_LIMIT      = UNLIMITED\n");
       }
 
       if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT
           || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
       {
-        printf("  IOV_NO_MPI_BOTTOM    = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom        ? "TRUE" : "FALSE");
+        printf("  IOV_NO_MPI_BOTTOM      = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom        ? "TRUE" : "FALSE");
       }
 
-      printf("  IOV_CHECKS           = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");
-      printf("  SHR_BUF_METHOD       = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
-      printf("  NONCOLLECTIVE_GROUPS = %s\n", ARMCII_GLOBAL_STATE.noncollective_groups   ? "TRUE" : "FALSE");
-      printf("  DEBUG_ALLOC          = %s\n", ARMCII_GLOBAL_STATE.debug_alloc            ? "TRUE" : "FALSE");
-      printf("  FLUSH_BARRIERS       = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers   ? "TRUE" : "FALSE");
+      printf("  IOV_CHECKS             = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");
+      printf("  SHR_BUF_METHOD         = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
+      printf("  NONCOLLECTIVE_GROUPS   = %s\n", ARMCII_GLOBAL_STATE.noncollective_groups   ? "TRUE" : "FALSE");
+      printf("  CACHE_RANK_TRANSLATION = %s\n", ARMCII_GLOBAL_STATE.cache_rank_translation ? "TRUE" : "FALSE");
+      printf("  DEBUG_ALLOC            = %s\n", ARMCII_GLOBAL_STATE.debug_alloc            ? "TRUE" : "FALSE");
+      printf("  FLUSH_BARRIERS         = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers   ? "TRUE" : "FALSE");
       printf("\n");
       fflush(NULL);
     }

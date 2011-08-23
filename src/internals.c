@@ -51,12 +51,15 @@ void ARMCII_Error_impl(const char *file, const int line, const char *func, const
   * @param[in] world_rank Rank of the process in the world group.
   * @return               Rank in group or -1 if not in the group.
   */
-int ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank) {
+int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
   int       group_rank;
   MPI_Group world_group, sub_group;
 
+  if (group->comm == ARMCI_GROUP_WORLD.comm)
+    return world_rank;
+
   MPI_Comm_group(ARMCI_GROUP_WORLD.comm, &world_group);
-  MPI_Comm_group(group_comm, &sub_group);
+  MPI_Comm_group(group->comm, &sub_group);
 
   MPI_Group_translate_ranks(world_group, 1, &world_rank, sub_group, &group_rank);
 

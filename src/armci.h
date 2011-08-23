@@ -151,6 +151,8 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc);
 typedef struct {
   MPI_Comm  comm;
   MPI_Comm  noncoll_pgroup_comm;
+  int      *grp_to_abs;
+  int      *abs_to_grp;
   int       rank;
   int       size;
 } ARMCI_Group;

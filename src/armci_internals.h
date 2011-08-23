@@ -40,14 +40,15 @@ extern char ARMCII_Iov_methods_str[][10];
 extern char ARMCII_Shr_buf_methods_str[][10];
 
 typedef struct {
-  int           init_count;           /* Number of times ARMCI_Init has been called           */
-  int           debug_alloc;          /* Do extra debuggin on memory allocation               */
-  int           debug_flush_barriers; /* Flush all windows on a barrier                       */
-  int           iov_checks;           /* Disable IOV same allocation and overlapping checks   */
-  int           iov_batched_limit;    /* Max number of ops per epoch for BATCHED IOV method   */
-  int           no_mpi_bottom;        /* Don't generate datatypes relative to MPI_BOTTOM      */
-  int           noncollective_groups; /* Use noncollective group creation algorithm           */
-  int           verbose;              /* ARMCI should produce extra status output             */
+  int           init_count;             /* Number of times ARMCI_Init has been called                           */
+  int           debug_alloc;            /* Do extra debuggin on memory allocation                               */
+  int           debug_flush_barriers;   /* Flush all windows on a barrier                                       */
+  int           iov_checks;             /* Disable IOV same allocation and overlapping checks                   */
+  int           iov_batched_limit;      /* Max number of ops per epoch for BATCHED IOV method                   */
+  int           no_mpi_bottom;          /* Don't generate datatypes relative to MPI_BOTTOM                      */
+  int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
+  int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
+  int           verbose;                /* ARMCI should produce extra status output                             */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
@@ -89,7 +90,7 @@ void ARMCII_Msg_sel_max_op(void *data_in, void *data_inout, int *len, MPI_Dataty
 
 /* Translate between ARMCI and MPI ranks */
 
-int  ARMCII_Translate_absolute_to_group(MPI_Comm group_comm, int world_rank);
+int  ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank);
 
 
 /* I/O Vector data management and implementation */
