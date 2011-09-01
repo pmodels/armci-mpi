@@ -63,7 +63,7 @@ int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
 
   /* Check for translation cache */
   else if (group->grp_to_abs != NULL)
-    group_rank = group->grp_to_abs[world_rank];
+    group_rank = group->abs_to_grp[world_rank];
 
   else {
     /* Translate the rank */
