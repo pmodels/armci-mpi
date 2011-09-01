@@ -53,7 +53,7 @@ int ARMCI_Init(void) {
 
   /* Group formation options */
 
-  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 0);
+  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
   if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS"))
     ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS", 0);
 
