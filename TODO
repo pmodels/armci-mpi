@@ -4,6 +4,8 @@ High priority:
 
   * Finish implementation of IOV iterators.
 
+  * NOGUARD -> disable GMR lookups
+
   * Cache the rank translation table for non-world groups.  Translation to
     absolute and vice versa.
 
