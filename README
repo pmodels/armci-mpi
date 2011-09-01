@@ -93,6 +93,14 @@ ARMCI_FLUSH_BARRIERS (boolean)
   Enable/disable extra communication flushing in ARMCI_Barrier.  Extra flushes
   are present to help make unsafe DLA safer.
 
+ ---------------------
+: Performance Options :
+ ---------------------
+
+ARMCI_CACHE_RANK_TRANSLATION (boolean)
+
+  Create a table to more quickly translate between absolute and group ranks.
+
  --------------------------
 : Noncollective Groups     :
  --------------------------
