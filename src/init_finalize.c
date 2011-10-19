@@ -194,6 +194,15 @@ int ARMCI_Init_args(int *argc, char ***argv) {
 }
 
 
+/** Check if ARMCI has been initialized.
+  *
+  * @return Non-zero if ARMCI has been initialized.
+  */
+int ARMCI_Initalized(void) {
+  return ARMCII_GLOBAL_STATE.init_count > 0;
+}
+
+
 /** Finalize ARMCI.  Must be called before MPI is finalized.  ARMCI calls are
   * not valid after finalization.  Collective on world group.
   *
