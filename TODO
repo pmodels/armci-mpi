@@ -6,9 +6,6 @@ High priority:
 
   * NOGUARD -> disable GMR lookups
 
-  * Cache the rank translation table for non-world groups.  Translation to
-    absolute and vice versa.
-
   * Add buffer guarding to ARMCI message and collective operations.
 
   * Passive target microbenchmarks: target sleeps on a shared file update.
