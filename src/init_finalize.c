@@ -60,7 +60,6 @@ int ARMCI_Init(void) {
   /* Check for IOV flags */
 
   ARMCII_GLOBAL_STATE.iov_checks           = ARMCII_Getenv_bool("ARMCI_IOV_CHECKS", 0);
-  ARMCII_GLOBAL_STATE.no_mpi_bottom        = ARMCII_Getenv_bool("ARMCI_IOV_NO_MPI_BOTTOM", 0);
   ARMCII_GLOBAL_STATE.iov_batched_limit    = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
   if (ARMCII_GLOBAL_STATE.iov_batched_limit < 0) {
@@ -156,12 +155,6 @@ int ARMCI_Init(void) {
           printf("  IOV_BATCHED_LIMIT      = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
         else
           printf("  IOV_BATCHED_LIMIT      = UNLIMITED\n");
-      }
-
-      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT
-          || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
-      {
-        printf("  IOV_NO_MPI_BOTTOM      = %s\n", ARMCII_GLOBAL_STATE.no_mpi_bottom        ? "TRUE" : "FALSE");
       }
 
       printf("  IOV_CHECKS             = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");

@@ -72,7 +72,6 @@ typedef struct {
   int           debug_flush_barriers;   /* Flush all windows on a barrier                                       */
   int           iov_checks;             /* Disable IOV same allocation and overlapping checks                   */
   int           iov_batched_limit;      /* Max number of ops per epoch for BATCHED IOV method                   */
-  int           no_mpi_bottom;          /* Don't generate datatypes relative to MPI_BOTTOM                      */
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
@@ -158,8 +157,6 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
 int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc);
-int ARMCII_Iov_op_datatype_no_bottom(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 
 armcii_iov_iter_t *ARMCII_Strided_to_iov_iter(
