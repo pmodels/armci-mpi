@@ -17,10 +17,9 @@ High priority:
 Low priority:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  * Buffer checking: What happens when the target is self and both the
-    source and destination buffers are shared.  Is this case handled?
-    Can we optimize it with a memcpy?
-
+  * Buffer checking: Optimize shared buffer self-communication with direct
+    memcpy.
+  
   * Add upper limit to shared buffer copy size and do flow control.  May be
     most useful for strided as a first cut.
 
