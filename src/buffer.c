@@ -109,28 +109,29 @@ int ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, i
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
   for (i = 0; i < count; i++) {
-    gmr_t *mreg;
+    gmr_t *mreg = NULL;
 
     // Check if the source buffer is within a shared region.
-    mreg = gmr_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+      mreg = gmr_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
 
     if (scaled) {
       MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
       ARMCII_Assert(new_bufs[i] != NULL);
 
       // Lock if needed so we can directly access the buffer
-      if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+      if (mreg != NULL)
         gmr_dla_lock(mreg);
 
       ARMCII_Buf_acc_scale(orig_bufs[i], new_bufs[i], size, datatype, scale);
 
-      if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+      if (mreg != NULL)
         gmr_dla_unlock(mreg);
     } else {
       new_bufs[i] = orig_bufs[i];
     }
 
-    if (mreg != NULL && ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_COPY) {
+    if (mreg != NULL) {
       // If the buffer wasn't copied, we should copy it into a private buffer
       if (new_bufs[i] == orig_bufs[i]) {
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);

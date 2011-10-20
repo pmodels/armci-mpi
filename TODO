@@ -4,8 +4,6 @@ High priority:
 
   * Finish implementation of IOV iterators.
 
-  * NOGUARD -> disable GMR lookups
-
   * Add buffer guarding to ARMCI message and collective operations.
 
   * Passive target microbenchmarks: target sleeps on a shared file update.
