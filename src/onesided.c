@@ -229,7 +229,12 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
   MPI_Datatype type;
   gmr_t *src_mreg, *dst_mreg;
 
-  src_mreg = gmr_lookup(src, ARMCI_GROUP_WORLD.rank);
+  /* If NOGUARD is set, assume the buffer is not shared */
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+    src_mreg = gmr_lookup(src, ARMCI_GROUP_WORLD.rank);
+  else
+    src_mreg = NULL;
+
   dst_mreg = gmr_lookup(dst, proc);
 
   ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
@@ -239,7 +244,7 @@ int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int pr
 
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
-  if (src_mreg && ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+  if (src_mreg) {
     gmr_dla_lock(src_mreg);
     src_is_locked = 1;
   }
