@@ -65,7 +65,7 @@ void armci_msg_bcast(void *buffer, int len, int root) {
   * @param[in] root   Rank of the root process.
   */
 void armci_msg_brdcst(void *buffer, int len, int root) {
-  MPI_Bcast(buffer, len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
+  armci_msg_bcast(buffer, len, root);
 }
 
 
@@ -85,6 +85,10 @@ void armci_msg_bcast_scope(int scope, void *buffer, int len, int root) {
   */
 void armci_msg_barrier(void) {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+
+  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
+    ARMCII_Flush_local();
+  }
 }
 
 
@@ -94,6 +98,10 @@ void armci_msg_barrier(void) {
   */
 void armci_msg_group_barrier(ARMCI_Group *group) {
   MPI_Barrier(group->comm);
+
+  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
+    ARMCII_Flush_local();
+  }
 }
 
 
