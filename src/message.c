@@ -53,8 +53,21 @@ double armci_timer(void) {
   * @param[in] len    Length of the message in bytes.
   * @param[in] root   Rank of the root process.
   */
-void armci_msg_bcast(void *buffer, int len, int root) {
-  MPI_Bcast(buffer, len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
+void armci_msg_bcast(void *buf_in, int len, int root) {
+  void **buf;
+
+  /* Is the buffer an input or an output? */
+  if (ARMCI_GROUP_WORLD.rank == root)
+    ARMCII_Buf_prepare_putv(&buf_in, &buf, 1, len);
+  else
+    ARMCII_Buf_prepare_getv(&buf_in, &buf, 1, len);
+
+  MPI_Bcast(buf[0], len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
+
+  if (ARMCI_GROUP_WORLD.rank == root)
+    ARMCII_Buf_finish_putv(&buf_in, buf, 1, len);
+  else
+    ARMCII_Buf_finish_getv(&buf_in, buf, 1, len);
 }
 
 
@@ -113,21 +126,30 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
   * @param[in]    abs_root Absolute rank of the process at the root of the broadcast
   * @param[in]    group ARMCI group on which to perform communication
   */
-void armci_msg_group_bcast_scope(int scope, void *buf, int len, int abs_root, ARMCI_Group *group) {
-  int grp_root;
+void armci_msg_group_bcast_scope(int scope, void *buf_in, int len, int abs_root, ARMCI_Group *group) {
+  int    grp_root;
+  void **buf;
 
   if (scope == SCOPE_ALL || scope == SCOPE_MASTERS) {
+    /* Is the buffer an input or an output? */
+    if (ARMCI_GROUP_WORLD.rank == abs_root)
+      ARMCII_Buf_prepare_putv(&buf_in, &buf, 1, len);
+    else
+      ARMCII_Buf_prepare_getv(&buf_in, &buf, 1, len);
+
     grp_root = ARMCII_Translate_absolute_to_group(group, abs_root);
     ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
 
     MPI_Bcast(buf, len, MPI_BYTE, grp_root, group->comm);
 
+    if (ARMCI_GROUP_WORLD.rank == abs_root)
+      ARMCII_Buf_finish_putv(&buf_in, buf, 1, len);
+    else
+      ARMCII_Buf_finish_getv(&buf_in, buf, 1, len);
   } else /* SCOPE_NODE */ {
-    // grp_root = ARMCII_Translate_absolute_to_group(MPI_COMM_SELF, abs_root);
-    // ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
     grp_root = 0;
 
-    MPI_Bcast(buf, len, MPI_BYTE, grp_root, MPI_COMM_SELF);
+    /* This is a self-broadcast, which is a no-op. */
   }
 }
 
