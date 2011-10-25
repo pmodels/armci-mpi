@@ -58,16 +58,16 @@ void armci_msg_bcast(void *buf_in, int len, int root) {
 
   /* Is the buffer an input or an output? */
   if (ARMCI_GROUP_WORLD.rank == root)
-    ARMCII_Buf_prepare_putv(&buf_in, &buf, 1, len);
+    ARMCII_Buf_prepare_read_vec(&buf_in, &buf, 1, len);
   else
-    ARMCII_Buf_prepare_getv(&buf_in, &buf, 1, len);
+    ARMCII_Buf_prepare_write_vec(&buf_in, &buf, 1, len);
 
   MPI_Bcast(buf[0], len, MPI_BYTE, root, ARMCI_GROUP_WORLD.comm);
 
   if (ARMCI_GROUP_WORLD.rank == root)
-    ARMCII_Buf_finish_putv(&buf_in, buf, 1, len);
+    ARMCII_Buf_finish_read_vec(&buf_in, buf, 1, len);
   else
-    ARMCII_Buf_finish_getv(&buf_in, buf, 1, len);
+    ARMCII_Buf_finish_write_vec(&buf_in, buf, 1, len);
 }
 
 
@@ -133,9 +133,9 @@ void armci_msg_group_bcast_scope(int scope, void *buf_in, int len, int abs_root,
   if (scope == SCOPE_ALL || scope == SCOPE_MASTERS) {
     /* Is the buffer an input or an output? */
     if (ARMCI_GROUP_WORLD.rank == abs_root)
-      ARMCII_Buf_prepare_putv(&buf_in, &buf, 1, len);
+      ARMCII_Buf_prepare_read_vec(&buf_in, &buf, 1, len);
     else
-      ARMCII_Buf_prepare_getv(&buf_in, &buf, 1, len);
+      ARMCII_Buf_prepare_write_vec(&buf_in, &buf, 1, len);
 
     grp_root = ARMCII_Translate_absolute_to_group(group, abs_root);
     ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
@@ -143,9 +143,9 @@ void armci_msg_group_bcast_scope(int scope, void *buf_in, int len, int abs_root,
     MPI_Bcast(buf, len, MPI_BYTE, grp_root, group->comm);
 
     if (ARMCI_GROUP_WORLD.rank == abs_root)
-      ARMCII_Buf_finish_putv(&buf_in, buf, 1, len);
+      ARMCII_Buf_finish_read_vec(&buf_in, buf, 1, len);
     else
-      ARMCII_Buf_finish_getv(&buf_in, buf, 1, len);
+      ARMCII_Buf_finish_write_vec(&buf_in, buf, 1, len);
   } else /* SCOPE_NODE */ {
     grp_root = 0;
 

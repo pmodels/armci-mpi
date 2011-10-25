@@ -389,9 +389,9 @@ int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
 
-    ARMCII_Buf_prepare_putv(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
+    ARMCII_Buf_prepare_read_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_PUT, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, same_alloc, proc);
-    ARMCII_Buf_finish_putv(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
+    ARMCII_Buf_finish_read_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
   return 0;
@@ -419,9 +419,9 @@ int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].src_ptr_array, iov[v].ptr_array_len, proc);
 
-    ARMCII_Buf_prepare_getv(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
+    ARMCII_Buf_prepare_write_vec(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_GET, iov[v].src_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes, 0, overlapping, same_alloc, proc);
-    ARMCII_Buf_finish_getv(iov[v].dst_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes);
+    ARMCII_Buf_finish_write_vec(iov[v].dst_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
   return 0;
@@ -448,9 +448,9 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
     overlapping = ARMCII_Iov_check_overlap(iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes);
     same_alloc  = ARMCII_Iov_check_same_allocation(iov[v].dst_ptr_array, iov[v].ptr_array_len, proc);
 
-    ARMCII_Buf_prepare_accv(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);
+    ARMCII_Buf_prepare_acc_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);
     ARMCII_Iov_op_dispatch(ARMCII_OP_ACC, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, datatype, overlapping, same_alloc, proc);
-    ARMCII_Buf_finish_accv(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
+    ARMCII_Buf_finish_acc_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
   return 0;

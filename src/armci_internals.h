@@ -170,13 +170,13 @@ int  ARMCII_Iov_iter_next(armcii_iov_iter_t *it, void **src, void **dst);
 
 /* Shared to private buffer management routines */
 
-int  ARMCII_Buf_prepare_putv(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
-void ARMCII_Buf_finish_putv(void **orig_bufs, void **new_bufs, int count, int size);
-int  ARMCII_Buf_prepare_accv(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
+int  ARMCII_Buf_prepare_read_vec(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+void ARMCII_Buf_finish_read_vec(void **orig_bufs, void **new_bufs, int count, int size);
+int  ARMCII_Buf_prepare_acc_vec(void **orig_bufs, void ***new_bufs_ptr, int count, int size,
                             int datatype, void *scale);
-void ARMCII_Buf_finish_accv(void **orig_bufs, void **new_bufs, int count, int size);
-int  ARMCII_Buf_prepare_getv(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
-void ARMCII_Buf_finish_getv(void **orig_bufs, void **new_bufs, int count, int size);
+void ARMCII_Buf_finish_acc_vec(void **orig_bufs, void **new_bufs, int count, int size);
+int  ARMCII_Buf_prepare_write_vec(void **orig_bufs, void ***new_bufs_ptr, int count, int size);
+void ARMCII_Buf_finish_write_vec(void **orig_bufs, void **new_bufs, int count, int size);
 
 int  ARMCII_Buf_acc_is_scaled(int datatype, void *scale);
 void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale);
