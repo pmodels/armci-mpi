@@ -191,7 +191,7 @@ int ARMCI_Init_args(int *argc, char ***argv) {
   *
   * @return Non-zero if ARMCI has been initialized.
   */
-int ARMCI_Initalized(void) {
+int ARMCI_Initialized(void) {
   return ARMCII_GLOBAL_STATE.init_count > 0;
 }
 
