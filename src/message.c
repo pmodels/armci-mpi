@@ -140,7 +140,7 @@ void armci_msg_group_bcast_scope(int scope, void *buf_in, int len, int abs_root,
     grp_root = ARMCII_Translate_absolute_to_group(group, abs_root);
     ARMCII_Assert(grp_root >= 0 && grp_root < group->size);
 
-    MPI_Bcast(buf, len, MPI_BYTE, grp_root, group->comm);
+    MPI_Bcast(buf[0], len, MPI_BYTE, grp_root, group->comm);
 
     if (ARMCI_GROUP_WORLD.rank == abs_root)
       ARMCII_Buf_finish_read_vec(&buf_in, buf, 1, len);
@@ -161,8 +161,12 @@ void armci_msg_group_bcast_scope(int scope, void *buf_in, int len, int abs_root,
   * @param[in] nbytes Length of the message in bytes
   * @param[in] dest   Destination process id
   */
-void armci_msg_snd(int tag, void *buf, int nbytes, int dest) {
-  MPI_Send(buf, nbytes, MPI_BYTE, dest, tag, ARMCI_GROUP_WORLD.comm);
+void armci_msg_snd(int tag, void *buf_in, int nbytes, int dest) {
+  void **buf;
+
+  ARMCII_Buf_prepare_read_vec(&buf_in, &buf, 1, nbytes);
+  MPI_Send(buf[0], nbytes, MPI_BYTE, dest, tag, ARMCI_GROUP_WORLD.comm);
+  ARMCII_Buf_finish_read_vec(&buf_in, buf, 1, nbytes);
 }
 
 
@@ -174,9 +178,13 @@ void armci_msg_snd(int tag, void *buf, int nbytes, int dest) {
   * @param[out] nbytes_msg Length of the message received in bytes (NULL to ignore)
   * @param[in]  src    Source process id
   */
-void armci_msg_rcv(int tag, void *buf, int nbytes_buf, int *nbytes_msg, int src) {
+void armci_msg_rcv(int tag, void *buf_out, int nbytes_buf, int *nbytes_msg, int src) {
+  void     **buf;
   MPI_Status status;
-  MPI_Recv(buf, nbytes_buf, MPI_BYTE, src, tag, ARMCI_GROUP_WORLD.comm, &status);
+
+  ARMCII_Buf_prepare_write_vec(&buf_out, &buf, 1, nbytes_buf);
+  MPI_Recv(buf[0], nbytes_buf, MPI_BYTE, src, tag, ARMCI_GROUP_WORLD.comm, &status);
+  ARMCII_Buf_finish_write_vec(&buf_out, buf, 1, nbytes_buf);
 
   if (nbytes_msg != NULL)
     MPI_Get_count(&status, MPI_BYTE, nbytes_msg);
@@ -191,9 +199,13 @@ void armci_msg_rcv(int tag, void *buf, int nbytes_buf, int *nbytes_msg, int src)
   * @param[out] nbytes_msg Length of the message received in bytes (NULL to ignore)
   * @return            Rank of the message source
   */
-int armci_msg_rcvany(int tag, void *buf, int nbytes_buf, int *nbytes_msg) {
+int armci_msg_rcvany(int tag, void *buf_out, int nbytes_buf, int *nbytes_msg) {
+  void     **buf;
   MPI_Status status;
-  MPI_Recv(buf, nbytes_buf, MPI_BYTE, MPI_ANY_SOURCE, tag, ARMCI_GROUP_WORLD.comm, &status);
+
+  ARMCII_Buf_prepare_write_vec(&buf_out, &buf, 1, nbytes_buf);
+  MPI_Recv(buf[0], nbytes_buf, MPI_BYTE, MPI_ANY_SOURCE, tag, ARMCI_GROUP_WORLD.comm, &status);
+  ARMCII_Buf_finish_write_vec(&buf_out, buf, 1, nbytes_buf);
 
   if (nbytes_msg != NULL)
     MPI_Get_count(&status, MPI_BYTE, nbytes_msg);
@@ -368,6 +380,7 @@ void armci_msg_sel(void *x, int n, char *op, int type, int contribute) {
 void armci_msg_sel_scope(int scope, void *x, int n, char* op, int type, int contribute) {
   MPI_Comm    sel_comm;
   sel_data_t *data_in, *data_out;
+  void      **x_buf;
 
   /*
   printf("[%d] armci_msg_sel_scope(scope=%d, x=%p, n=%d, op=%s, type=%d, contribute=%d)\n",
@@ -385,6 +398,8 @@ void armci_msg_sel_scope(int scope, void *x, int n, char* op, int type, int cont
 
   ARMCII_Assert(data_in != NULL && data_out != NULL);
 
+  ARMCII_Buf_prepare_read_vec(&x, &x_buf, 1, n);
+
   data_in->contribute = contribute;
   data_in->type       = type;
 
@@ -400,6 +415,8 @@ void armci_msg_sel_scope(int scope, void *x, int n, char* op, int type, int cont
   }
 
   ARMCI_Copy(data_out->data, x, n);
+
+  ARMCII_Buf_finish_write_vec(&x, x_buf, 1, n);
 
   free(data_in);
   free(data_out);
