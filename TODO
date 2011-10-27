@@ -6,16 +6,14 @@ High priority:
 
   * Add buffer guarding to ARMCI message and collective operations.
 
-  * Passive target microbenchmarks: target sleeps on a shared file update.
-
   * Breakpoint optimization to shift from IOV->BATCHED to DIRECT.
-
-  * GA Non-CC: ARMCI_Access and access modes extension
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Low priority:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * Passive target microbenchmarks: target sleeps on a shared file update.
 
   * Buffer checking: Optimize shared buffer self-communication with direct
     memcpy.
