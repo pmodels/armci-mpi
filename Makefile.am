@@ -6,7 +6,6 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/src
 
 lib_LTLIBRARIES = libarmci.la
-noinst_LTLIBRARIES = libarmcii.la
 
 libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
                       $(top_srcdir)/src/debug.c         \
@@ -31,9 +30,6 @@ libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
 
 libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
 
-libarmcii_la_SOURCES = $(libarmci_la_SOURCES)
-libarmcii_la_LDFLAGS = $(libarmci_la_LDFLAGS)
-
 include_HEADERS = $(top_srcdir)/src/armci.h $(top_srcdir)/src/message.h \
         $(top_srcdir)/src/armcix.h
 
@@ -42,7 +38,7 @@ check_PROGRAMS =
 TESTS = 
 XFAIL_TESTS = 
 
-MPIEXEC ?= mpiexec -n 2
+MPIEXEC = mpiexec -n 2
 TESTS_ENVIRONMENT = $(MPIEXEC)
 
 include benchmarks/Makefile.mk
