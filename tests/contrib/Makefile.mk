@@ -12,13 +12,8 @@ TESTS          += \
                   tests/contrib/armci-test         \
                   # end
 
-tests_contrib_armci_perf_SOURCES = $(top_srcdir)/tests/contrib/armci-perf.c
-tests_contrib_armci_perf_LDADD = -larmci -lm
-tests_contrib_armci_perf_DEPENDENCIES = libarmci.la
-
-tests_contrib_armci_test_SOURCES = $(top_srcdir)/tests/contrib/armci-test.c
-tests_contrib_armci_test_LDADD = -larmci -lm
-tests_contrib_armci_test_DEPENDENCIES = libarmci.la
+tests_contrib_armci_perf_LDADD = libarmci.la -lm
+tests_contrib_armci_test_LDADD = libarmci.la -lm
 
 include tests/contrib/cg/Makefile.mk
 include tests/contrib/lu/Makefile.mk
