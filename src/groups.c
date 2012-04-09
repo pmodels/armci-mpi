@@ -211,9 +211,9 @@ void ARMCI_Group_free(ARMCI_Group *group) {
   }
 
   /* If the group has translation caches, free them */
-  if (group->abs_to_grp == NULL)
+  if (group->abs_to_grp != NULL)
     free(group->abs_to_grp);
-  if (group->grp_to_abs == NULL)
+  if (group->grp_to_abs != NULL)
     free(group->grp_to_abs);
 
   group->rank = -1;
