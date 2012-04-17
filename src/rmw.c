@@ -79,7 +79,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   }
 
   else {
-    ARMCII_Error("unsupported operation (%d)", op);
+    ARMCII_Error("invalid operation (%d)", op);
   }
 
   return 0;
