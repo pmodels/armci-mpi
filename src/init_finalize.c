@@ -19,7 +19,7 @@
   *
   * @return            Zero on success
   */
-int ARMCI_Init(void) {
+int PARMCI_Init(void) {
   char *var;
 
   /* GA/TCGMSG end up calling ARMCI_Init() multiple times. */
@@ -177,8 +177,8 @@ int ARMCI_Init(void) {
   * @param[inout] argv Command line arguments
   * @return            Zero on success
   */
-int ARMCI_Init_args(int *argc, char ***argv) {
-  return ARMCI_Init();
+int PARMCI_Init_args(int *argc, char ***argv) {
+  return PARMCI_Init();
 }
 
 
@@ -186,7 +186,7 @@ int ARMCI_Init_args(int *argc, char ***argv) {
   *
   * @return Non-zero if ARMCI has been initialized.
   */
-int ARMCI_Initialized(void) {
+int PARMCI_Initialized(void) {
   return ARMCII_GLOBAL_STATE.init_count > 0;
 }
 
@@ -196,7 +196,7 @@ int ARMCI_Initialized(void) {
   *
   * @return            Zero on success
   */
-int ARMCI_Finalize(void) {
+int PARMCI_Finalize(void) {
   int nfreed;
 
   /* GA/TCGMSG end up calling ARMCI_Finalize() multiple times. */

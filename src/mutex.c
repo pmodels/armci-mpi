@@ -26,7 +26,7 @@ static armcix_mutex_hdl_t armci_mutex_hdl = NULL;
   *
   * @param[in] count Number of mutexes to create on the calling process
   */
-int ARMCI_Create_mutexes(int count) {
+int PARMCI_Create_mutexes(int count) {
   if (armci_mutex_hdl != NULL)
     ARMCII_Error("attempted to create ARMCI mutexes multiple times");
 
@@ -41,7 +41,7 @@ int ARMCI_Create_mutexes(int count) {
 
 /** Destroy/free ARMCI mutexes.  Collective.
   */
-int ARMCI_Destroy_mutexes(void) {
+int PARMCI_Destroy_mutexes(void) {
   int err;
 
   if (armci_mutex_hdl == NULL)
@@ -59,7 +59,7 @@ int ARMCI_Destroy_mutexes(void) {
   * @param[in] mutex Number of the mutex to lock
   * @param[in] proc  Target process for the lock operation
   */
-void ARMCI_Lock(int mutex, int proc) {
+void PARMCI_Lock(int mutex, int proc) {
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to lock on unallocated ARMCI mutexes");
   
@@ -71,7 +71,7 @@ void ARMCI_Lock(int mutex, int proc) {
   * @param[in] mutex Number of the mutex to unlock
   * @param[in] proc  Target process for the unlock operation
   */
-void ARMCI_Unlock(int mutex, int proc) {
+void PARMCI_Unlock(int mutex, int proc) {
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to unlock on unallocated ARMCI mutexes");
   

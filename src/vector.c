@@ -376,7 +376,7 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
+int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
   int v;
 
   for (v = 0; v < iov_len; v++) {
@@ -405,7 +405,7 @@ int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
+int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
   int v;
 
   for (v = 0; v < iov_len; v++) {
@@ -435,7 +435,7 @@ int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc) {
+int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc) {
   int v;
 
   for (v = 0; v < iov_len; v++) {
@@ -457,16 +457,16 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
 }
 
 
-int ARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  return ARMCI_PutV(iov, iov_len, proc);
+int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  return PARMCI_PutV(iov, iov_len, proc);
 }
 
-int ARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  return ARMCI_GetV(iov, iov_len, proc);
+int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  return PARMCI_GetV(iov, iov_len, proc);
 }
 
-int ARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  return ARMCI_AccV(datatype, scale, iov, iov_len, proc);
+int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  return PARMCI_AccV(datatype, scale, iov, iov_len, proc);
 }
 
 

@@ -96,7 +96,7 @@ void armci_msg_bcast_scope(int scope, void *buffer, int len, int root) {
 
 /** Barrier from the messaging layer.
   */
-void armci_msg_barrier(void) {
+void parmci_msg_barrier(void) {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 
   if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
@@ -109,7 +109,7 @@ void armci_msg_barrier(void) {
   *
   * @param[in] group Group on which to perform barrier
   */
-void armci_msg_group_barrier(ARMCI_Group *group) {
+void parmci_msg_group_barrier(ARMCI_Group *group) {
   MPI_Barrier(group->comm);
 
   if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {

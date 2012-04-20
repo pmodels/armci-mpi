@@ -90,7 +90,7 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
@@ -154,7 +154,7 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = ARMCI_PutV(&iov, 1, proc);
+    err = PARMCI_PutV(&iov, 1, proc);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
@@ -178,7 +178,7 @@ int ARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
 
@@ -242,7 +242,7 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = ARMCI_GetV(&iov, 1, proc);
+    err = PARMCI_GetV(&iov, 1, proc);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
@@ -268,7 +268,7 @@ int ARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_AccS(int datatype, void *scale,
+int PARMCI_AccS(int datatype, void *scale,
                void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc) {
@@ -374,7 +374,7 @@ int ARMCI_AccS(int datatype, void *scale,
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = ARMCI_AccV(datatype, scale, &iov, 1, proc);
+    err = PARMCI_AccV(datatype, scale, &iov, 1, proc);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
@@ -398,11 +398,11 @@ int ARMCI_AccS(int datatype, void *scale,
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  return PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
@@ -420,11 +420,11 @@ int ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  return PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
@@ -444,12 +444,12 @@ int ARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_NbAccS(int datatype, void *scale,
+int PARMCI_NbAccS(int datatype, void *scale,
                void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
 
-  return ARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  return PARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
 
@@ -667,14 +667,14 @@ int ARMCII_Iov_iter_next(armcii_iov_iter_t *it, void **src, void **dst) {
   *
   * @return                    Zero on success, error code otherwise.
   */
-int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
+int PARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
                  int count[/*stride_levels+1*/], int stride_levels, 
                  int *flag, int value, int proc) {
 
-  ARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
-  ARMCI_Fence(proc);
-  ARMCI_Put(&value, flag, sizeof(int), proc);
+  PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
+  PARMCI_Fence(proc);
+  PARMCI_Put(&value, flag, sizeof(int), proc);
 
   return 1;
 }

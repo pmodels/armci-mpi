@@ -20,7 +20,7 @@
   *                       segment.
   * @param[in]       size Number of bytes to allocate on the local process.
   */
-int ARMCI_Malloc(void **ptr_arr, armci_size_t bytes) {
+int PARMCI_Malloc(void **ptr_arr, armci_size_t bytes) {
   return ARMCI_Malloc_group(ptr_arr, bytes, &ARMCI_GROUP_WORLD);
 }
 
@@ -29,7 +29,7 @@ int ARMCI_Malloc(void **ptr_arr, armci_size_t bytes) {
   *
   * @param[in] ptr Pointer to the local patch of the allocation
   */
-int ARMCI_Free(void *ptr) {
+int PARMCI_Free(void *ptr) {
   return ARMCI_Free_group(ptr, &ARMCI_GROUP_WORLD);
 }
 
@@ -45,7 +45,7 @@ int ARMCI_Malloc_group(void **base_ptrs, armci_size_t size, ARMCI_Group *group) 
   int i;
   gmr_t *mreg;
 
-  ARMCII_Assert(ARMCI_Initialized());
+  ARMCII_Assert(PARMCI_Initialized());
 
   mreg = gmr_create(size, base_ptrs, group);
 
@@ -96,7 +96,7 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
   * @param[in] size Number of bytes to allocate
   * @return         Pointer to the local buffer
   */
-void *ARMCI_Malloc_local(armci_size_t size) {
+void *PARMCI_Malloc_local(armci_size_t size) {
   void *buf;
 
   MPI_Alloc_mem((MPI_Aint) size, MPI_INFO_NULL, &buf);
@@ -114,7 +114,7 @@ void *ARMCI_Malloc_local(armci_size_t size) {
   *
   * @param[in] buf Pointer to local buffer to free
   */
-int ARMCI_Free_local(void *buf) {
+int PARMCI_Free_local(void *buf) {
   MPI_Free_mem(buf);
   return 0;
 }

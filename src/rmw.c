@@ -27,7 +27,7 @@
   * @param[in]  value Value to add to remote location (ignored for swap).
   * @param[in]  proc  Process rank for the target buffer.
   */
-int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
+int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   int           is_long;
   gmr_t *mreg;
 
@@ -44,9 +44,9 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     int  swap_val_i;
 
     ARMCIX_Lock_hdl(mreg->rmw_mutex, 0, proc);
-    ARMCI_Get(prem, is_long ? (void*) &swap_val_l : (void*) &swap_val_i, 
+    PARMCI_Get(prem, is_long ? (void*) &swap_val_l : (void*) &swap_val_i, 
               is_long ? sizeof(long) : sizeof(int), proc);
-    ARMCI_Put(ploc, prem, is_long ? sizeof(long) : sizeof(int), proc);
+    PARMCI_Put(ploc, prem, is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_hdl(mreg->rmw_mutex, 0, proc);
 
     if (is_long)
@@ -60,7 +60,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     int  fetch_val_i, new_val_i;
     
     ARMCIX_Lock_hdl(mreg->rmw_mutex, 0, proc);
-    ARMCI_Get(prem, is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i,
+    PARMCI_Get(prem, is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i,
               is_long ? sizeof(long) : sizeof(int), proc);
     
     if (is_long)
@@ -68,7 +68,7 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     else
       new_val_i = fetch_val_i + value;
 
-    ARMCI_Put(is_long ? (void*) &new_val_l : (void*) &new_val_i, prem, 
+    PARMCI_Put(is_long ? (void*) &new_val_l : (void*) &new_val_i, prem, 
               is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_hdl(mreg->rmw_mutex, 0, proc);
 

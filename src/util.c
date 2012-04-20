@@ -26,8 +26,8 @@ void ARMCI_Error(char *msg, int code) {
 /** Barrier synchronization.  Collective on the world group (not the default
   * group!).
   */
-void ARMCI_Barrier(void) {
-  ARMCI_AllFence();
+void PARMCI_Barrier(void) {
+  PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 
   if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
@@ -41,7 +41,7 @@ void ARMCI_Barrier(void) {
   *
   * @param[in] proc Process to target
   */
-void ARMCI_Fence(int proc) {
+void PARMCI_Fence(int proc) {
   return;
 }
 
@@ -49,7 +49,7 @@ void ARMCI_Fence(int proc) {
 /** Wait for remote completion on all one-sided operations.  In MPI-2, this is
   * a no-op since get/put/acc already guarantee remote completion.
   */
-void ARMCI_AllFence(void) {
+void PARMCI_AllFence(void) {
   return;
 }
 
