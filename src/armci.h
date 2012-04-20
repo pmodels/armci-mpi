@@ -279,11 +279,4 @@ int     PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc);
 void    parmci_msg_barrier(void);
 void    parmci_msg_group_barrier(ARMCI_Group *group);
 
-/* TODO: Not implemented */
-/*
-int    PARMCI_PutS_flag_dir(void *src_ptr, int *src_stride_arr, void *dst_ptr, int *dst_stride_arr, int *count, int stride_levels, int *flag, int val, int proc);
-int    PARMCI_WaitProc(int proc);
-int    parmci_notify_wait(int proc, int *pval);
-*/
-
 #endif /* _ARMCI_H_ */
