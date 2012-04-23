@@ -76,6 +76,16 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_PutS = PARMCI_PutS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_PutS ARMCI_PutS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_PutS as PARMCI_PutS
+#endif
+/* -- end weak symbols block -- */
+
 /** Blocking operation that transfers data from the calling process to the
   * memory of the remote process.  The data transfer is strided and blocking.
   *
@@ -164,6 +174,16 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_GetS = PARMCI_GetS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_GetS ARMCI_GetS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_GetS as PARMCI_GetS
+#endif
+/* -- end weak symbols block -- */
+
 /** Blocking operation that transfers data from the remote process to the
   * memory of the calling process.  The data transfer is strided and blocking.
   *
@@ -251,6 +271,16 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   return err;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_AccS = PARMCI_AccS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_AccS ARMCI_AccS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_AccS as PARMCI_AccS
+#endif
+/* -- end weak symbols block -- */
 
 /** Blocking operation that accumulates data from the local process into the
   * memory of the remote process.  The data transfer is strided and blocking.
@@ -384,6 +414,16 @@ int PARMCI_AccS(int datatype, void *scale,
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_NbPutS = PARMCI_NbPutS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_NbPutS ARMCI_NbPutS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_NbPutS as PARMCI_NbPutS
+#endif
+/* -- end weak symbols block -- */
+
 /** Non-blocking operation that transfers data from the calling process to the
   * memory of the remote process.  The data transfer is strided and blocking.
   *
@@ -406,6 +446,16 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_NbGetS = PARMCI_NbGetS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_NbGetS ARMCI_NbGetS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_NbGetS as PARMCI_NbGetS
+#endif
+/* -- end weak symbols block -- */
+
 /** Non-blocking operation that transfers data from the remote process to the
   * memory of the calling process.  The data transfer is strided and blocking.
   *
@@ -427,6 +477,16 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   return PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_NbAccS = PARMCI_NbAccS
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_NbAccS ARMCI_NbAccS
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_NbAccS as PARMCI_NbAccS
+#endif
+/* -- end weak symbols block -- */
 
 /** Non-blocking operation that accumulates data from the local process into the
   * memory of the remote process.  The data transfer is strided and blocking.
@@ -649,6 +709,16 @@ int ARMCII_Iov_iter_next(armcii_iov_iter_t *it, void **src, void **dst) {
   return 1;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_PutS_flag = PARMCI_PutS_flag
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_PutS_flag ARMCI_PutS_flag
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_PutS_flag as PARMCI_PutS_flag
+#endif
+/* -- end weak symbols block -- */
 
 /** Blocking operation that transfers data from the calling process to the
   * memory of the remote process.  The data transfer is strided and blocking.

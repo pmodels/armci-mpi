@@ -13,6 +13,16 @@
 #include <gmr.h>
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Access_begin = PARMCI_Access_begin
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Access_begin ARMCI_Access_begin
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Access_begin as PARMCI_Access_begin
+#endif
+/* -- end weak symbols block -- */
+
 /** Declare the start of a local access epoch.  This allows direct access to
   * data in local memory.
   *
@@ -30,6 +40,16 @@ void PARMCI_Access_begin(void *ptr) {
   gmr_dla_lock(mreg);
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Access_end = PARMCI_Access_end
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Access_end ARMCI_Access_end
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Access_end as PARMCI_Access_end
+#endif
+/* -- end weak symbols block -- */
 
 /** Declare the end of a local access epoch.
   *
@@ -95,6 +115,16 @@ int ARMCIX_Mode_get(void *ptr) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Get = PARMCI_Get
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Get ARMCI_Get
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Get as PARMCI_Get
+#endif
+/* -- end weak symbols block -- */
+
 /** One-sided get operation.
   *
   * @param[in] src    Source address (remote)
@@ -152,6 +182,16 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
   return 0;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Put = PARMCI_Put
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Put ARMCI_Put
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Put as PARMCI_Put
+#endif
+/* -- end weak symbols block -- */
 
 /** One-sided put operation.
   *
@@ -211,6 +251,16 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
   return 0;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Acc = PARMCI_Acc
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Acc ARMCI_Acc
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Acc as PARMCI_Acc
+#endif
+/* -- end weak symbols block -- */
 
 /** One-sided accumulate operation.
   *
@@ -295,6 +345,16 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
   return 0;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Put_flag = PARMCI_Put_flag
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Put_flag ARMCI_Put_flag
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Put_flag as PARMCI_Put_flag
+#endif
+/* -- end weak symbols block -- */
 
 /** One-sided copy of data from the source to the destination.  Set a flag on
   * the remote process when the transfer is complete.

@@ -13,6 +13,16 @@
 #include <gmr.h>
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Malloc = PARMCI_Malloc
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Malloc ARMCI_Malloc
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Malloc as PARMCI_Malloc
+#endif
+/* -- end weak symbols block -- */
+
 /** Allocate a shared memory segment.  Collective.
   *
   * @param[out] base_ptrs Array of length nproc that will contain pointers to
@@ -24,6 +34,16 @@ int PARMCI_Malloc(void **ptr_arr, armci_size_t bytes) {
   return ARMCI_Malloc_group(ptr_arr, bytes, &ARMCI_GROUP_WORLD);
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Free = PARMCI_Free
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Free ARMCI_Free
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Free as PARMCI_Free
+#endif
+/* -- end weak symbols block -- */
 
 /** Free a shared memory allocation.  Collective.
   *
@@ -91,6 +111,16 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Malloc_local = PARMCI_Malloc_local
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Malloc_local ARMCI_Malloc_local
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Malloc_local as PARMCI_Malloc_local
+#endif
+/* -- end weak symbols block -- */
+
 /** Allocate a local buffer suitable for use in one-sided communication
   *
   * @param[in] size Number of bytes to allocate
@@ -109,6 +139,16 @@ void *PARMCI_Malloc_local(armci_size_t size) {
   return buf;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Free_local = PARMCI_Free_local
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Free_local ARMCI_Free_local
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Free_local as PARMCI_Free_local
+#endif
+/* -- end weak symbols block -- */
 
 /** Free memory allocated with ARMCI_Malloc_local
   *

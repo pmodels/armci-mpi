@@ -11,6 +11,16 @@
 #include <debug.h>
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Rmw = PARMCI_Rmw
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Rmw ARMCI_Rmw
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Rmw as PARMCI_Rmw
+#endif
+/* -- end weak symbols block -- */
+
 /** Perform atomic read-modify-write on the given integer or long location and
   * return the location's original value.
   *

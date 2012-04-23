@@ -22,6 +22,16 @@
 static armcix_mutex_hdl_t armci_mutex_hdl = NULL;
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Create_mutexes = PARMCI_Create_mutexes
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Create_mutexes ARMCI_Create_mutexes
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Create_mutexes as PARMCI_Create_mutexes
+#endif
+/* -- end weak symbols block -- */
+
 /** Create ARMCI mutexes.  Collective.
   *
   * @param[in] count Number of mutexes to create on the calling process
@@ -39,6 +49,16 @@ int PARMCI_Create_mutexes(int count) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Destroy_mutexes = PARMCI_Destroy_mutexes
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Destroy_mutexes ARMCI_Destroy_mutexes
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Destroy_mutexes as PARMCI_Destroy_mutexes
+#endif
+/* -- end weak symbols block -- */
+
 /** Destroy/free ARMCI mutexes.  Collective.
   */
 int PARMCI_Destroy_mutexes(void) {
@@ -54,6 +74,16 @@ int PARMCI_Destroy_mutexes(void) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Lock = PARMCI_Lock
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Lock ARMCI_Lock
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Lock as PARMCI_Lock
+#endif
+/* -- end weak symbols block -- */
+
 /** Lock a mutex.
   *
   * @param[in] mutex Number of the mutex to lock
@@ -65,6 +95,17 @@ void PARMCI_Lock(int mutex, int proc) {
   
   ARMCIX_Lock_hdl(armci_mutex_hdl, mutex, proc);
 }
+
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Unlock = PARMCI_Unlock
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Unlock ARMCI_Unlock
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Unlock as PARMCI_Unlock
+#endif
+/* -- end weak symbols block -- */
 
 /** Unlock a mutex.
   *

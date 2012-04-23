@@ -94,6 +94,16 @@ void armci_msg_bcast_scope(int scope, void *buffer, int len, int root) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak armci_msg_barrier = parmci_msg_barrier
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF parmci_msg_barrier armci_msg_barrier
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate armci_msg_barrier as parmci_msg_barrier
+#endif
+/* -- end weak symbols block -- */
+
 /** Barrier from the messaging layer.
   */
 void parmci_msg_barrier(void) {
@@ -104,6 +114,16 @@ void parmci_msg_barrier(void) {
   }
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak armci_msg_group_barrier = parmci_msg_group_barrier
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF parmci_msg_group_barrier armci_msg_group_barrier
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate armci_msg_group_barrier as parmci_msg_group_barrier
+#endif
+/* -- end weak symbols block -- */
 
 /** Message barrier on a group.
   *

@@ -12,6 +12,15 @@
 #include <debug.h>
 #include <gmr.h>
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Init = PARMCI_Init
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Init ARMCI_Init
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Init as PARMCI_Init
+#endif
+/* -- end weak symbols block -- */
 
 /** Initialize ARMCI.  MPI must be initialized before this can be called.  It
   * invalid to make ARMCI calls before initialization.  Collective on the world
@@ -169,6 +178,16 @@ int PARMCI_Init(void) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Init_args = PARMCI_Init_args
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Init_args ARMCI_Init_args
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Init_args as PARMCI_Init_args
+#endif
+/* -- end weak symbols block -- */
+
 /** Initialize ARMCI.  MPI must be initialized before this can be called.  It
   * is invalid to make ARMCI calls before initialization.  Collective on the
   * world group.
@@ -182,6 +201,16 @@ int PARMCI_Init_args(int *argc, char ***argv) {
 }
 
 
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Initialized = PARMCI_Initialized
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Initialized ARMCI_Initialized
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Initialized as PARMCI_Initialized
+#endif
+/* -- end weak symbols block -- */
+
 /** Check if ARMCI has been initialized.
   *
   * @return Non-zero if ARMCI has been initialized.
@@ -190,6 +219,16 @@ int PARMCI_Initialized(void) {
   return ARMCII_GLOBAL_STATE.init_count > 0;
 }
 
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Finalize = PARMCI_Finalize
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Finalize ARMCI_Finalize
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Finalize as PARMCI_Finalize
+#endif
+/* -- end weak symbols block -- */
 
 /** Finalize ARMCI.  Must be called before MPI is finalized.  ARMCI calls are
   * not valid after finalization.  Collective on world group.
