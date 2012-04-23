@@ -13,6 +13,9 @@
 #define NUM_ITERATIONS 10
 #define DATA_SZ        (DATA_NELTS*sizeof(int))
 
+       int armci_calls = 0;
+extern int parmci_calls;
+
 int main(int argc, char ** argv) {
   int    rank, nproc, i, test_iter;
   int   *my_data, *buf;
@@ -20,6 +23,7 @@ int main(int argc, char ** argv) {
 
   MPI_Init(&argc, &argv);
   ARMCI_Init();
+  armci_calls++;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -42,8 +46,10 @@ int main(int argc, char ** argv) {
     ARMCI_Access_end(my_data);
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
+    armci_calls++;
 
     ARMCI_Get(base_ptrs[(rank+1) % nproc], buf, DATA_SZ, (rank+1) % nproc);
+    armci_calls++;
 
     for (i = 0; i < DATA_NELTS; i++) {
       if (buf[i] != ((rank+1) % nproc)*test_iter) {
@@ -53,12 +59,15 @@ int main(int argc, char ** argv) {
     }
 
     ARMCI_Barrier(); // Wait for all gets to complete
+    armci_calls++;
 
     /*** Put to our left neighbor and verify correct data ***/
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank*test_iter;
     ARMCI_Put(buf, base_ptrs[(rank+nproc-1) % nproc], DATA_SZ, (rank+nproc-1) % nproc);
+    armci_calls++;
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
+    armci_calls++;
 
     ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
@@ -70,6 +79,7 @@ int main(int argc, char ** argv) {
     ARMCI_Access_end(my_data);
 
     ARMCI_Barrier(); // Wait for all gets to complete
+    armci_calls++;
 
     /*** Accumulate to our left neighbor and verify correct data ***/
     for (i = 0; i < DATA_NELTS; i++) buf[i] = rank;
@@ -78,11 +88,13 @@ int main(int argc, char ** argv) {
     for (i = 0; i < DATA_NELTS; i++) my_data[i] = rank;
     ARMCI_Access_end(my_data);
     ARMCI_Barrier();
+    armci_calls++;
 
     int scale = test_iter;
     ARMCI_Acc(ARMCI_ACC_INT, &scale, buf, base_ptrs[(rank+nproc-1) % nproc], DATA_SZ, (rank+nproc-1) % nproc);
 
     ARMCI_Barrier(); // Wait for all updates to data to complete
+    armci_calls++;
 
     ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
@@ -98,10 +110,20 @@ int main(int argc, char ** argv) {
 
   free(buf);
   free(base_ptrs);
-
-  if (rank == 0) printf("Test complete: PASS.\n");
+  
+  if (armci_calls == parmci_calls) {
+    if (rank == 0) {
+      printf("Profiling check ok: %d recorded == %d profiled calls\n", armci_calls, parmci_calls);
+      printf("Test complete: PASS.\n");
+    }
+  } else {
+    printf("%d: Profiling check failed -- %d recorded != %d profiled calls\n", rank, armci_calls, parmci_calls);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
 
   ARMCI_Finalize();
+  armci_calls++;
+
   MPI_Finalize();
 
   return 0;
