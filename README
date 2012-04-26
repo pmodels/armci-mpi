@@ -9,7 +9,7 @@ This project provides a full, high performance, portable implementation of the
 ARMCI runtime system using MPI's remote memory access (RMA) functionality.
 
 ===============================================================================
-Installing ARMCI-MPI
+Installing Only ARMCI-MPI
 ===============================================================================
 
 ARMCI-MPI uses autoconf and must be configured before compiling:
@@ -21,10 +21,8 @@ configuring the source tree, the code can be built and installed by running:
 
  $ make && make install
 
-ARMCI-MPI can be used with GA 5.0 and later by substituting this directory for
-the "armci" directory in the GA distribution.  The quality of MPI-RMA
-implementations varies.  As of August, 2011 the following MPI implementations are
-known to work correctly with ARMCI-MPI:
+The quality of MPI-RMA implementations varies.  As of August, 2011 the
+following MPI implementations are known to work correctly with ARMCI-MPI:
 
  + MVAPICH2 1.6
  + MPICH2
@@ -35,6 +33,15 @@ known to work correctly with ARMCI-MPI:
 The following MPI implementations are known to fail with ARMCI-MPI:
 
  - MVAPICH2 prior to 1.6
+
+===============================================================================
+Installing Global Arrays with ARMCI-MPI
+===============================================================================
+
+ARMCI-MPI is currently compatible only with GA 5.0.x.  To build GA with
+ARMCI-MPI, rename this directory to "armci" and substitute it for the "armci"
+directory in the GA distribution.  Configure and build GA as usual; no special
+flags are required.
 
 ===============================================================================
 The ARMCI-MPI Test Suite
