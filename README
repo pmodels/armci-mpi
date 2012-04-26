@@ -38,10 +38,9 @@ The following MPI implementations are known to fail with ARMCI-MPI:
 Installing Global Arrays with ARMCI-MPI
 ===============================================================================
 
-ARMCI-MPI is currently compatible only with GA 5.0.x.  To build GA with
-ARMCI-MPI, rename this directory to "armci" and substitute it for the "armci"
-directory in the GA distribution.  Configure and build GA as usual; no special
-flags are required.
+ARMCI-MPI has been tested with GA 5.0.2.  To build GA with ARMCI-MPI, rename
+this directory to "armci" and substitute it for the "armci" directory in the GA
+distribution.  Configure and build GA as usual; no special flags are required.
 
 ===============================================================================
 The ARMCI-MPI Test Suite
