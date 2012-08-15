@@ -49,27 +49,27 @@ int ARMCI_Free_local(void *ptr) {
 
 #pragma weak ARMCI_Barrier
 void ARMCI_Barrier(void) {
-  return PARMCI_Barrier();
+  PARMCI_Barrier();
 }
 
 #pragma weak ARMCI_Fence
 void ARMCI_Fence(int proc) {
-  return PARMCI_Fence(proc);
+  PARMCI_Fence(proc);
 }
 
 #pragma weak ARMCI_AllFence
 void ARMCI_AllFence(void) {
-  return PARMCI_AllFence();
+  PARMCI_AllFence();
 }
 
 #pragma weak ARMCI_Access_begin
 void ARMCI_Access_begin(void *ptr) {
-  return PARMCI_Access_begin(ptr);
+  PARMCI_Access_begin(ptr);
 }
 
 #pragma weak ARMCI_Access_end
 void ARMCI_Access_end(void *ptr) {
-  return PARMCI_Access_end(ptr);
+  PARMCI_Access_end(ptr);
 }
 
 #pragma weak ARMCI_Get
@@ -259,12 +259,12 @@ int ARMCI_Destroy_mutexes(void) {
 
 #pragma weak ARMCI_Lock
 void ARMCI_Lock(int mutex, int proc) {
-  return PARMCI_Lock(mutex, proc);
+  PARMCI_Lock(mutex, proc);
 }
 
 #pragma weak ARMCI_Unlock
 void ARMCI_Unlock(int mutex, int proc) {
-  return PARMCI_Unlock(mutex, proc);
+  PARMCI_Unlock(mutex, proc);
 }
 
 #pragma weak ARMCI_Rmw
@@ -274,12 +274,12 @@ int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
 #pragma weak armci_msg_barrier
 void armci_msg_barrier(void) {
-  return parmci_msg_barrier();
+  parmci_msg_barrier();
 }
 
 #pragma weak armci_msg_group_barrier
 void armci_msg_group_barrier(ARMCI_Group *group) {
-  return parmci_msg_group_barrier(group);
+  parmci_msg_group_barrier(group);
 }
 
 #endif
