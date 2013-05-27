@@ -64,11 +64,8 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 #ifdef RMA_SUPPORTS_RMW
-int gmr_get_accumulate_typed(gmr_t *mreg, 
-    void *src, int src_count, MPI_Datatype src_type, /* corresponds to origin */
-    void *out, int out_count, MPI_Datatype out_type, /* corresponds to result */
-    void *dst, int dst_count, MPI_Datatype dst_type, /* corresponds to target */
-    int proc);
+int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type, 
+    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 #endif
 
 void gmr_lock(gmr_t *mreg, int proc);
