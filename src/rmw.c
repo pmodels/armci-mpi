@@ -44,7 +44,7 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   int src_is_locked = 0;
   int count = 1; /* ARMCI_Rmw only supports single elements */
   MPI_Datatype type;
-  MPI_Op       op;
+  MPI_Op       rop;
   gmr_t *src_mreg, *dst_mreg;
 
   /* If NOGUARD is set, assume the buffer is not shared */
@@ -63,9 +63,9 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     type = MPI_INT;
 
   if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG)
-    op = MPI_REPLACE;
+    rop = MPI_REPLACE;
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG)
-    op = MPI_SUM;
+    rop = MPI_SUM;
   else
     ARMCII_Error("invalid operation (%d)", op);
 
