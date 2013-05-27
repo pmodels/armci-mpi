@@ -52,7 +52,7 @@ int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
 #ifdef RMA_SUPPORTS_RMW
-int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, int proc);
+int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, MPI_Op op, int proc);
 #endif
 
 int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
@@ -63,7 +63,7 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 #ifdef RMA_SUPPORTS_RMW
 int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type, 
-    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type, int proc);
+    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type, MPI_Op op, int proc);
 #endif
 
 void gmr_lock(gmr_t *mreg, int proc);
