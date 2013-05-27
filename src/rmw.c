@@ -38,6 +38,55 @@
   * @param[in]  proc  Process rank for the target buffer.
   */
 int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
+
+#ifdef RMA_SUPPORTS_RMW
+
+  int src_is_locked = 0;
+  int count = 1; /* ARMCI_Rmw only supports single elements */
+  MPI_Datatype type;
+  MPI_Op       op;
+  gmr_t *src_mreg, *dst_mreg;
+
+  /* If NOGUARD is set, assume the buffer is not shared */
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+    src_mreg = gmr_lookup(src, ARMCI_GROUP_WORLD.rank);
+  else
+    src_mreg = NULL;
+
+  dst_mreg = gmr_lookup(dst, proc);
+
+  ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
+
+  if (op == ARMCI_SWAP_LONG || op == ARMCI_FETCH_AND_ADD_LONG)
+    type = MPI_LONG;
+  else
+    type = MPI_INT;
+
+  if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG)
+    op = MPI_REPLACE;
+  else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG)
+    op = MPI_SUM;
+  else
+    ARMCII_Error("invalid operation (%d)", op);
+
+  /* We hold the DLA lock if (src_mreg != NULL). */
+
+  if (src_mreg) {
+    gmr_dla_lock(src_mreg);
+    src_is_locked = 1;
+  }
+
+  gmr_lock(dst_mreg, proc);
+  gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, proc);
+  gmr_unlock(dst_mreg, proc);
+
+  if (src_is_locked) {
+    gmr_dla_unlock(src_mreg);
+    src_is_locked = 0;
+  }
+
+#else // if !RMA_SUPPORTS_RMW
+
   int           is_long;
   gmr_t *mreg;
 
@@ -91,6 +140,8 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   else {
     ARMCII_Error("invalid operation (%d)", op);
   }
+
+#endif // RMA_SUPPORTS_RMW
 
   return 0;
 }
