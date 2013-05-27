@@ -33,9 +33,7 @@ typedef struct gmr_s {
   enum gmr_lock_states_e  lock_state;     /* State of the lock                                              */
   int                     lock_target;    /* Group (window) rank of the current target (if locked)          */
   int                     dla_lock_count; /* Access count on the DLA lock.  Can unlock when this reaches 0. */
-#ifndef RMA_SUPPORTS_RMW
   armcix_mutex_hdl_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
-#endif
 
   struct gmr_s           *prev;           /* Linked list pointers for GMR list                              */
   struct gmr_s           *next;
