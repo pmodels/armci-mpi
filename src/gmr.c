@@ -413,7 +413,7 @@ int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype ty
   * @param[in] src_type  MPI datatype of the source elements
   * @param[in] dst       Address of destination buffer
   * @param[in] dst_count Number of elements of the given type at the destination
-  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] dst_type  MPI datatype of the destination elements
   * @param[in] size      Number of bytes to transfer
   * @param[in] proc      Absolute process id of target process
   * @return              0 on success, non-zero on failure
