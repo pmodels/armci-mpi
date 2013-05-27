@@ -33,7 +33,9 @@ typedef struct gmr_s {
   enum gmr_lock_states_e  lock_state;     /* State of the lock                                              */
   int                     lock_target;    /* Group (window) rank of the current target (if locked)          */
   int                     dla_lock_count; /* Access count on the DLA lock.  Can unlock when this reaches 0. */
+#ifndef RMA_SUPPORTS_RMW
   armcix_mutex_hdl_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
+#endif
 
   struct gmr_s           *prev;           /* Linked list pointers for GMR list                              */
   struct gmr_s           *next;
@@ -51,6 +53,9 @@ gmr_t *gmr_lookup(void *ptr, int proc);
 int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
+#ifdef RMA_SUPPORTS_RMW
+int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, int proc);
+#endif
 
 int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
@@ -58,6 +63,13 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
+#ifdef RMA_SUPPORTS_RMW
+int gmr_get_accumulate_typed(gmr_t *mreg, 
+    void *src, int src_count, MPI_Datatype src_type, /* corresponds to origin */
+    void *out, int out_count, MPI_Datatype out_type, /* corresponds to result */
+    void *dst, int dst_count, MPI_Datatype dst_type, /* corresponds to target */
+    int proc);
+#endif
 
 void gmr_lock(gmr_t *mreg, int proc);
 void gmr_unlock(gmr_t *mreg, int proc);
