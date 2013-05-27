@@ -13,6 +13,7 @@
 #include <debug.h>
 #include <gmr.h>
 
+#ifdef RMA_SUPPORTS_RMW
 
 /** One-sided get-accumulate operation.  Source and output buffer must be private.
   *
@@ -74,3 +75,4 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   return 0;
 }
 
+#endif
