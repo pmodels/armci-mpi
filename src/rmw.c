@@ -41,7 +41,7 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
 #ifdef RMA_SUPPORTS_RMW
 
-  int src_is_locked = 0;
+  int src_is_locked = 0, is_swap, is_long;
   int count = 1; /* ARMCI_Rmw only supports single elements */
   MPI_Datatype type;
   MPI_Op       rop;
@@ -57,13 +57,17 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
   ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
 
-  if (op == ARMCI_SWAP_LONG || op == ARMCI_FETCH_AND_ADD_LONG)
+  if (op == ARMCI_SWAP_LONG || op == ARMCI_FETCH_AND_ADD_LONG) {
+    is_long = 1;
     type = MPI_LONG;
+  }
   else
     type = MPI_INT;
 
-  if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG)
+  if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG) {
+    is_swap = 1;
     rop = MPI_REPLACE;
+  }
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG)
     rop = MPI_SUM;
   else
@@ -76,9 +80,22 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     src_is_locked = 1;
   }
 
-  gmr_lock(dst_mreg, proc);
-  gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, rop, proc);
-  gmr_unlock(dst_mreg, proc);
+  if (is_swap) {
+    long swap_val_l;
+    int  swap_val_i;
+    gmr_lock(dst_mreg, proc);
+    gmr_get_accumulate(dst_mreg, ploc /* src */, is_long ? (void*) &swap_val_l : (void*) &swap_val_i /* out */, prem /* dst */, count, type, rop, proc);
+    gmr_unlock(dst_mreg, proc); /* must unlock before touching swap_val */
+    if (is_long)
+      *(long*) ploc = swap_val_l;
+    else
+      *(int*) ploc = swap_val_i;
+  }
+  else /* fetch-and-add */ {
+    gmr_lock(dst_mreg, proc);
+    gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, rop, proc);
+    gmr_unlock(dst_mreg, proc);
+  }
 
   if (src_is_locked) {
     gmr_dla_unlock(src_mreg);
