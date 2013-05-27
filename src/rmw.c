@@ -77,7 +77,7 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   }
 
   gmr_lock(dst_mreg, proc);
-  gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, proc);
+  gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, rop, proc);
   gmr_unlock(dst_mreg, proc);
 
   if (src_is_locked) {
