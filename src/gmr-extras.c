@@ -76,6 +76,9 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 
   return 0;
 }
+#endif // RMA_SUPPORTS_RMW
+
+#ifdef RMA_SUPPORTS_LOCK_ALL
 
 /** Lock a memory region at all targets so that one-sided operations can be performed.
   *
@@ -115,6 +118,9 @@ int gmr_unlockall(gmr_t *mreg) {
 
   return 0;
 }
+#endif // RMA_SUPPORTS_LOCK_ALL
+
+#ifdef RMA_SUPPORTS_FLUSH
 
 /** Flush a memory region for local or remote completion.
   *
@@ -155,4 +161,4 @@ int gmr_flushall(gmr_t *mreg) {
   return 0;
 }
 
-#endif
+#endif // RMA_SUPPORTS_FLUSH
