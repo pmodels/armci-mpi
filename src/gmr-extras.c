@@ -77,4 +77,116 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   return 0;
 }
 
+/** Lock a memory region at all targets so that one-sided operations can be performed.
+  *
+  * @param[in] mreg     Memory region
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_lockall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+  int lock_assert = 0;
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
+
+#if 0
+  /* TODO: Can/should we use this here? */
+  if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
+      && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
+  {
+    /* Only non-conflicting RMA accesses allowed.
+       Shared and exclusive locks. */
+    lock_assert = MPI_MODE_NOCHECK;
+  } else if (mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE) {
+    /* Non-conflicting RMA and local accesses allowed.
+       Shared and exclusive locks. */
+    lock_assert = 0;
+  }
+#endif
+
+  MPI_Win_lock_all(lock_assert, mreg->window);
+
+  mreg->lock_target = -1;
+
+  return 0;
+}
+
+/** Lock a memory region at all targets so that one-sided operations can be performed.
+  *
+  * @param[in] mreg     Memory region
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_lockall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+  int lock_assert = 0;
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
+
+  MPI_Win_lock_all(lock_assert, mreg->window);
+
+  mreg->lock_state  = GMR_LOCK_ALL;
+  mreg->lock_target = -1;
+
+  return 0;
+}
+
+/** Unlock a memory region at all targets.
+  *
+  * @param[in] mreg     Memory region
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_unlockall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
+
+  MPI_Win_unlock_all(mreg->window);
+
+  mreg->lock_state  = GMR_LOCK_UNLOCKED;
+  mreg->lock_target = -1;
+
+  return 0;
+}
+
+/** Flush a memory region for local or remote completion.
+  *
+  * @param[in] mreg         Memory region
+  * @param[in] proc         Absolute process id of the target
+  * @param[in] local_only   Only flush the operation locally.
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_flush(gmr_t *mreg, int proc, int local_only) {
+  int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED || 
+                mreg->lock_state == GMR_LOCK_ALL);
+
+  if (local_only)
+    MPI_Win_flush_local(grp_proc, mreg->window);
+  else
+    MPI_Win_flush(grp_proc, mreg->window);
+
+  return 0;
+}
+
+/** Flush a memory region for remote completion to all targets.
+  *
+  * @param[in] mreg         Memory region
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_flushall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
+
+  MPI_Win_flush_all(mreg->window);
+
+  return 0;
+}
+
 #endif
