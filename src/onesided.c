@@ -175,8 +175,9 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
 
     gmr_dla_lock(dst_mreg);
     ARMCI_Copy(dst_buf, dst, size);
-    MPI_Free_mem(dst_buf);
     gmr_dla_unlock(dst_mreg);
+
+    MPI_Free_mem(dst_buf);
   }
 
   return 0;
