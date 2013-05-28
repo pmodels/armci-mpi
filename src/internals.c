@@ -127,9 +127,12 @@ void ARMCII_Flush_local(void) {
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
+#ifdef RMA_SUPPORTS_SYNC
+    gmr_sync(cur_mreg);
+#else
     gmr_dla_lock(cur_mreg);
     gmr_dla_unlock(cur_mreg);
-
+#endif
     cur_mreg = cur_mreg->next;
   }
 }

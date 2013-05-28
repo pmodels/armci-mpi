@@ -80,6 +80,9 @@ int  gmr_unlockall(gmr_t *mreg);
 int  gmr_flush(gmr_t *mreg, int proc, int local_only);
 int  gmr_flushall(gmr_t *mreg);
 #endif
+#ifdef RMA_SUPPORTS_SYNC
+int gmr_sync(gmr_t *mreg);
+#endif
 
 void gmr_dla_lock(gmr_t *mreg);
 void gmr_dla_unlock(gmr_t *mreg);

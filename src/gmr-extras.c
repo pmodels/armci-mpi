@@ -76,6 +76,7 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 
   return 0;
 }
+
 #endif // RMA_SUPPORTS_RMW
 
 #ifdef RMA_SUPPORTS_LOCK_ALL
@@ -118,6 +119,7 @@ int gmr_unlockall(gmr_t *mreg) {
 
   return 0;
 }
+
 #endif // RMA_SUPPORTS_LOCK_ALL
 
 #ifdef RMA_SUPPORTS_FLUSH
@@ -162,3 +164,24 @@ int gmr_flushall(gmr_t *mreg) {
 }
 
 #endif // RMA_SUPPORTS_FLUSH
+
+#ifdef RMA_SUPPORTS_SYNC
+
+/** Sync memory region so that public and private windows are the same.
+  *
+  * @param[in] mreg         Memory region
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_sync(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
+                mreg->lock_state == GMR_LOCK_ALL);
+
+  MPI_Win_sync(mreg->window);
+
+  return 0;
+}
+
+#endif // RMA_SUPPORTS_SYNC
