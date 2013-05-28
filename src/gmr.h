@@ -16,6 +16,9 @@ enum gmr_lock_states_e {
   GMR_LOCK_UNLOCKED,    /* Mem region is unlocked */
   GMR_LOCK_EXCLUSIVE,   /* Mem region is locked for exclusive access */
   GMR_LOCK_SHARED,      /* Mem region is locked for shared (non-conflicting) access */
+#ifdef RMA_SUPPORTS_LOCK_ALL
+  GMR_LOCK_ALL,         /* Mem region is locked for shared access for all targets using MPI_WIN_LOCK_ALL */
+#endif
   GMR_LOCK_DLA,         /* Mem region is locked for Direct Local Access */
   GMR_LOCK_DLA_SUSP     /* Mem region is unlocked and DLA is suspended */
 };
@@ -68,6 +71,14 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 
 void gmr_lock(gmr_t *mreg, int proc);
 void gmr_unlock(gmr_t *mreg, int proc);
+#ifdef RMA_SUPPORTS_LOCK_ALL
+int    gmr_lockall(gmr_t *mreg);
+#endif
+#ifdef RMA_SUPPORTS_FLUSH
+void gmr_flush_local(gmr_t *mreg, int proc);
+void gmr_flush(gmr_t *mreg, int proc);
+void gmr_flushall(gmr_t *mreg);
+#endif
 
 void gmr_dla_lock(gmr_t *mreg);
 void gmr_dla_unlock(gmr_t *mreg);
