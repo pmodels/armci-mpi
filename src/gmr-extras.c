@@ -89,40 +89,6 @@ int gmr_lockall(gmr_t *mreg) {
   ARMCII_Assert(grp_me >= 0);
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
 
-#if 0
-  /* TODO: Can/should we use this here? */
-  if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
-      && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
-  {
-    /* Only non-conflicting RMA accesses allowed.
-       Shared and exclusive locks. */
-    lock_assert = MPI_MODE_NOCHECK;
-  } else if (mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE) {
-    /* Non-conflicting RMA and local accesses allowed.
-       Shared and exclusive locks. */
-    lock_assert = 0;
-  }
-#endif
-
-  MPI_Win_lock_all(lock_assert, mreg->window);
-
-  mreg->lock_target = -1;
-
-  return 0;
-}
-
-/** Lock a memory region at all targets so that one-sided operations can be performed.
-  *
-  * @param[in] mreg     Memory region
-  * @return             0 on success, non-zero on failure
-  */
-int gmr_lockall(gmr_t *mreg) {
-  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
-  int lock_assert = 0;
-
-  ARMCII_Assert(grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
-
   MPI_Win_lock_all(lock_assert, mreg->window);
 
   mreg->lock_state  = GMR_LOCK_ALL;
