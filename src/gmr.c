@@ -448,7 +448,6 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
 /** Lock a memory region so that one-sided operations can be performed.
   *
   * @param[in] mreg     Memory region
-  * @param[in] mode     Lock mode (exclusive, shared, etc...)
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
@@ -532,7 +531,6 @@ void gmr_unlock(gmr_t *mreg, int proc) {
 /** Lock a memory region so that load/store operations can be performed.
   *
   * @param[in] mreg     Memory region
-  * @param[in] mode     Lock mode (exclusive, shared, etc...)
   * @return             0 on success, non-zero on failure
   */
 void gmr_dla_lock(gmr_t *mreg) {
