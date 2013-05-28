@@ -34,7 +34,8 @@ typedef struct gmr_s {
 
   int                     access_mode;    /* Current access mode                                            */
   enum gmr_lock_states_e  lock_state;     /* State of the lock                                              */
-  int                     lock_target;    /* Group (window) rank of the current target (if locked)          */
+  int                     lock_target;    /* Group (window) rank of the current target (if locked).
+                                             If LOCK_ALL is used, this value is undefined.                  */
   int                     dla_lock_count; /* Access count on the DLA lock.  Can unlock when this reaches 0. */
   armcix_mutex_hdl_t      rmw_mutex;      /* Mutex used for Read-Modify-Write operations                    */
 
@@ -72,12 +73,12 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 void gmr_lock(gmr_t *mreg, int proc);
 void gmr_unlock(gmr_t *mreg, int proc);
 #ifdef RMA_SUPPORTS_LOCK_ALL
-int    gmr_lockall(gmr_t *mreg);
+int  gmr_lockall(gmr_t *mreg);
+int  gmr_unlockall(gmr_t *mreg);
 #endif
 #ifdef RMA_SUPPORTS_FLUSH
-void gmr_flush_local(gmr_t *mreg, int proc);
-void gmr_flush(gmr_t *mreg, int proc);
-void gmr_flushall(gmr_t *mreg);
+int  gmr_flush(gmr_t *mreg, int proc, int local_only);
+int  gmr_flushall(gmr_t *mreg);
 #endif
 
 void gmr_dla_lock(gmr_t *mreg);
