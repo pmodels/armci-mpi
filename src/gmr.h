@@ -16,7 +16,7 @@ enum gmr_lock_states_e {
   GMR_LOCK_UNLOCKED,    /* Mem region is unlocked */
   GMR_LOCK_EXCLUSIVE,   /* Mem region is locked for exclusive access */
   GMR_LOCK_SHARED,      /* Mem region is locked for shared (non-conflicting) access */
-#ifdef RMA_SUPPORTS_LOCK_ALL
+#if defined(RMA_SUPPORTS_LOCK_ALL) || defined(RMA_SUPPORTS_FLUSH)
   GMR_LOCK_ALL,         /* Mem region is locked for shared access for all targets using MPI_WIN_LOCK_ALL */
 #endif
   GMR_LOCK_DLA,         /* Mem region is locked for Direct Local Access */
