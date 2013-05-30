@@ -79,7 +79,7 @@ int PARMCI_Init(void) {
   var = ARMCII_Getenv("ARMCI_IOV_METHOD");
 
   /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used */
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
 
   if (var != NULL) {
     if (strcmp(var, "AUTO") == 0)
