@@ -389,7 +389,7 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
 #ifdef RMA_PROPER_ATOMICITY
   //printf("dst = %p \n", dst);
-  MPI_Get_accumulate(dst, dst_count, dst_type, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
+  MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
 #else
   MPI_Get(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window);
 #endif
