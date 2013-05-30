@@ -8,19 +8,15 @@
 #include <mpi.h>
 #include <armci.h>
 
-#define XDIM 64 
-#define YDIM 64
+#define XDIM 1024
+#define YDIM 1024
 #define ITERATIONS 10
 
 int main(int argc, char **argv) {
 
     int i, j, rank, nranks, peer, bufsize, errors;
     double **buffer, *src_buf;
-#ifdef STRIDED
-    int count[2], src_stride, trg_stride, stride_level;
-#else
     armci_giov_t iov;
-#endif
 
     MPI_Init(&argc, &argv);
     ARMCI_Init();
@@ -39,14 +35,6 @@ int main(int argc, char **argv) {
 
     peer = (rank+1) % nranks;
 
-#ifdef STRIDED
-    src_stride = XDIM * sizeof(double);
-    trg_stride = XDIM * sizeof(double);
-    stride_level = 1;
-
-    count[1] = YDIM;
-    count[0] = XDIM * sizeof(double);
-#else
     iov.bytes                = XDIM * sizeof(double);
     iov.ptr_array_len        = YDIM;
     iov.src_ptr_array        = malloc(iov.ptr_array_len*sizeof(void*));
@@ -55,7 +43,6 @@ int main(int argc, char **argv) {
         iov.src_ptr_array[i] = (void *)&src_buf[i*XDIM];
         iov.dst_ptr_array[i] = (void *)&buffer[peer][i*XDIM];
     }
-#endif
 
     ARMCI_Barrier();
 
@@ -65,11 +52,7 @@ int main(int argc, char **argv) {
         *(src_buf + j) = rank + i;
       }
 
-#ifdef STRIDED
-      ARMCI_PutS(src_buf, &src_stride, (void *) buffer[peer], &trg_stride, count, stride_level, peer);
-#else
       ARMCI_PutV(&iov, 1, peer);
-#endif
     }
 
     ARMCI_Barrier();
