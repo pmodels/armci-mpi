@@ -20,6 +20,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
+                  tests/test_putv             \
                   tests/test_assert           \
                   tests/test_igop             \
                   tests/test_rmw_fadd         \
@@ -44,6 +45,7 @@ TESTS          += tests/test_onesided         \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
+                  tests/test_putv             \
                   tests/test_igop             \
                   tests/test_rmw_fadd         \
                   tests/test_parmci           \
@@ -70,6 +72,7 @@ tests_test_accs_dla_LDADD = libarmci.la
 tests_test_puts_LDADD = libarmci.la
 tests_test_puts_gets_LDADD = libarmci.la
 tests_test_puts_gets_dla_LDADD = libarmci.la
+tests_test_putv_LDADD = libarmci.la
 tests_test_assert_LDADD = libarmci.la
 tests_test_igop_LDADD = libarmci.la
 tests_test_rmw_fadd_LDADD = libarmci.la
