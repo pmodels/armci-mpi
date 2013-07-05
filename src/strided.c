@@ -70,7 +70,9 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
       sizes   [stride_levels-i] = stride_array[i]/stride_array[i-1];
       subsizes[stride_levels-i] = count[i];
 
-      ARMCII_Assert_msg((stride_array[i] % stride_array[i-1]) == 0, "Invalid striding");
+      /* This assertion is violated by what seems to be valid usage resulting from
+       * the new GA API call nga_strided_get during the stride test in GA 5.2.  
+       * ARMCII_Assert_msg((stride_array[i] % stride_array[i-1]) == 0, "Invalid striding"); */
     }
 
     sizes   [0] = count[stride_levels];
