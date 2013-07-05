@@ -31,21 +31,25 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
   MPI_Type_size(old_type, &old_type_size);
 
   /* Eliminate counts that don't count (all 1 counts at the end) */
-  for (i = stride_levels+1; i > 0 && stride_levels > 0 && count[i-1] == 1; i--)
+  for (i = stride_levels+1; (i > 0) && (stride_levels > 0) && (count[i-1] == 1); i--)
     stride_levels--;
 
   /* A correct strided spec should me monotonic increasing and stride_array[i+1] should
      be a multiple of stride_array[i]. */
   if (stride_levels > 0) {
-    for (i = 1; i < stride_levels; i++)
-      ARMCII_Assert(stride_array[i] >= stride_array[i-1] && stride_array[i] % stride_array[i-1] == 0);
+    for (i = 1; i < stride_levels; i++) {
+      ARMCII_Assert(stride_array[i] >= stride_array[i-1]);
+      /* This assertion is violated by what seems to be valid usage resulting from
+       * the new GA API call nga_strided_get during the stride test in GA 5.2.
+       * ARMCII_Assert((stride_array[i] % stride_array[i-1]) == 0); */
+    }
   }
 
   /* Test for a contiguous transfer */
   if (stride_levels == 0) {
     int elem_count = count[0]/old_type_size;
 
-    ARMCII_Assert(count[0] % old_type_size == 0);
+    ARMCII_Assert((count[0] % old_type_size) == 0);
     MPI_Type_contiguous(elem_count, old_type, new_type);
   }
 
@@ -58,14 +62,15 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
     sizes   [stride_levels] = stride_array[0]/old_type_size;
     subsizes[stride_levels] = count[0]/old_type_size;
 
-    ARMCII_Assert(stride_array[0] % old_type_size == 0 && count[0] % old_type_size == 0);
+    ARMCII_Assert((stride_array[0] % old_type_size) == 0);
+    ARMCII_Assert((count[0] % old_type_size) == 0);
 
     for (i = 1; i < stride_levels; i++) {
       /* Convert strides into dimensions by dividing out contributions from lower dims */
       sizes   [stride_levels-i] = stride_array[i]/stride_array[i-1];
       subsizes[stride_levels-i] = count[i];
 
-      ARMCII_Assert_msg(stride_array[i] % stride_array[i-1] == 0, "Invalid striding");
+      ARMCII_Assert_msg((stride_array[i] % stride_array[i-1]) == 0, "Invalid striding");
     }
 
     sizes   [0] = count[stride_levels];
@@ -541,7 +546,7 @@ void ARMCII_Strided_to_iov(armci_giov_t *iov,
   iov->src_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
   iov->dst_ptr_array = malloc(iov->ptr_array_len*sizeof(void*));
 
-  ARMCII_Assert(iov->src_ptr_array != NULL && iov->dst_ptr_array != NULL);
+  ARMCII_Assert((iov->src_ptr_array != NULL) && (iov->dst_ptr_array != NULL));
 
   // Case 1: Non-strided transfer
   if (stride_levels == 0) {
@@ -653,7 +658,7 @@ void ARMCII_Iov_iter_free(armcii_iov_iter_t *it) {
   * @return             True if another iteration exists
   */
 int ARMCII_Iov_iter_has_next(armcii_iov_iter_t *it) {
-  return (it->idx[it->stride_levels-1] < it->count[it->stride_levels] && !it->was_contiguous);
+  return ((it->idx[it->stride_levels-1] < it->count[it->stride_levels]) && (!it->was_contiguous));
 }
 
 
