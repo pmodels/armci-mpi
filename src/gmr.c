@@ -388,7 +388,11 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
 #ifdef RMA_PROPER_ATOMICITY
-  //printf("dst = %p \n", dst);
+  /* I can only assume that the 3.1 release - MPICH_CALC_VERSION(3,1,0,3,0) - will fix this. */
+#if (MPICH && (MPICH_NUM_VERSION < MPICH_CALC_VERSION(3,1,0,3,0)) )
+#warning MPI_Get_accumulate will fail on an improper assertion for ARMCI_IOV_METHOD=DIRECT and/or ARMCI_STRIDED_METHOD=DIRECT \
+	unless you apply the patch from http://trac.mpich.org/projects/mpich/ticket/1863
+#endif
   MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
 #else
   MPI_Get(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window);
