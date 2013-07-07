@@ -42,7 +42,6 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 #if MPI_VERSION >= 3
 
   int src_is_locked = 0, is_swap = 0, is_long = 0;
-  int count = 1; /* ARMCI_Rmw only supports single elements */
   MPI_Datatype type;
   MPI_Op       rop;
   gmr_t *src_mreg, *dst_mreg;
@@ -84,7 +83,8 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     long swap_val_l;
     int  swap_val_i;
     gmr_lock(dst_mreg, proc);
-    gmr_get_accumulate(dst_mreg, ploc /* src */, is_long ? (void*) &swap_val_l : (void*) &swap_val_i /* out */, prem /* dst */, count, type, rop, proc);
+    gmr_fetch_and_op(dst_mreg, ploc /* src */, is_long ? (void*) &swap_val_l : (void*) &swap_val_i /* out */,
+    		         prem /* dst */, type, rop, proc);
     gmr_unlock(dst_mreg, proc); /* must unlock before touching swap_val */
     if (is_long)
       *(long*) ploc = swap_val_l;
@@ -93,7 +93,7 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   }
   else /* fetch-and-add */ {
     gmr_lock(dst_mreg, proc);
-    gmr_get_accumulate(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, count, type, rop, proc);
+    gmr_fetch_and_op(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, type, rop, proc);
     gmr_unlock(dst_mreg, proc);
   }
 
