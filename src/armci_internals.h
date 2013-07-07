@@ -69,7 +69,7 @@ extern char ARMCII_Shr_buf_methods_str[][10];
 typedef struct {
   int           init_count;             /* Number of times ARMCI_Init has been called                           */
   int           debug_alloc;            /* Do extra debuggin on memory allocation                               */
-  int           debug_flush_barriers;   /* Flush all windows on a barrier                                       */
+  int           debug_sync_barriers;    /* Sync all windows on a barrier                                        */
   int           iov_checks;             /* Disable IOV same allocation and overlapping checks                   */
   int           iov_batched_limit;      /* Max number of ops per epoch for BATCHED IOV method                   */
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
@@ -103,7 +103,7 @@ int   ARMCII_Getenv_int(char *varname, int default_value);
 
 /* Synchronization */
 
-void ARMCII_Flush_local(void);
+void ARMCII_Sync_local(void);
 
 /* GOP Operators */
 

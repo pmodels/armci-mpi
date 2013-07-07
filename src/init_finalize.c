@@ -57,7 +57,13 @@ int PARMCI_Init(void) {
   /* Check for debugging flags */
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
-  ARMCII_GLOBAL_STATE.debug_flush_barriers = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", 1);
+  {
+	int junk;
+	junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
+    if (junk != -1)
+      ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.  Use ARMCI_SYNC_AT_BARRIERS instead. \n");
+  }
+  ARMCII_GLOBAL_STATE.debug_sync_barriers  = ARMCII_Getenv_bool("ARMCI_SYNC_AT_BARRIERS", 1);
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
 
   /* Group formation options */
@@ -167,7 +173,7 @@ int PARMCI_Init(void) {
       printf("  NONCOLLECTIVE_GROUPS   = %s\n", ARMCII_GLOBAL_STATE.noncollective_groups   ? "TRUE" : "FALSE");
       printf("  CACHE_RANK_TRANSLATION = %s\n", ARMCII_GLOBAL_STATE.cache_rank_translation ? "TRUE" : "FALSE");
       printf("  DEBUG_ALLOC            = %s\n", ARMCII_GLOBAL_STATE.debug_alloc            ? "TRUE" : "FALSE");
-      printf("  FLUSH_BARRIERS         = %s\n", ARMCII_GLOBAL_STATE.debug_flush_barriers   ? "TRUE" : "FALSE");
+      printf("  SYNC_AT_BARRIERS       = %s\n", ARMCII_GLOBAL_STATE.debug_sync_barriers    ? "TRUE" : "FALSE");
       printf("\n");
       fflush(NULL);
     }

@@ -109,8 +109,8 @@ void armci_msg_bcast_scope(int scope, void *buffer, int len, int root) {
 void parmci_msg_barrier(void) {
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 
-  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
-    ARMCII_Flush_local();
+  if (ARMCII_GLOBAL_STATE.debug_sync_barriers) {
+	ARMCII_Sync_local();
   }
 }
 
@@ -132,8 +132,8 @@ void parmci_msg_barrier(void) {
 void parmci_msg_group_barrier(ARMCI_Group *group) {
   MPI_Barrier(group->comm);
 
-  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
-    ARMCII_Flush_local();
+  if (ARMCII_GLOBAL_STATE.debug_sync_barriers) {
+    ARMCII_Sync_local();
   }
 }
 

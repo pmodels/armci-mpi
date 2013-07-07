@@ -40,8 +40,8 @@ void PARMCI_Barrier(void) {
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
 
-  if (ARMCII_GLOBAL_STATE.debug_flush_barriers) {
-    ARMCII_Flush_local();
+  if (ARMCII_GLOBAL_STATE.debug_sync_barriers) {
+	ARMCII_Sync_local();
   }
 }
 

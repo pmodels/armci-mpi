@@ -123,12 +123,22 @@ void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *
 
 /** Synchronize all public and private windows.
   */
-void ARMCII_Flush_local(void) {
+void ARMCII_Sync_local(void) {
   gmr_t *cur_mreg = gmr_list;
 
+  /* Note that we have two different semantics here.
+   * gmr_sync acts on windows that are locked via lock_all whereas
+   * gmr_dla_(un)lock act on windows that are unlocked.
+   * It might be appropriate to refactor the code such that
+   * conflicting semantics are not present. */
+
   while (cur_mreg) {
+#if defined(RMA_SUPPORTS_SYNC) && defined(RMA_SUPPORTS_LOCK_ALL)
+	gmr_sync(cur_mreg);
+#else
     gmr_dla_lock(cur_mreg);
     gmr_dla_unlock(cur_mreg);
+#endif
     cur_mreg = cur_mreg->next;
   }
 }
