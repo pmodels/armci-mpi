@@ -125,14 +125,17 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   MPI_Group_free(&world_group);
   MPI_Group_free(&alloc_group);
 
-#ifndef RMA_SUPPORTS_RMW
+#if MPI_VERSION < 3
   /* Create the RMW mutex: Keeps RMW operations atomic wrt each other */
   mreg->rmw_mutex = ARMCIX_Create_mutexes_hdl(1, group);
 #endif
 
-  /* The memory model for a particular RMA window can be determined by accessing the attribute MPI_WIN_MODEL.
-   * If the memory model is the unified model, the value of this attribute is MPI_WIN_UNIFIED;
-   * otherwise, the value is MPI_WIN_SEPARATE. */
+  {
+    int attribute_val, attr_flag;
+    /* this function will always return flag=false in MPI-2 */
+    MPI_Win_get_attr(mreg->window, MPI_WIN_MODEL, (void *)&attribute_val, &attr_flag);
+    mreg->memory_model = (attr_flag && attribute_val==MPI_WIN_UNIFIED) ? GMR_MODEL_UNIFIED : GMR_MODEL_SEPARATE;
+  }
 
   /* Append the new region onto the region list */
   if (gmr_list == NULL) {
@@ -233,7 +236,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
     MPI_Free_mem(mreg->slices[world_me].base);
 
   free(mreg->slices);
-#ifndef RMA_SUPPORTS_RMW
+#if MPI_VERSION < 3
   ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
 #endif
 
@@ -395,7 +398,7 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-#ifdef RMA_PROPER_ATOMICITY
+#if (MPI_VERSION >= 3) && defined(RMA_PROPER_ATOMICITY)
   /* I can only assume that the 3.1 release - MPICH_CALC_VERSION(3,1,0,3,0) - will fix this. */
 #if (MPICH && (MPICH_NUM_VERSION < MPICH_CALC_VERSION(3,1,0,3,0)) )
 #warning MPI_Get_accumulate will fail on an improper assertion for ARMCI_IOV_METHOD=DIRECT and/or ARMCI_STRIDED_METHOD=DIRECT \
@@ -487,8 +490,8 @@ void gmr_lock(gmr_t *mreg, int proc) {
     mreg->lock_state = GMR_LOCK_DLA_SUSP;
   }
 
-  if (   mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE 
-      && mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE )
+  if (   ( mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE )
+      && ( mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE ) )
   {
     /* Only non-conflicting RMA accesses allowed.
        Shared and exclusive locks. */

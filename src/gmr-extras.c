@@ -13,7 +13,7 @@
 #include <debug.h>
 #include <gmr.h>
 
-#ifdef RMA_SUPPORTS_RMW
+#if MPI_VERSION >= 3
 
 /** One-sided get-accumulate operation.  Source and output buffer must be private.
   *
@@ -110,10 +110,6 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
   return 0;
 }
 
-#endif // RMA_SUPPORTS_RMW
-
-#ifdef RMA_SUPPORTS_LOCK_ALL
-
 /** Lock a memory region at all targets so that one-sided operations can be performed.
   *
   * @param[in] mreg     Memory region
@@ -152,10 +148,6 @@ int gmr_unlockall(gmr_t *mreg) {
 
   return 0;
 }
-
-#endif // RMA_SUPPORTS_LOCK_ALL
-
-#ifdef RMA_SUPPORTS_FLUSH
 
 /** Flush a memory region for local or remote completion.
   *
@@ -196,10 +188,6 @@ int gmr_flushall(gmr_t *mreg) {
   return 0;
 }
 
-#endif // RMA_SUPPORTS_FLUSH
-
-#ifdef RMA_SUPPORTS_SYNC
-
 /** Sync memory region so that public and private windows are the same.
   *
   * @param[in] mreg         Memory region
@@ -217,4 +205,4 @@ int gmr_sync(gmr_t *mreg) {
   return 0;
 }
 
-#endif // RMA_SUPPORTS_SYNC
+#endif // MPI_VERSION >= 3

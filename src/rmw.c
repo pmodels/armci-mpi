@@ -39,7 +39,7 @@
   */
 int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
 
-#ifdef RMA_SUPPORTS_RMW
+#if MPI_VERSION >= 3
 
   int src_is_locked = 0, is_swap = 0, is_long = 0;
   int count = 1; /* ARMCI_Rmw only supports single elements */
