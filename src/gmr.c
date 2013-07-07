@@ -125,8 +125,14 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   MPI_Group_free(&world_group);
   MPI_Group_free(&alloc_group);
 
+#ifndef RMA_SUPPORTS_RMW
   /* Create the RMW mutex: Keeps RMW operations atomic wrt each other */
   mreg->rmw_mutex = ARMCIX_Create_mutexes_hdl(1, group);
+#endif
+
+  /* The memory model for a particular RMA window can be determined by accessing the attribute MPI_WIN_MODEL.
+   * If the memory model is the unified model, the value of this attribute is MPI_WIN_UNIFIED;
+   * otherwise, the value is MPI_WIN_SEPARATE. */
 
   /* Append the new region onto the region list */
   if (gmr_list == NULL) {
@@ -227,7 +233,9 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
     MPI_Free_mem(mreg->slices[world_me].base);
 
   free(mreg->slices);
+#ifndef RMA_SUPPORTS_RMW
   ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
+#endif
 
   free(mreg);
 }
