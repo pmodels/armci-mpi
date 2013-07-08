@@ -122,6 +122,15 @@ int gmr_lockall(gmr_t *mreg) {
   ARMCII_Assert(grp_me >= 0);
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
 
+  if (   ( mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE )
+      && ( mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE ) )
+  {
+    /* Only non-conflicting RMA accesses allowed. */
+    lock_assert = MPI_MODE_NOCHECK;
+  } else {
+    lock_assert = 0;
+  }
+
   MPI_Win_lock_all(lock_assert, mreg->window);
 
   mreg->lock_state  = GMR_LOCK_ALL;
