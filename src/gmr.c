@@ -162,7 +162,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   */
 void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   int   search_proc_in, search_proc_out, search_proc_out_grp;
-  void *search_base;
+  void *search_base = NULL;
   int   alloc_me, alloc_nproc;
   int   world_me, world_nproc;
 
@@ -273,6 +273,7 @@ gmr_t *gmr_lookup(void *ptr, int proc) {
   while (mreg != NULL) {
     ARMCII_Assert(proc < mreg->nslices);
 
+    /* Jeff: Why is uint8_t used here?  .base is (void*). */
     if (proc < mreg->nslices) {
       const uint8_t   *base = mreg->slices[proc].base;
       const gmr_size_t size = mreg->slices[proc].size;
