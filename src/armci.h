@@ -63,7 +63,7 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   * currently behave the same as the blocking ops.
   */
 
-typedef 
+typedef struct armci_hdl_s
 {
     MPI_Request request;
     /* TODO: add implicit handle support like A1 did - assuming this is even necessary. */
