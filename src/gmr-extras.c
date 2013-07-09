@@ -170,8 +170,7 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED || 
-                mreg->lock_state == GMR_LOCK_ALL);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
 
   if (local_only)
     MPI_Win_flush_local(grp_proc, mreg->window);
@@ -186,13 +185,16 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
   * @param[in] mreg         Memory region
   * @return                 0 on success, non-zero on failure
   */
-int gmr_flushall(gmr_t *mreg) {
+int gmr_flushall(gmr_t *mreg, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
 
-  MPI_Win_flush_all(mreg->window);
+  if (local_only)
+    MPI_Win_flush_local_all(mreg->window);
+  else
+    MPI_Win_flush_all(mreg->window);
 
   return 0;
 }
