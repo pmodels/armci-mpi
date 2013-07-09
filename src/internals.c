@@ -38,7 +38,7 @@ void ARMCII_Error_impl(const char *file, const int line, const char *func, const
   disp += vsnprintf(string, 500, msg, ap);
   va_end(ap);
 
-  fprintf(stderr, "[%d] ARMCI Internal error in %s (%s:%d)\n[%d] Messge: %s\n", ARMCI_GROUP_WORLD.rank, 
+  fprintf(stderr, "[%d] ARMCI Internal error in %s (%s:%d)\n[%d] Message: %s\n", ARMCI_GROUP_WORLD.rank,
       func, file, line, ARMCI_GROUP_WORLD.rank, string);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, 100);
 }
