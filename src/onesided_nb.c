@@ -42,6 +42,7 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *hdl) {
 /** Non-blocking put operation.  Note: the implementation is not non-blocking
   */
 int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
+	/* TODO: implement nonblocking properly and then use it to get blocking */
   return PARMCI_Put(src, dst, bytes, proc);
 }
 
@@ -59,6 +60,7 @@ int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
 /** Non-blocking get operation.  Note: the implementation is not non-blocking
   */
 int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
+	/* TODO: implement nonblocking properly and then use it to get blocking */
   return PARMCI_Get(src, dst, bytes, proc);
 }
 
@@ -76,6 +78,7 @@ int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
 /** Non-blocking accumulate operation.  Note: the implementation is not non-blocking
   */
 int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl) {
+	/* TODO: implement nonblocking properly and then use it to get blocking */
   return PARMCI_Acc(datatype, scale, src, dst, bytes, proc);
 }
 
@@ -93,6 +96,13 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 /** Wait for a non-blocking operation to finish.
   */
 int PARMCI_Wait(armci_hdl_t* handle) {
+#if MPI_VERSION >=3
+  if (!(handle->is_aggregate)) {
+    MPI_Wait(handle->request, MPI_STATUS_IGNORE);
+  } else {
+    ARMCII_Error("aggregate nonblocking handles are not yet implemented");
+  }
+#endif
   return 0;
 }
 
@@ -110,6 +120,41 @@ int PARMCI_Wait(armci_hdl_t* handle) {
 /** Check if a non-blocking operation has finished.
   */
 int PARMCI_Test(armci_hdl_t* handle) {
+#if MPI_VERSION >=3
+  int completed = 0;
+  if (!(handle->is_aggregate)) {
+    MPI_Test(handle->request, &completed, MPI_STATUS_IGNORE);
+  } else {
+    ARMCII_Error("aggregate nonblocking handles are not yet implemented");
+  }
+  return (completed==1 ? 0 : 1); /* Jeff will not assume !0 = 1 or !1 = 0 */
+#else
+  return 0;
+#endif
+}
+
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_WaitAll = PARMCI_WaitAll
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_WaitAll ARMCI_WaitAll
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_WaitAll as PARMCI_WaitAll
+#endif
+/* -- end weak symbols block -- */
+
+/** Wait for all outstanding non-blocking operations with implicit handles to a particular process to finish.
+  */
+int PARMCI_WaitProc(int proc) {
+#if MPI_VERSION >=3
+  gmr_t *cur_mreg = gmr_list;
+
+  while (cur_mreg) {
+    gmr_flush(cur_mreg, proc, 1); /* flush local only, unlike Fence */
+    cur_mreg = cur_mreg->next;
+  }
+#endif
   return 0;
 }
 
@@ -127,6 +172,14 @@ int PARMCI_Test(armci_hdl_t* handle) {
 /** Wait for all non-blocking operations with implicit (NULL) handles to finish.
   */
 int PARMCI_WaitAll(void) {
+#if MPI_VERSION >=3
+  gmr_t *cur_mreg = gmr_list;
+
+  while (cur_mreg) {
+    gmr_flushall(cur_mreg, 1); /* flush local only, unlike Fence */
+    cur_mreg = cur_mreg->next;
+  }
+#endif
   return 0;
 }
 
