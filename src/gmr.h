@@ -90,7 +90,7 @@ void gmr_unlock(gmr_t *mreg, int proc);
 int  gmr_lockall(gmr_t *mreg);
 int  gmr_unlockall(gmr_t *mreg);
 int  gmr_flush(gmr_t *mreg, int proc, int local_only);
-int  gmr_flushall(gmr_t *mreg);
+int  gmr_flushall(gmr_t *mreg, int local_only);
 int gmr_sync(gmr_t *mreg);
 #endif
 
