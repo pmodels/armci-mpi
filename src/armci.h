@@ -67,6 +67,7 @@ typedef
 {
     MPI_Request request;
     /* TODO: add implicit handle support like A1 did - assuming this is even necessary. */
+    int is_aggregate;
 }
 armci_hdl_t;
 
