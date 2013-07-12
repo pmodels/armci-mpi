@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   MP_MYID(&me);
 
   if (nprocs < 2)
-    ARMCI_Error("This program requires at least to processes", 1);
+    ARMCI_Error("This program requires at least two processes", 1);
 
   myptrs = (double **)malloc(sizeof(double *)*nprocs);
   ARMCI_Malloc((void **)myptrs, LOOP*sizeof(double)); 
