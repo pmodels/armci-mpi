@@ -154,9 +154,15 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
+#if MPI_VERSION < 3
     gmr_lock(mreg, proc);
+#endif
     gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+#if MPI_VERSION < 3
     gmr_unlock(mreg, proc);
+#else
+    gmr_flush(mreg, proc, 1); /* flush_local */
+#endif
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -248,9 +254,15 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
+#if MPI_VERSION < 3
     gmr_lock(mreg, proc);
+#endif
     gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
+#if MPI_VERSION < 3
     gmr_unlock(mreg, proc);
+#else
+    gmr_flush(mreg, proc, 0);
+#endif
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
@@ -394,9 +406,15 @@ int PARMCI_AccS(int datatype, void *scale,
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
+#if MPI_VERSION < 3
     gmr_lock(mreg, proc);
+#endif
     gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+#if MPI_VERSION < 3
     gmr_unlock(mreg, proc);
+#else
+    gmr_flush(mreg, proc, 0);
+#endif
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -447,8 +465,10 @@ int PARMCI_AccS(int datatype, void *scale,
   */
 int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
+               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
@@ -479,8 +499,10 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   */
 int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
+               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
@@ -514,8 +536,10 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 int PARMCI_NbAccS(int datatype, void *scale,
                void *src_ptr, int src_stride_ar[/*stride_levels*/],
                void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
-               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *hdl) {
+               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 

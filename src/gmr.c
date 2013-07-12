@@ -562,6 +562,7 @@ void gmr_dla_lock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
+#if MPI_VERSION < 3
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED || mreg->lock_state == GMR_LOCK_DLA);
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not allowed in the current access mode");
@@ -577,6 +578,13 @@ void gmr_dla_lock(gmr_t *mreg) {
 
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_DLA);
   mreg->dla_lock_count++;
+#else
+  /* FIXME: This is totally evil on many levels but I haven't figured out how to fix the DLA situation yet. */
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
+                mreg->lock_state == GMR_LOCK_ALL);
+
+  MPI_Win_sync(mreg->window);
+#endif
 }
 
 
@@ -588,6 +596,7 @@ void gmr_dla_unlock(gmr_t *mreg) {
   int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0);
+#if MPI_VERSION < 3
   ARMCII_Assert(mreg->lock_state == GMR_LOCK_DLA);
   ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
       "Direct local access is not allowed in the current access mode");
@@ -598,4 +607,11 @@ void gmr_dla_unlock(gmr_t *mreg) {
     MPI_Win_unlock(grp_proc, mreg->window);
     mreg->lock_state = GMR_LOCK_UNLOCKED;
   }
+#else
+  /* FIXME: This is totally evil on many levels but I haven't figured out how to fix the DLA situation yet. */
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
+                mreg->lock_state == GMR_LOCK_ALL);
+
+  MPI_Win_sync(mreg->window);
+#endif
 }

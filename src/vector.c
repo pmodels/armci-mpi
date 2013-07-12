@@ -172,6 +172,7 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
     MPI_Datatype type, int proc) {
   
   int i;
+  int flush_local = 0; /* used only for MPI-3 */
 
   for (i = 0; i < count; i++) {
     gmr_t *mreg;
@@ -195,24 +196,33 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
     mreg = gmr_lookup(shr_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
+#if MPI_VERSION < 3
     gmr_lock(mreg, proc);
+#endif
 
     switch(op) {
       case ARMCII_OP_PUT:
         gmr_put(mreg, src[i], dst[i], elem_count, proc);
+        flush_local = 1;
         break;
       case ARMCII_OP_GET:
         gmr_get(mreg, src[i], dst[i], elem_count, proc);
+        flush_local = 0;
         break;
       case ARMCII_OP_ACC:
         gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        flush_local = 1;
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
         return 1;
     }
 
+#if MPI_VERSION < 3
     gmr_unlock(mreg, proc);
+#else
+    gmr_flush(mreg, proc, flush_local);
+#endif
   }
 
   return 0;
@@ -226,6 +236,7 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
     MPI_Datatype type, int proc) {
 
   int i;
+  int flush_local = 1; /* used only for MPI-3 */
   gmr_t *mreg;
   void *shr_ptr;
 
@@ -247,7 +258,9 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
   mreg = gmr_lookup(shr_ptr, proc);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
+#if MPI_VERSION < 3
   gmr_lock(mreg, proc);
+#endif
 
   for (i = 0; i < count; i++) {
 
@@ -255,19 +268,26 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
         && i % ARMCII_GLOBAL_STATE.iov_batched_limit == 0
         && i > 0 )
     {
+#if MPI_VERSION < 3
       gmr_unlock(mreg, proc);
       gmr_lock(mreg, proc);
+#else
+      gmr_flush(mreg, proc, flush_local);
+#endif
     }
 
     switch(op) {
       case ARMCII_OP_PUT:
         gmr_put(mreg, src[i], dst[i], elem_count, proc);
+        flush_local = 1;
         break;
       case ARMCII_OP_GET:
         gmr_get(mreg, src[i], dst[i], elem_count, proc);
+        flush_local = 0;
         break;
       case ARMCII_OP_ACC:
         gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        flush_local = 1;
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
@@ -275,7 +295,11 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
     }
   }
 
+#if MPI_VERSION < 3
   gmr_unlock(mreg, proc);
+#else
+  gmr_flush(mreg, proc, flush_local);
+#endif
 
   return 0;
 }
@@ -296,6 +320,7 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
     int           dst_win_size, i, type_size;
     void        **buf_rem, **buf_loc;
     MPI_Aint      base_rem;
+    int flush_local = 0; /* used only for MPI-3 */
 
     switch(op) {
       case ARMCII_OP_ACC:
@@ -343,24 +368,33 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
 
+#if MPI_VERSION < 3
     gmr_lock(mreg, proc);
+#endif
 
     switch(op) {
-      case ARMCII_OP_ACC:
-        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
-        break;
       case ARMCII_OP_PUT:
         gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        flush_local = 1;
         break;
       case ARMCII_OP_GET:
         gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        flush_local = 0;
+        break;
+      case ARMCII_OP_ACC:
+        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        flush_local = 1;
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
         return 1;
     }
 
-    gmr_unlock(mreg, proc);
+#if MPI_VERSION < 3
+  gmr_unlock(mreg, proc);
+#else
+  gmr_flush(mreg, proc, flush_local);
+#endif
 
     MPI_Type_free(&type_loc);
     MPI_Type_free(&type_rem);
@@ -498,6 +532,8 @@ int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int p
 /* -- end weak symbols block -- */
 
 int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_PutV(iov, iov_len, proc);
 }
 
@@ -512,6 +548,8 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 /* -- end weak symbols block -- */
 
 int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_GetV(iov, iov_len, proc);
 }
 
@@ -526,6 +564,8 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 /* -- end weak symbols block -- */
 
 int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_AccV(datatype, scale, iov, iov_len, proc);
 }
 

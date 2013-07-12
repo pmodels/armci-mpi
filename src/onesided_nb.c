@@ -6,7 +6,8 @@
 #include <stdlib.h>
 
 #include <armci.h>
-
+#include <debug.h>
+#include <gmr.h>
 
 /** Initialize Non-blocking handle.
   */
@@ -42,7 +43,8 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *hdl) {
 /** Non-blocking put operation.  Note: the implementation is not non-blocking
   */
 int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
-	/* TODO: implement nonblocking properly and then use it to get blocking */
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_Put(src, dst, bytes, proc);
 }
 
@@ -60,7 +62,8 @@ int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
 /** Non-blocking get operation.  Note: the implementation is not non-blocking
   */
 int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
-	/* TODO: implement nonblocking properly and then use it to get blocking */
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_Get(src, dst, bytes, proc);
 }
 
@@ -77,8 +80,9 @@ int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
 
 /** Non-blocking accumulate operation.  Note: the implementation is not non-blocking
   */
-int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl) {
-	/* TODO: implement nonblocking properly and then use it to get blocking */
+int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
+  /* TODO: implement nonblocking properly and then use it to get blocking */
+  handle->request = MPI_REQUEST_NULL;
   return PARMCI_Acc(datatype, scale, src, dst, bytes, proc);
 }
 
@@ -98,7 +102,8 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 int PARMCI_Wait(armci_hdl_t* handle) {
 #if MPI_VERSION >=3
   if (!(handle->is_aggregate)) {
-    MPI_Wait(handle->request, MPI_STATUS_IGNORE);
+    if (handle->request != MPI_REQUEST_NULL)
+      MPI_Wait(&(handle->request), MPI_STATUS_IGNORE);
   } else {
     ARMCII_Error("aggregate nonblocking handles are not yet implemented");
   }
@@ -123,7 +128,8 @@ int PARMCI_Test(armci_hdl_t* handle) {
 #if MPI_VERSION >=3
   int completed = 0;
   if (!(handle->is_aggregate)) {
-    MPI_Test(handle->request, &completed, MPI_STATUS_IGNORE);
+    if (handle->request != MPI_REQUEST_NULL)
+      MPI_Test(&(handle->request), &completed, MPI_STATUS_IGNORE);
   } else {
     ARMCII_Error("aggregate nonblocking handles are not yet implemented");
   }

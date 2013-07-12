@@ -82,19 +82,31 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   if (is_swap) {
     long swap_val_l;
     int  swap_val_i;
+#if MPI_VERSION < 3
     gmr_lock(dst_mreg, proc);
+#endif
     gmr_fetch_and_op(dst_mreg, ploc /* src */, is_long ? (void*) &swap_val_l : (void*) &swap_val_i /* out */,
     		         prem /* dst */, type, rop, proc);
+#if MPI_VERSION < 3
     gmr_unlock(dst_mreg, proc); /* must unlock before touching swap_val */
+#else
+    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
+#endif
     if (is_long)
       *(long*) ploc = swap_val_l;
     else
       *(int*) ploc = swap_val_i;
   }
   else /* fetch-and-add */ {
+#if MPI_VERSION < 3
     gmr_lock(dst_mreg, proc);
+#endif
     gmr_fetch_and_op(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, type, rop, proc);
-    gmr_unlock(dst_mreg, proc);
+#if MPI_VERSION < 3
+    gmr_unlock(dst_mreg, proc); /* must unlock before touching value */
+#else
+    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
+#endif
   }
 
   if (src_is_locked) {
