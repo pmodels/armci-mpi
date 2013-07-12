@@ -409,8 +409,10 @@ void create_array(void *a[], int elem_size, int ndim, int dims[])
 
 void destroy_array(void *ptr[])
 {
+    int rc;
     MP_BARRIER();
-    assert(!ARMCI_Free(ptr[me]));
+    rc = ARMCI_Free(ptr[me]);
+    assert(rc==0);
 }
 
 
@@ -446,7 +448,7 @@ void test_dim(int ndim)
 	}
 
         /* create shared and local arrays */
-        create_array(b, sizeof(double),ndim,dimsB);
+        create_array((void**)b, sizeof(double),ndim,dimsB);
         a = malloc(sizeof(double)*elems);
         assert(a);
         c = malloc(sizeof(double)*elems);
@@ -503,7 +505,7 @@ void test_dim(int ndim)
         }
 
         free(c);
-        destroy_array(b);
+        destroy_array((void**)b);
         free(a);
 }
 
@@ -672,7 +674,7 @@ sleep(5);
     }
     
     for(ndim=1;ndim<=MAXDIMS;ndim++){
-       destroy_array(b[ndim]);
+       ARMCI_Free(b[ndim][me]);
        free(c[ndim]);
        free(a[ndim]);
     }
@@ -788,6 +790,7 @@ int lenpergiov;
     if(me==0){
        printf("\n\tPuts OK\n");
     }
+    ARMCI_Free(putdst[me]);
     /****************Done Testing NbPutV*********************************/
 
     /*********************Testing NbGetV*********************************/
@@ -823,6 +826,7 @@ int lenpergiov;
     if(me==0){
        printf("\n\tGets OK\n");
     }
+    ARMCI_Free(getsrc[me]);
     /****************Done Testing NbGetV*********************************/
     free(pdst);
     free(psrc);
@@ -893,7 +897,7 @@ void test_acc(int ndim)
 	}
 
         /* create shared and local arrays */
-        create_array(b, sizeof(double),ndim,dimsB);
+        create_array((void**)b, sizeof(double),ndim,dimsB);
         a = malloc(sizeof(double)*elems);
         assert(a);
         c = malloc(sizeof(double)*elems);
@@ -954,7 +958,7 @@ void test_acc(int ndim)
         }
 
         free(c);
-        destroy_array(b);
+        destroy_array((void**)b);
         free(a);
 }
 
@@ -983,7 +987,7 @@ void test_vector()
 	}
 
         /* create shared and local arrays */
-        create_array(b, sizeof(double),ndim,dimsB);
+        create_array((void**)b, sizeof(double),ndim,dimsB);
         a = malloc(sizeof(double)*elems);
         assert(a);
         c = malloc(sizeof(double)*elems);
@@ -1099,7 +1103,7 @@ void test_vector()
         }
 
         free(c);
-        destroy_array(b);
+        destroy_array((void**)b);
         free(a);
 }
 
@@ -1125,7 +1129,7 @@ void test_vector_acc()
         bytes = sizeof(double)*elems;
 
         /* create shared and local arrays */
-        create_array(b, sizeof(double),dim,&elems);
+        create_array((void**)b, sizeof(double),dim,&elems);
         a = malloc(bytes);
         assert(a);
         c = malloc(bytes);
