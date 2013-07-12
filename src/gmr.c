@@ -165,6 +165,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   void *search_base = NULL;
   int   alloc_me, alloc_nproc;
   int   world_me, world_nproc;
+  int   gmr_locked = 0;
 
   MPI_Comm_rank(group->comm, &alloc_me);
   MPI_Comm_size(group->comm, &alloc_nproc);
@@ -206,6 +207,12 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
 
   switch (mreg->lock_state) {
     case GMR_LOCK_UNLOCKED:
+      break;
+    case GMR_LOCK_SHARED:
+      ARMCII_Warning("Attempting to destroy a window that is locked (LOCK_SHARED) \n");
+      break;
+    case GMR_LOCK_ALL:
+      ARMCII_Warning("Attempting to destroy a window that is locked (LOCK_ALL) \n");
       break;
     case GMR_LOCK_DLA:
       ARMCII_Warning("Releasing direct local access before freeing shared allocation\n");
