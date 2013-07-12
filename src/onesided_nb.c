@@ -44,8 +44,10 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *hdl) {
   */
 int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->is_aggregate = 0;
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_Put(src, dst, bytes, proc);
 }
 
@@ -64,8 +66,10 @@ int PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
   */
 int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->is_aggregate = 0;
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_Get(src, dst, bytes, proc);
 }
 
@@ -84,8 +88,10 @@ int PARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *handle)
   */
 int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->is_aggregate = 0;
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_Acc(datatype, scale, src, dst, bytes, proc);
 }
 

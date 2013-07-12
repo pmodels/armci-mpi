@@ -477,6 +477,9 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   * @return             0 on success, non-zero on failure
   */
 void gmr_lock(gmr_t *mreg, int proc) {
+#if MPI_VERSION >= 3
+  ARMCII_Assert_msg(0, "gmr_lock should never be called with MPI-3" );
+#else
   int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
   int lock_assert, lock_mode;
@@ -518,6 +521,7 @@ void gmr_lock(gmr_t *mreg, int proc) {
     mreg->lock_state = GMR_LOCK_SHARED;
 
   mreg->lock_target = grp_proc;
+#endif
 }
 
 
@@ -528,6 +532,9 @@ void gmr_lock(gmr_t *mreg, int proc) {
   * @return             0 on success, non-zero on failure
   */
 void gmr_unlock(gmr_t *mreg, int proc) {
+#if MPI_VERSION >= 3
+  ARMCII_Assert_msg(0, "gmr_unlock should never be called with MPI-3" );
+#else
   int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
@@ -550,6 +557,7 @@ void gmr_unlock(gmr_t *mreg, int proc) {
     MPI_Win_unlock(grp_proc, mreg->window);
     mreg->lock_state = GMR_LOCK_UNLOCKED;
   }
+#endif
 }
 
 
@@ -580,10 +588,8 @@ void gmr_dla_lock(gmr_t *mreg) {
   mreg->dla_lock_count++;
 #else
   /* FIXME: This is totally evil on many levels but I haven't figured out how to fix the DLA situation yet. */
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
-                mreg->lock_state == GMR_LOCK_ALL);
-
-  MPI_Win_sync(mreg->window);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
+  //MPI_Win_sync(mreg->window);
 #endif
 }
 
@@ -609,9 +615,7 @@ void gmr_dla_unlock(gmr_t *mreg) {
   }
 #else
   /* FIXME: This is totally evil on many levels but I haven't figured out how to fix the DLA situation yet. */
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
-                mreg->lock_state == GMR_LOCK_ALL);
-
-  MPI_Win_sync(mreg->window);
+  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
+  //MPI_Win_sync(mreg->window);
 #endif
 }

@@ -468,7 +468,10 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
@@ -502,7 +505,10 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 
@@ -539,7 +545,10 @@ int PARMCI_NbAccS(int datatype, void *scale,
                int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
 

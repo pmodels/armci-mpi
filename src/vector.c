@@ -533,7 +533,10 @@ int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int p
 
 int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_PutV(iov, iov_len, proc);
 }
 
@@ -549,7 +552,10 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 
 int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_GetV(iov, iov_len, proc);
 }
 
@@ -565,7 +571,10 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 
 int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   /* TODO: implement nonblocking properly and then use it to get blocking */
-  handle->request = MPI_REQUEST_NULL;
+  if (handle!=NULL) {
+      handle->is_aggregate = 0;
+      handle->request = MPI_REQUEST_NULL;
+  }
   return PARMCI_AccV(datatype, scale, iov, iov_len, proc);
 }
 
