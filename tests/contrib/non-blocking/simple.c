@@ -70,6 +70,9 @@ int main(int argc, char **argv) {
 
   MP_BARRIER();
 
+  ARMCI_Free(myptrs[me]); 
+  free(myptrs);
+
   ARMCI_Finalize();
   MP_FINALIZE();
 
