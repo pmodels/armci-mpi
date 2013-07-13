@@ -153,6 +153,9 @@ int PARMCI_Init(void) {
       MPI_Get_version(&major, &minor);
 
       printf("ARMCI-MPI initialized with %d process%s, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
+#if MPI_VERSION >= 3
+      printf("  MPI-3 is available and being used.\n");
+#endif
 #ifdef NO_SEATBELTS
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
