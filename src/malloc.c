@@ -68,9 +68,6 @@ int ARMCI_Malloc_group(void **base_ptrs, armci_size_t size, ARMCI_Group *group) 
   ARMCII_Assert(PARMCI_Initialized());
 
   mreg = gmr_create(size, base_ptrs, group);
-#if MPI_VERSION >= 3
-  gmr_lockall(mreg);
-#endif
 
   if (DEBUG_CAT_ENABLED(DEBUG_CAT_ALLOC)) {
 #define BUF_LEN 1000
@@ -107,9 +104,6 @@ int ARMCI_Free_group(void *ptr, ARMCI_Group *group) {
     ARMCII_Dbg_print(DEBUG_CAT_ALLOC, "given NULL\n");
     mreg = NULL;
   }
-#if MPI_VERSION >= 3
-  gmr_unlockall(mreg);
-#endif
   gmr_destroy(mreg, group);
 
   return 0;

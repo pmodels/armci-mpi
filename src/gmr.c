@@ -128,6 +128,23 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 #if MPI_VERSION < 3
   /* Create the RMW mutex: Keeps RMW operations atomic wrt each other */
   mreg->rmw_mutex = ARMCIX_Create_mutexes_hdl(1, group);
+#else
+  {
+    int lock_assert = 0;
+
+    if (   ( mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE )
+        && ( mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE ) )
+      {
+        /* Only non-conflicting RMA accesses allowed. */
+        lock_assert = MPI_MODE_NOCHECK;
+      } else {
+          lock_assert = 0;
+      }
+    MPI_Win_lock_all(lock_assert, mreg->window);
+
+    mreg->lock_state  = GMR_LOCK_ALL;
+    mreg->lock_target = -1;
+  }
 #endif
 
   {
@@ -236,6 +253,12 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
       mreg->next->prev = mreg->prev;
   }
 
+#if MPI_VERSION < 3
+  ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
+#else
+  MPI_Win_unlock_all(mreg->window);
+#endif
+
   /* Destroy the window and free all buffers */
   MPI_Win_free(&mreg->window);
 
@@ -243,10 +266,6 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
     MPI_Free_mem(mreg->slices[world_me].base);
 
   free(mreg->slices);
-#if MPI_VERSION < 3
-  ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
-#endif
-
   free(mreg);
 }
 
