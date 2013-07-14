@@ -216,4 +216,185 @@ int gmr_sync(gmr_t *mreg) {
   return 0;
 }
 
+/** One-sided put operation.  Source buffer must be private.
+  *
+  * @param[in] mreg   Memory region
+  * @param[in] src    Source address (local)
+  * @param[in] dst    Destination address (remote)
+  * @param[in] size   Number of bytes to transfer
+  * @param[in] proc   Absolute process id of target process
+  * @return           0 on success, non-zero on failure
+  */
+int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request *request) {
+  ARMCII_Assert_msg(src != NULL, "Invalid local address");
+  return gmr_iput_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, request);
+}
+
+
+/** One-sided put operation with type arguments.  Source buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+
+  int        grp_proc;
+  gmr_size_t disp;
+  MPI_Aint lb, extent;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  ARMCII_Assert(grp_proc >= 0);
+
+  // Calculate displacement from beginning of the window
+  if (dst == MPI_BOTTOM)
+    disp = 0;
+  else
+    disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+
+  // Perform checks
+  MPI_Type_get_true_extent(dst_type, &lb, &extent);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
+
+#ifdef RMA_PROPER_ATOMICITY
+  MPI_Raccumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window, request);
+#else
+  MPI_Rput(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, mreg->window, request);
+#endif
+
+  return 0;
+}
+
+
+/** One-sided get operation.  Destination buffer must be private.
+  *
+  * @param[in] mreg   Memory region
+  * @param[in] src    Source address (remote)
+  * @param[in] dst    Destination address (local)
+  * @param[in] size   Number of bytes to transfer
+  * @param[in] proc   Absolute process id of target process
+  * @return           0 on success, non-zero on failure
+  */
+int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request *request) {
+  ARMCII_Assert_msg(dst != NULL, "Invalid local address");
+  return gmr_iget_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, request);
+}
+
+
+/** One-sided get operation with type arguments.  Destination buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] src_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+
+  int        grp_proc;
+  gmr_size_t disp;
+  MPI_Aint lb, extent;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  ARMCII_Assert(grp_proc >= 0);
+
+  // Calculate displacement from beginning of the window
+  if (src == MPI_BOTTOM)
+    disp = 0;
+  else
+    disp = (gmr_size_t) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
+
+  // Perform checks
+  MPI_Type_get_true_extent(src_type, &lb, &extent);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
+
+#if (MPI_VERSION >= 3) && defined(RMA_PROPER_ATOMICITY)
+  /* I can only assume that the 3.1 release - MPICH_CALC_VERSION(3,1,0,3,0) - will fix this. */
+#if (MPICH && (MPICH_NUM_VERSION < MPICH_CALC_VERSION(3,1,0,3,0)) )
+#warning MPI_Get_accumulate will fail on an improper assertion for ARMCI_IOV_METHOD=DIRECT and/or ARMCI_STRIDED_METHOD=DIRECT \
+        unless you apply the patch from http://trac.mpich.org/projects/mpich/ticket/1863
+#endif
+  MPI_Rget_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window, request);
+#else
+  MPI_Rget(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window, request);
+#endif
+
+  return 0;
+}
+
+
+/** One-sided accumulate operation.  Source buffer must be private.
+  *
+  * @param[in] mreg     Memory region
+  * @param[in] src      Source address (local)
+  * @param[in] dst      Destination address (remote)
+  * @param[in] type     MPI type of the given buffers
+  * @param[in] count    Number of elements of the given type to transfer
+  * @param[in] proc     Absolute process id of the target
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc, MPI_Request *request) {
+  ARMCII_Assert_msg(src != NULL, "Invalid local address");
+  return gmr_iaccumulate_typed(mreg, src, count, type, dst, count, type, proc, request);
+}
+
+
+/** One-sided accumulate operation with typed arguments.  Source buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] dst_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+
+  int        grp_proc;
+  gmr_size_t disp;
+  MPI_Aint lb, extent;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  ARMCII_Assert(grp_proc >= 0);
+
+  // Calculate displacement from beginning of the window
+  if (dst == MPI_BOTTOM)
+    disp = 0;
+  else
+    disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+
+  // Perform checks
+  MPI_Type_get_true_extent(dst_type, &lb, &extent);
+  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
+
+  MPI_Raccumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window, request);
+
+  return 0;
+}
+
 #endif // MPI_VERSION >= 3

@@ -68,7 +68,8 @@ int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int target);
 int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
 #if MPI_VERSION >= 3
-int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, MPI_Op op, int proc);
+int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type,
+    MPI_Op op, int proc);
 int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst, MPI_Datatype type, MPI_Op op, int proc);
 #endif
 
@@ -80,7 +81,26 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
     void *dst, int dst_count, MPI_Datatype dst_type, int proc);
 #if MPI_VERSION >= 3
 int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type, 
-    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type, MPI_Op op, int proc);
+    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type,
+    MPI_Op op, int proc);
+#endif
+
+#if MPI_VERSION >= 3
+int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int target, MPI_Request *request);
+int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int target, MPI_Request *request);
+int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc,
+    MPI_Request *request);
+int gmr_iget_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type,
+    MPI_Op op, int proc, MPI_Request *request);
+int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request);
+int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request);
+int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request);
+int gmr_iget_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type,
+    MPI_Op op, int proc, MPI_Request *request);
 #endif
 
 void gmr_lock(gmr_t *mreg, int proc);
