@@ -112,7 +112,7 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
 
 /** Non-blocking get operation.  Note: the implementation is not non-blocking
   */
-int PARMCI_NbGet(void *src, void *dst, int bytes, int target, armci_hdl_t *handle) {
+int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle) {
 #if MPI_VERSION >= 3
   gmr_t *src_mreg, *dst_mreg;
 
@@ -163,7 +163,7 @@ int PARMCI_NbGet(void *src, void *dst, int bytes, int target, armci_hdl_t *handl
       handle->is_aggregate = 0;
       handle->request = MPI_REQUEST_NULL;
   }
-  return PARMCI_Get(src, dst, bytes, target);
+  return PARMCI_Get(src, dst, size, target);
 #endif
 }
 
