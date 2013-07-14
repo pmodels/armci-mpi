@@ -229,7 +229,9 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
       ARMCII_Warning("Attempting to destroy a window that is locked (LOCK_SHARED) \n");
       break;
     case GMR_LOCK_ALL:
-      ARMCII_Warning("Attempting to destroy a window that is locked (LOCK_ALL) \n");
+      /* GMR-3 always hits this path and it's okay.  We unlock later.
+       * ARMCII_Warning("Attempting to destroy a window that is locked (LOCK_ALL) \n");
+       */
       break;
     case GMR_LOCK_DLA:
       ARMCII_Warning("Releasing direct local access before freeing shared allocation\n");
@@ -257,6 +259,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   ARMCIX_Destroy_mutexes_hdl(mreg->rmw_mutex);
 #else
   MPI_Win_unlock_all(mreg->window);
+  mreg->lock_state = GMR_LOCK_UNLOCKED;
 #endif
 
   /* Destroy the window and free all buffers */
