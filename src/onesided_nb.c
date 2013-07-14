@@ -319,11 +319,11 @@ int PARMCI_Test(armci_hdl_t* handle) {
 
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
-#  pragma weak ARMCI_WaitAll = PARMCI_WaitAll
+#  pragma weak ARMCI_WaitProc = PARMCI_WaitProc
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#  pragma _HP_SECONDARY_DEF PARMCI_WaitAll ARMCI_WaitAll
+#  pragma _HP_SECONDARY_DEF PARMCI_WaitProc ARMCI_WaitProc
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#  pragma _CRI duplicate ARMCI_WaitAll as PARMCI_WaitAll
+#  pragma _CRI duplicate ARMCI_WaitProc as PARMCI_WaitProc
 #endif
 /* -- end weak symbols block -- */
 
