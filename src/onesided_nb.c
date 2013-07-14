@@ -282,7 +282,8 @@ int PARMCI_Wait(armci_hdl_t* handle) {
     if (handle->request != MPI_REQUEST_NULL)
       MPI_Wait(&(handle->request), MPI_STATUS_IGNORE);
   } else {
-    ARMCII_Error("aggregate nonblocking handles are not yet implemented");
+    /* this is overkill but sufficient */
+    PARMCI_WaitAll();
   }
 #endif
   return 0;
@@ -308,7 +309,8 @@ int PARMCI_Test(armci_hdl_t* handle) {
     if (handle->request != MPI_REQUEST_NULL)
       MPI_Test(&(handle->request), &completed, MPI_STATUS_IGNORE);
   } else {
-    ARMCII_Error("aggregate nonblocking handles are not yet implemented");
+    /* all aggregate handles are in-progress until wait is called */
+    return 1;
   }
   return (completed==1 ? 0 : 1); /* Jeff will not assume !0 = 1 or !1 = 0 */
 #else
