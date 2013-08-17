@@ -10,36 +10,35 @@ lib_LTLIBRARIES = libarmci.la
 # Needed to connect with the GA build system
 noinst_LTLIBRARIES = libarmcii.la
 
-libarmci_la_SOURCES = $(top_srcdir)/src/buffer.c        \
-                      $(top_srcdir)/src/debug.c         \
-                      $(top_srcdir)/src/groups.c        \
-                      $(top_srcdir)/src/internals.c     \
-                      $(top_srcdir)/src/malloc.c        \
-                      $(top_srcdir)/src/gmr.c           \
-                      $(top_srcdir)/src/gmr-extras.c    \
-                      $(top_srcdir)/src/message.c       \
-                      $(top_srcdir)/src/message_gop.c   \
-                      $(top_srcdir)/src/mutex.c         \
-                      $(top_srcdir)/src/mutex_hdl_queue.c \
-                      $(top_srcdir)/src/onesided.c      \
-                      $(top_srcdir)/src/onesided_nb.c   \
-                      $(top_srcdir)/src/rmw.c           \
-                      $(top_srcdir)/src/strided.c       \
-                      $(top_srcdir)/src/topology.c      \
-                      $(top_srcdir)/src/util.c          \
-                      $(top_srcdir)/src/value_ops.c     \
-                      $(top_srcdir)/src/vector.c        \
-                      $(top_srcdir)/src/init_finalize.c \
-                      $(top_srcdir)/src/conflict_tree.c \
-                      $(top_srcdir)/src/parmci.c
+libarmci_la_SOURCES = src/buffer.c        \
+                      src/debug.c         \
+                      src/groups.c        \
+                      src/internals.c     \
+                      src/malloc.c        \
+                      src/gmr.c           \
+                      src/gmr-extras.c    \
+                      src/message.c       \
+                      src/message_gop.c   \
+                      src/mutex.c         \
+                      src/mutex_hdl_queue.c \
+                      src/onesided.c      \
+                      src/onesided_nb.c   \
+                      src/rmw.c           \
+                      src/strided.c       \
+                      src/topology.c      \
+                      src/util.c          \
+                      src/value_ops.c     \
+                      src/vector.c        \
+                      src/init_finalize.c \
+                      src/conflict_tree.c \
+                      src/parmci.c
 
 libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
 
 libarmcii_la_SOURCES = $(libarmci_la_SOURCES)
 libarmcii_la_LDFLAGS = $(libarmci_abi_version)
 
-include_HEADERS = $(top_srcdir)/src/armci.h $(top_srcdir)/src/message.h \
-        $(top_srcdir)/src/armcix.h
+include_HEADERS = src/armci.h src/message.h src/armcix.h
 
 bin_PROGRAMS =
 check_PROGRAMS = 
