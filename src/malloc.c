@@ -129,7 +129,6 @@ void *PARMCI_Malloc_local(armci_size_t size) {
   void *buf;
 
   MPI_Alloc_mem((MPI_Aint) size, MPI_INFO_NULL, &buf);
-  ARMCII_Assert(buf != NULL);
 
   if (ARMCII_GLOBAL_STATE.debug_alloc) {
     ARMCII_Bzero(buf, size);
