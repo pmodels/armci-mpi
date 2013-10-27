@@ -34,10 +34,7 @@ void PARMCI_Access_begin(void *ptr) {
   mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  ARMCII_Assert_msg((mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE) == 0,
-      "Direct local access is not permitted in the current access mode");
-
-  gmr_dla_lock(mreg);
+  gmr_sync(mreg);
 }
 
 
@@ -65,53 +62,7 @@ void PARMCI_Access_end(void *ptr) {
   mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
 
-  gmr_dla_unlock(mreg);
-}
-
-
-/** Set the acess mode for the given allocation.  Collective across the
-  * allocation's group.  Waits for all processes, finishes all communication,
-  * and then sets the new access mode.
-  *
-  * @param[in] new_mode The new access mode.
-  * @param[in] ptr      Pointer within the allocation.
-  * @return             Zero upon success, error code otherwise.
-  */
-int ARMCIX_Mode_set(int new_mode, void *ptr, ARMCI_Group *group) {
-  gmr_t *mreg;
-
-  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
-
-  ARMCII_Assert(group->comm == mreg->group.comm);
-
-  ARMCII_Assert_msg(mreg->lock_state != GMR_LOCK_DLA,
-      "Cannot change the access mode; window is locked for local access.");
-  ARMCII_Assert_msg(mreg->lock_state == GMR_LOCK_UNLOCKED,
-      "Cannot change the access mode on a window that is locked.");
-
-  // Wait for all processes to complete any outstanding communication before we
-  // do the mode switch
-  MPI_Barrier(mreg->group.comm);
-
-  mreg->access_mode = new_mode;
-
-  return 0;
-}
-
-
-/** Query the access mode for the given allocation.  Non-collective.
-  *
-  * @param[in] ptr      Pointer within the allocation.
-  * @return             Current access mode.
-  */
-int ARMCIX_Mode_get(void *ptr) {
-  gmr_t *mreg;
-
-  mreg = gmr_lookup(ptr, ARMCI_GROUP_WORLD.rank);
-  ARMCII_Assert_msg(mreg != NULL, "Invalid remote pointer");
-
-  return mreg->access_mode;
+  gmr_sync(mreg);
 }
 
 
@@ -148,22 +99,13 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank && dst_mreg == NULL) {
-    gmr_dla_lock(src_mreg);
     ARMCI_Copy(src, dst, size);
-    gmr_dla_unlock(src_mreg);
   }
 
   /* Origin buffer is private */
   else if (dst_mreg == NULL) {
-#if MPI_VERSION < 3
-    gmr_lock(src_mreg, target);
-#endif
     gmr_get(src_mreg, src, dst, size, target);
-#if MPI_VERSION < 3
-    gmr_unlock(src_mreg, target);
-#else
     gmr_flush(src_mreg, target, 0); /* it's a round trip so w.r.t. flush, local=remote */
-#endif
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
@@ -175,19 +117,10 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
     MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
     ARMCII_Assert(dst_buf != NULL);
 
-#if MPI_VERSION < 3
-    gmr_lock(src_mreg, target);
-#endif
     gmr_get(src_mreg, src, dst_buf, size, target);
-#if MPI_VERSION < 3
-    gmr_unlock(src_mreg, target);
-#else
     gmr_flush(src_mreg, target, 0); /* it's a round trip so w.r.t. flush, local=remote */
-#endif
 
-    gmr_dla_lock(dst_mreg);
     ARMCI_Copy(dst_buf, dst, size);
-    gmr_dla_unlock(dst_mreg);
 
     MPI_Free_mem(dst_buf);
   }
@@ -229,22 +162,13 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
 
   /* Local operation */
   if (target == ARMCI_GROUP_WORLD.rank && src_mreg == NULL) {
-    gmr_dla_lock(dst_mreg);
     ARMCI_Copy(src, dst, size);
-    gmr_dla_unlock(dst_mreg);
   }
 
   /* Origin buffer is private */
   else if (src_mreg == NULL) {
-#if MPI_VERSION < 3
-    gmr_lock(dst_mreg, target);
-#endif
     gmr_put(dst_mreg, src, dst, size, target);
-#if MPI_VERSION < 3
-    gmr_unlock(dst_mreg, target);
-#else
     gmr_flush(dst_mreg, target, 1); /* flush_local */
-#endif
   }
 
   /* COPY: Either origin and target buffers are in the same window and we can't
@@ -256,19 +180,10 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
     MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
     ARMCII_Assert(src_buf != NULL);
 
-    gmr_dla_lock(src_mreg);
     ARMCI_Copy(src, src_buf, size);
-    gmr_dla_unlock(src_mreg);
 
-#if MPI_VERSION < 3
-    gmr_lock(dst_mreg, target);
-#endif
     gmr_put(dst_mreg, src_buf, dst, size, target);
-#if MPI_VERSION < 3
-    gmr_unlock(dst_mreg, target);
-#else
     gmr_flush(dst_mreg, target, 1); /* flush_local */
-#endif
 
     MPI_Free_mem(src_buf);
   }
@@ -300,7 +215,7 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
   */
 int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
   void  *src_buf;
-  int    count, type_size, scaled, src_is_locked = 0;
+  int    count, type_size, scaled;
   MPI_Datatype type;
   gmr_t *src_mreg, *dst_mreg;
 
@@ -319,11 +234,6 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
 
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
-  if (src_mreg) {
-    gmr_dla_lock(src_mreg);
-    src_is_locked = 1;
-  }
-
   if (scaled) {
       MPI_Alloc_mem(bytes, MPI_INFO_NULL, &src_buf);
       ARMCII_Assert(src_buf != NULL);
@@ -341,12 +251,6 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
     ARMCI_Copy(src, src_buf, bytes);
   }
 
-  /* Unlock early if src_buf is a copy */
-  if (src_buf != src && src_is_locked) {
-    gmr_dla_unlock(src_mreg);
-    src_is_locked = 0;
-  }
-
   ARMCII_Acc_type_translate(datatype, &type, &type_size);
   count = bytes/type_size;
 
@@ -355,20 +259,8 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-#if MPI_VERSION < 3
-  gmr_lock(dst_mreg, proc);
-#endif
   gmr_accumulate(dst_mreg, src_buf, dst, count, type, proc);
-#if MPI_VERSION < 3
-  gmr_unlock(dst_mreg, proc);
-#else
   gmr_flush(dst_mreg, proc, 1); /* flush_local */
-#endif
-
-  if (src_is_locked) {
-    gmr_dla_unlock(src_mreg);
-    src_is_locked = 0;
-  }
 
   if (src_buf != src)
     MPI_Free_mem(src_buf);

@@ -131,9 +131,7 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
         MPI_Alloc_mem(size, MPI_INFO_NULL, &src_buf);
         ARMCII_Assert(src_buf != NULL);
 
-        gmr_dla_lock(gmr_loc);
         armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
-        gmr_dla_unlock(gmr_loc);
 
         MPI_Type_contiguous(size, MPI_BYTE, &src_type);
       }
@@ -154,15 +152,8 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-#if MPI_VERSION < 3
-    gmr_lock(mreg, proc);
-#endif
     gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-#if MPI_VERSION < 3
-    gmr_unlock(mreg, proc);
-#else
     gmr_flush(mreg, proc, 1); /* flush_local */
-#endif
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -254,21 +245,12 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-#if MPI_VERSION < 3
-    gmr_lock(mreg, proc);
-#endif
     gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
-#if MPI_VERSION < 3
-    gmr_unlock(mreg, proc);
-#else
     gmr_flush(mreg, proc, 0);
-#endif
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
-      gmr_dla_lock(gmr_loc);
       armci_read_strided(dst_ptr, stride_levels, dst_stride_ar, count, dst_buf);
-      gmr_dla_unlock(gmr_loc);
       MPI_Free_mem(dst_buf);
     }
 
@@ -347,8 +329,6 @@ int PARMCI_AccS(int datatype, void *scale,
       MPI_Alloc_mem(nelem*mpi_datatype_size, MPI_INFO_NULL, &src_buf);
       ARMCII_Assert(src_buf != NULL);
 
-      if (gmr_loc != NULL) gmr_dla_lock(gmr_loc);
-
       /* Shoehorn the strided information into an IOV */
       ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, src_ptr, src_stride_ar, count, stride_levels);
 
@@ -357,8 +337,6 @@ int PARMCI_AccS(int datatype, void *scale,
 
       free(iov.src_ptr_array);
       free(iov.dst_ptr_array);
-
-      if (gmr_loc != NULL) gmr_dla_unlock(gmr_loc);
 
       MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
     }
@@ -376,9 +354,7 @@ int PARMCI_AccS(int datatype, void *scale,
         MPI_Alloc_mem(nelem*mpi_datatype_size, MPI_INFO_NULL, &src_buf);
         ARMCII_Assert(src_buf != NULL);
 
-        gmr_dla_lock(gmr_loc);
         armci_write_strided(src_ptr, stride_levels, src_stride_ar, count, src_buf);
-        gmr_dla_unlock(gmr_loc);
 
         MPI_Type_contiguous(nelem, mpi_datatype, &src_type);
       }
@@ -406,15 +382,8 @@ int PARMCI_AccS(int datatype, void *scale,
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-#if MPI_VERSION < 3
-    gmr_lock(mreg, proc);
-#endif
     gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-#if MPI_VERSION < 3
-    gmr_unlock(mreg, proc);
-#else
     gmr_flush(mreg, proc, 0);
-#endif
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -469,8 +438,7 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
   if (handle!=NULL) {
-      handle->is_aggregate = 0;
-      handle->request = MPI_REQUEST_NULL;
+      handle->target = proc;
   }
   return PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
@@ -506,8 +474,7 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
   if (handle!=NULL) {
-      handle->is_aggregate = 0;
-      handle->request = MPI_REQUEST_NULL;
+      handle->target = proc;
   }
   return PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }
@@ -546,8 +513,7 @@ int PARMCI_NbAccS(int datatype, void *scale,
 
   /* TODO: implement nonblocking properly and then use it to get blocking */
   if (handle!=NULL) {
-      handle->is_aggregate = 0;
-      handle->request = MPI_REQUEST_NULL;
+      handle->target = proc;
   }
   return PARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
 }

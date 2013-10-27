@@ -13,8 +13,6 @@
 #include <debug.h>
 #include <gmr.h>
 
-#if MPI_VERSION >= 3
-
 /** One-sided get-accumulate operation.  Source and output buffer must be private.
   *
   * @param[in] mreg     Memory region
@@ -68,7 +66,6 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
@@ -101,7 +98,6 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
   disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
 
   // Perform checks
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp <= mreg->slices[proc].size, "Transfer is out of range");
 
@@ -117,24 +113,10 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
   */
 int gmr_lockall(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
-  int lock_assert = 0;
 
   ARMCII_Assert(grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_UNLOCKED);
 
-  if (   ( mreg->access_mode & ARMCIX_MODE_CONFLICT_FREE )
-      && ( mreg->access_mode & ARMCIX_MODE_NO_LOAD_STORE ) )
-  {
-    /* Only non-conflicting RMA accesses allowed. */
-    lock_assert = MPI_MODE_NOCHECK;
-  } else {
-    lock_assert = 0;
-  }
-
-  MPI_Win_lock_all(lock_assert, mreg->window);
-
-  mreg->lock_state  = GMR_LOCK_ALL;
-  mreg->lock_target = -1;
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, mreg->window);
 
   return 0;
 }
@@ -148,12 +130,8 @@ int gmr_unlockall(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
 
   MPI_Win_unlock_all(mreg->window);
-
-  mreg->lock_state  = GMR_LOCK_UNLOCKED;
-  mreg->lock_target = -1;
 
   return 0;
 }
@@ -170,7 +148,6 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
 
   if (local_only)
     MPI_Win_flush_local(grp_proc, mreg->window);
@@ -189,7 +166,6 @@ int gmr_flushall(gmr_t *mreg, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_ALL);
 
   if (local_only)
     MPI_Win_flush_local_all(mreg->window);
@@ -208,8 +184,6 @@ int gmr_sync(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
-  ARMCII_Assert(mreg->lock_state == GMR_LOCK_EXCLUSIVE || mreg->lock_state == GMR_LOCK_SHARED ||
-                mreg->lock_state == GMR_LOCK_ALL);
 
   MPI_Win_sync(mreg->window);
 
@@ -225,9 +199,9 @@ int gmr_sync(gmr_t *mreg) {
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request *request) {
+int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_iput_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, request);
+  return gmr_iput_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
 
 
@@ -245,7 +219,7 @@ int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request 
   * @return              0 on success, non-zero on failure
   */
 int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int        grp_proc;
   gmr_size_t disp;
@@ -262,14 +236,13 @@ int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
 #ifdef RMA_PROPER_ATOMICITY
-  MPI_Raccumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window, request);
+  MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window);
 #else
-  MPI_Rput(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, mreg->window, request);
+  MPI_Put(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, mreg->window);
 #endif
 
   return 0;
@@ -285,9 +258,9 @@ int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request *request) {
+int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   ARMCII_Assert_msg(dst != NULL, "Invalid local address");
-  return gmr_iget_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, request);
+  return gmr_iget_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
 }
 
 
@@ -305,7 +278,7 @@ int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int proc, MPI_Request 
   * @return              0 on success, non-zero on failure
   */
 int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int        grp_proc;
   gmr_size_t disp;
@@ -322,19 +295,13 @@ int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   // Perform checks
   MPI_Type_get_true_extent(src_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-#if (MPI_VERSION >= 3) && defined(RMA_PROPER_ATOMICITY)
-  /* I can only assume that the 3.1 release - MPICH_CALC_VERSION(3,1,0,3,0) - will fix this. */
-#if (MPICH && (MPICH_NUM_VERSION < MPICH_CALC_VERSION(3,1,0,3,0)) )
-#warning MPI_Get_accumulate will fail on an improper assertion for ARMCI_IOV_METHOD=DIRECT and/or ARMCI_STRIDED_METHOD=DIRECT \
-        unless you apply the patch from http://trac.mpich.org/projects/mpich/ticket/1863
-#endif
-  MPI_Rget_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window, request);
+#ifdef RMA_PROPER_ATOMICITY
+  MPI_Get_accumulate(NULL, 0, MPI_DATATYPE_NULL, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
 #else
-  MPI_Rget(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window, request);
+  MPI_Get(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window);
 #endif
 
   return 0;
@@ -351,9 +318,9 @@ int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc, MPI_Request *request) {
+int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_iaccumulate_typed(mreg, src, count, type, dst, count, type, proc, request);
+  return gmr_iaccumulate_typed(mreg, src, count, type, dst, count, type, proc);
 }
 
 
@@ -371,7 +338,7 @@ int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype t
   * @return              0 on success, non-zero on failure
   */
 int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc, MPI_Request *request) {
+    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
 
   int        grp_proc;
   gmr_size_t disp;
@@ -388,13 +355,10 @@ int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
-  ARMCII_Assert(mreg->lock_state != GMR_LOCK_UNLOCKED);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-  MPI_Raccumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window, request);
+  MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window);
 
   return 0;
 }
-
-#endif // MPI_VERSION >= 3

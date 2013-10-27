@@ -40,10 +40,8 @@ int ARMCII_Buf_prepare_read_vec(void **orig_bufs, void ***new_bufs_ptr, int coun
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
 
-        gmr_dla_lock(mreg);
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
         // gmr_get(mreg, orig_bufs[i], new_bufs[i], size, ARMCI_GROUP_WORLD.rank);
-        gmr_dla_unlock(mreg);
 
         num_moved++;
       } else {
@@ -119,14 +117,8 @@ int ARMCII_Buf_prepare_acc_vec(void **orig_bufs, void ***new_bufs_ptr, int count
       MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
       ARMCII_Assert(new_bufs[i] != NULL);
 
-      // Lock if needed so we can directly access the buffer
-      if (mreg != NULL)
-        gmr_dla_lock(mreg);
-
       ARMCII_Buf_acc_scale(orig_bufs[i], new_bufs[i], size, datatype, scale);
 
-      if (mreg != NULL)
-        gmr_dla_unlock(mreg);
     } else {
       new_bufs[i] = orig_bufs[i];
     }
@@ -137,9 +129,7 @@ int ARMCII_Buf_prepare_acc_vec(void **orig_bufs, void ***new_bufs_ptr, int count
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
 
-        gmr_dla_lock(mreg);
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
-        gmr_dla_unlock(mreg);
       }
     }
 
@@ -236,10 +226,8 @@ void ARMCII_Buf_finish_write_vec(void **orig_bufs, void **new_bufs, int count, i
         gmr_t *mreg = gmr_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
         ARMCII_Assert(mreg != NULL);
 
-        gmr_dla_lock(mreg);
         ARMCI_Copy(new_bufs[i], orig_bufs[i], size);
         // gmr_put(mreg, new_bufs[i], orig_bufs[i], size, ARMCI_GROUP_WORLD.rank);
-        gmr_dla_unlock(mreg);
 
         MPI_Free_mem(new_bufs[i]);
       }

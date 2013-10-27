@@ -61,11 +61,7 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
 typedef struct armci_hdl_s
 {
-    int is_aggregate;
-    MPI_Request request;
-    /* TODO: add implicit handle support like A1 did - assuming this is even necessary. */
-    int count;
-    MPI_Request * requests;
+    int target; /* we do not actually support individual completion */
 }
 armci_hdl_t;
 

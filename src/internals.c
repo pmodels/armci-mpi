@@ -55,7 +55,10 @@ int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
   int       group_rank;
   MPI_Group world_group, sub_group;
 
-  ARMCII_Assert(world_rank >= 0 && world_rank < ARMCI_GROUP_WORLD.size);
+  //ARMCII_Assert(world_rank >= 0 && world_rank < ARMCI_GROUP_WORLD.size);
+  if (!(world_rank >= 0 && world_rank < ARMCI_GROUP_WORLD.size))
+      ARMCII_Warning("world_rank (%d) >= 0 && world_rank (%d) < ARMCI_GROUP_WORLD.size (%d) is FALSE \n",
+                      world_rank, world_rank, ARMCI_GROUP_WORLD.size);
 
   /* Check if group is the world group */
   if (group->comm == ARMCI_GROUP_WORLD.comm)
@@ -120,15 +123,3 @@ void ARMCII_Acc_type_translate(int armci_datatype, MPI_Datatype *mpi_type, int *
     MPI_Type_size(*mpi_type, type_size);
 }
 
-
-/** Synchronize all public and private windows.
-  */
-void ARMCII_Sync_local(void) {
-  gmr_t *cur_mreg = gmr_list;
-
-  while (cur_mreg) {
-    gmr_dla_lock(cur_mreg);
-    gmr_dla_unlock(cur_mreg);
-    cur_mreg = cur_mreg->next;
-  }
-}

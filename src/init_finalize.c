@@ -63,7 +63,6 @@ int PARMCI_Init(void) {
     if (junk != -1)
       ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.  Use ARMCI_SYNC_AT_BARRIERS instead. \n");
   }
-  ARMCII_GLOBAL_STATE.debug_sync_barriers  = ARMCII_Getenv_bool("ARMCI_SYNC_AT_BARRIERS", 1);
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
 
   /* Group formation options */
@@ -153,9 +152,6 @@ int PARMCI_Init(void) {
       MPI_Get_version(&major, &minor);
 
       printf("ARMCI-MPI initialized with %d process%s, MPI v%d.%d\n", ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
-#if MPI_VERSION >= 3
-      printf("  MPI-3 is available and being used.\n");
-#endif
 #ifdef NO_SEATBELTS
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
@@ -176,7 +172,6 @@ int PARMCI_Init(void) {
       printf("  NONCOLLECTIVE_GROUPS   = %s\n", ARMCII_GLOBAL_STATE.noncollective_groups   ? "TRUE" : "FALSE");
       printf("  CACHE_RANK_TRANSLATION = %s\n", ARMCII_GLOBAL_STATE.cache_rank_translation ? "TRUE" : "FALSE");
       printf("  DEBUG_ALLOC            = %s\n", ARMCII_GLOBAL_STATE.debug_alloc            ? "TRUE" : "FALSE");
-      printf("  SYNC_AT_BARRIERS       = %s\n", ARMCII_GLOBAL_STATE.debug_sync_barriers    ? "TRUE" : "FALSE");
       printf("\n");
       fflush(NULL);
     }

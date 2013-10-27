@@ -39,10 +39,6 @@ void ARMCI_Error(char *msg, int code) {
 void PARMCI_Barrier(void) {
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
-
-  if (ARMCII_GLOBAL_STATE.debug_sync_barriers) {
-    ARMCII_Sync_local();
-  }
 }
 
 /* -- begin weak symbols block -- */
@@ -62,14 +58,12 @@ void PARMCI_Barrier(void) {
   * @param[in] proc Process to target
   */
 void PARMCI_Fence(int proc) {
-#if MPI_VERSION >=3
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
     gmr_flush(cur_mreg, proc, 0);
     cur_mreg = cur_mreg->next;
   }
-#endif
   return;
 }
 
@@ -88,14 +82,12 @@ void PARMCI_Fence(int proc) {
   * a no-op since get/put/acc already guarantee remote completion.
   */
 void PARMCI_AllFence(void) {
-#if MPI_VERSION >=3
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
     gmr_flushall(cur_mreg, 0);
     cur_mreg = cur_mreg->next;
   }
-#endif
   return;
 }
 
