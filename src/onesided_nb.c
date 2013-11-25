@@ -192,7 +192,6 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 int PARMCI_Wait(armci_hdl_t* handle) {
   gmr_t *cur_mreg = gmr_list;
   int proc = handle->target;
-  ARMCII_Warning("PARMCI_Wait: proc = %d \n", proc);
 
   if(proc == -1) {
     while (cur_mreg) {
