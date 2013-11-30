@@ -61,14 +61,23 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   mreg->prev           = NULL;
   mreg->next           = NULL;
 
+  /* TODO Use MPI_Win_allocate instead of MPI_Win_create. */
+
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
   if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
   } else {
-    MPI_Alloc_mem(local_size, MPI_INFO_NULL, &(alloc_slices[alloc_me].base));
+    /* http://mvapich.cse.ohio-state.edu/support/user_guide_mvapich2-2.0a.html#x1-600006.7 */
+    MPI_Info win_info;
+    MPI_Info_create(&win_info); 
+    MPI_Info_set(win_info, "alloc_shm", "true"); 
+
+    MPI_Alloc_mem(local_size, win_info, &(alloc_slices[alloc_me].base));
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+
+    MPI_Info_free(&win_info);
   }
 
   /* Debugging: Zero out shared memory if enabled */
