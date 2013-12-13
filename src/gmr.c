@@ -128,9 +128,10 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     int attribute_val, attr_flag;
     /* this function will always return flag=false in MPI-2 */
     MPI_Win_get_attr(mreg->window, MPI_WIN_MODEL, (void *)&attribute_val, &attr_flag);
-    if (!attr_flag)
+    if (!attr_flag && world_me==0)
         ARMCII_Warning("MPI_WIN_MODEL flag missing! \n");
-    ARMCII_Warning("MPI_WIN_MODEL = %s \n", attribute_val==MPI_WIN_UNIFIED ? "MPI_WIN_UNIFIED" : "MPI_WIN_SEPARATE" );
+    if (0 /* disable */ && attr_flag && attribute_val!=MPI_WIN_UNIFIED && world_me==0)
+        ARMCII_Warning("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
 #if 0 // This is a hack
     if (!attr_flag || attribute_val!=MPI_WIN_UNIFIED)
         ARMCII_Error("MPI_WIN_UNIFIED is required");
