@@ -17,19 +17,12 @@
 
 #define NINC 100
 
-#ifdef USE_ARMCI_LONG
-#  define INC_TYPE long
-#  define ARMCI_OP ARMCI_FETCH_AND_ADD_LONG
-#else
-#  define INC_TYPE int
-#  define ARMCI_OP ARMCI_FETCH_AND_ADD
-#endif
-
 int main(int argc, char ** argv) {
   int        errors = 0;
   int        rank, nproc, i, j;
   void     **base_ptrs;
-  INC_TYPE   val;
+  int        ival;
+  long       lval;
 
   MPI_Init(&argc, &argv);
   ARMCI_Init();
@@ -39,8 +32,10 @@ int main(int argc, char ** argv) {
 
   if (rank == 0) printf("Starting ARMCI RMW-FADD test with %d processes\n", nproc);
 
+  /* TYPE = INT */
+
   base_ptrs = malloc(sizeof(void*)*nproc);
-  ARMCI_Malloc(base_ptrs, sizeof(INC_TYPE));
+  ARMCI_Malloc(base_ptrs, sizeof(int));
 
   ARMCI_Access_begin(base_ptrs[rank]);
   *(int*) base_ptrs[rank] = 0;
@@ -50,7 +45,7 @@ int main(int argc, char ** argv) {
 
   for (i = 0; i < NINC; i++) {
     for (j = 0; j < nproc; j++) {
-      ARMCI_Rmw(ARMCI_OP, &val, base_ptrs[j], 1, j);
+      ARMCI_Rmw(ARMCI_FETCH_AND_ADD, &ival, base_ptrs[j], 1, j);
     }
   }
 
@@ -60,6 +55,42 @@ int main(int argc, char ** argv) {
   if (*(int*) base_ptrs[rank] != NINC*nproc) {
     errors++;
     printf("%3d -- Got %d, expected %d\n", rank, *(int*) base_ptrs[rank], NINC*nproc);
+  }
+  ARMCI_Access_end(base_ptrs[rank]);
+
+  armci_msg_igop(&errors, 1, "+");
+
+  if (rank == 0) {
+    if (errors == 0) printf("Test complete: PASS.\n");
+    else            printf("Test fail: %d errors.\n", errors);
+  }
+
+  ARMCI_Free(base_ptrs[rank]);
+  free(base_ptrs);
+
+  /* TYPE = LONG */
+
+  base_ptrs = malloc(sizeof(void*)*nproc);
+  ARMCI_Malloc(base_ptrs, sizeof(long));
+
+  ARMCI_Access_begin(base_ptrs[rank]);
+  *(long*) base_ptrs[rank] = 0;
+  ARMCI_Access_end(base_ptrs[rank]);
+
+  ARMCI_Barrier();
+
+  for (i = 0; i < NINC; i++) {
+    for (j = 0; j < nproc; j++) {
+      ARMCI_Rmw(ARMCI_FETCH_AND_ADD_LONG, &lval, base_ptrs[j], 1, j);
+    }
+  }
+
+  ARMCI_Barrier();
+
+  ARMCI_Access_begin(base_ptrs[rank]);
+  if (*(long*) base_ptrs[rank] != NINC*nproc) {
+    errors++;
+    printf("%3d -- Got %d, expected %d\n", rank, *(long*) base_ptrs[rank], NINC*nproc);
   }
   ARMCI_Access_end(base_ptrs[rank]);
 
