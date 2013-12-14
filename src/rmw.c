@@ -73,19 +73,33 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   /* We hold the DLA lock if (src_mreg != NULL). */
 
   if (is_swap) {
-    long swap_val_l;
-    int  swap_val_i;
-    gmr_fetch_and_op(dst_mreg, ploc /* src */, is_long ? (void*) &swap_val_l : (void*) &swap_val_i /* out */,
-    		         prem /* dst */, type, rop, proc);
+    long out_val_l, src_val_l = *((long*)ploc);
+    int  out_val_i, src_val_i = *((int*)ploc);
+
+    gmr_fetch_and_op(dst_mreg, 
+                     is_long ? (void*) &src_val_l : (void*) &src_val_i /* src */,
+                     is_long ? (void*) &out_val_l : (void*) &out_val_i /* out */,
+    		     prem /* dst */, type, rop, proc);
     gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
     if (is_long)
-      *(long*) ploc = swap_val_l;
+      *(long*) ploc = out_val_l;
     else
-      *(int*) ploc = swap_val_i;
+      *(int*) ploc = out_val_i;
   }
   else /* fetch-and-add */ {
-    gmr_fetch_and_op(dst_mreg, &value /* src */, ploc /* out */, prem /* dst */, type, rop, proc);
+    long fetch_val_l, add_val_l = value;
+    int  fetch_val_i, add_val_i = value;
+
+    gmr_fetch_and_op(dst_mreg,
+                     is_long ? (void*) &add_val_l   : (void*) &add_val_i   /* src */,
+                     is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i /* out */,
+                     prem /* dst */, type, rop, proc);
     gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
+
+    if (is_long)
+      *(long*) ploc = fetch_val_l;
+    else
+      *(int*) ploc = fetch_val_i;
   }
 
   return 0;
