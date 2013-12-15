@@ -60,11 +60,6 @@ int main(int argc, char ** argv) {
 
   armci_msg_igop(&errors, 1, "+");
 
-  if (rank == 0) {
-    if (errors == 0) printf("Test complete: PASS.\n");
-    else            printf("Test fail: %d errors.\n", errors);
-  }
-
   ARMCI_Free(base_ptrs[rank]);
   free(base_ptrs);
 
