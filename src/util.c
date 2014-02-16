@@ -200,7 +200,7 @@ char *ARMCII_Getenv(char *varname) {
 /** Retrieve the value of an integer environment variable.
   */
 int ARMCII_Getenv_int(char *varname, int default_value) {
-  char *var = getenv("ARMCI_IOV_BATCHED_LIMIT");
+  char *var = getenv(varname);
   if (var) 
     return atoi(var);
   else
