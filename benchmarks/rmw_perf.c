@@ -84,9 +84,10 @@ int main(int argc, char* argv[])
     }
     MPI_Allreduce(MPI_IN_PLACE, complete, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-    double dt = (double)tt/nrecv;
-    printf("process %d received %d counters in %f seconds (%f per call)\n",
-           rank, nrecv, tt, dt);
+    double dt = 1.e6*(double)tt/(double)nrecv;
+    if(nrecv>0)
+        printf("process %d received %d counters in %lf seconds (%lf microseconds per call)\n",
+               rank, nrecv, tt, dt);
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
