@@ -28,13 +28,14 @@ int main(int argc, char* argv[])
 
     ARMCI_Init();
 
+    int rank, nproc;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
     int count = ( argc > 1 ? atoi(argv[1]) : 1000000 );
 
     int * complete = (int *) malloc(sizeof(int) * count);
-    for(i=0; i<count; i++) complete[i] = 0;
+    for(int i=0; i<count; i++) complete[i] = 0;
 
     void ** base_ptrs = malloc(sizeof(void*)*nproc);
     ARMCI_Malloc(base_ptrs, sizeof(INC_TYPE));
@@ -54,12 +55,13 @@ int main(int argc, char* argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    double tt = 0;
+    int nrecv = 0;
     if (rank>0)
     {
         int target = 0;
-        int nrecv = 0;
         INC_TYPE val = -1;
-        t0 = MPI_Wtime();
+        double t0 = MPI_Wtime();
         while(val < count) {
             ARMCI_Rmw(ARMCI_OP, &val, base_ptrs[target], 1, target);
             if (val < count) {
@@ -67,21 +69,21 @@ int main(int argc, char* argv[])
                 nrecv++;
             }
         }
-        t1 = MPI_Wtime();
+        double t1 = MPI_Wtime();
         tt = (t1-t0);
     }
     MPI_Allreduce(MPI_IN_PLACE, complete, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-    dt = (double)tt/nrecv;
+    double dt = (double)tt/nrecv;
     printf("process %d received %d counters in %f seconds (%f per call)\n",
            rank, nrecv, tt, dt);
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (0==rank) {
-        printf("Checking for fairness...\n", rank);
+        printf("Checking for fairness...\n");
         fflush(stdout);
-        for(i=0; i<count; i++) {
+        for(int i=0; i<count; i++) {
             printf("counter value %d %s received (rank %d) \n", i,
                    0==complete[i] ? "was NOT" : "was",
                    0==complete[i] ? -911 : complete[i] );
