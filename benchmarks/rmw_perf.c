@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
     if (nproc<2) {
         printf("This benchmark requires >1 MPI processes\n");
         MPI_Finalize();
+        return 1;
     }
 
     ARMCI_Init();
