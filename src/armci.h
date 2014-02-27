@@ -75,6 +75,7 @@ int   ARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, in
 
 int   ARMCI_Wait(armci_hdl_t* hdl);
 int   ARMCI_Test(armci_hdl_t* hdl);
+int   ARMCI_WaitProc(int proc);
 int   ARMCI_WaitAll(void);
 
 int   ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
@@ -241,6 +242,7 @@ int     PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, i
 
 int     PARMCI_Wait(armci_hdl_t* hdl);
 int     PARMCI_Test(armci_hdl_t* hdl);
+int     PARMCI_WaitProc(int proc);
 int     PARMCI_WaitAll(void);
 
 int     PARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
