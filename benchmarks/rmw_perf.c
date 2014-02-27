@@ -26,11 +26,16 @@ int main(int argc, char* argv[])
     MPI_Init_thread(&argc, &argv, MPI_THREAD_SINGLE, &provided);
 #endif
 
-    ARMCI_Init();
-
     int rank, nproc;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+
+    if (nproc<2) {
+        printf("This benchmark requires >1 MPI processes\n");
+        MPI_Finalize();
+    }
+
+    ARMCI_Init();
 
     int count = ( argc > 1 ? atoi(argv[1]) : 1000000 );
 
