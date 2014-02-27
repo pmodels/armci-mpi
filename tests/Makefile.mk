@@ -23,6 +23,7 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_assert           \
                   tests/test_igop             \
                   tests/test_rmw_fadd         \
+                  tests/test_rmw_fadd_perf    \
                   tests/test_parmci           \
                   # end
 
@@ -46,6 +47,7 @@ TESTS          += tests/test_onesided         \
                   tests/test_puts_gets_dla    \
                   tests/test_igop             \
                   tests/test_rmw_fadd         \
+                  tests/test_rmw_fadd_perf    \
                   tests/test_parmci           \
                   # end
 
