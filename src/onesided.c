@@ -195,8 +195,8 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
 
 /** One-sided put operation.
   *
-  * @param[in] src    Source address (remote)
-  * @param[in] dst    Destination address (local)
+  * @param[in] src    Source address (local)
+  * @param[in] dst    Destination address (remote)
   * @param[in] size   Number of bytes to transfer
   * @param[in] target Process id to target
   * @return           0 on success, non-zero on failure
