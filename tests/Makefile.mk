@@ -78,6 +78,7 @@ tests_test_putv_LDADD = libarmci.la
 tests_test_assert_LDADD = libarmci.la
 tests_test_igop_LDADD = libarmci.la
 tests_test_rmw_fadd_LDADD = libarmci.la
+tests_test_rmw_fadd_perf_LDADD = libarmci.la
 tests_test_parmci_LDADD = libarmci.la
 tests_test_parmci_SOURCES = tests/test_parmci.c tests/test_parmci_lib.c
 
