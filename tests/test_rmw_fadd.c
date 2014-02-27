@@ -85,7 +85,7 @@ int main(int argc, char ** argv) {
   ARMCI_Access_begin(base_ptrs[rank]);
   if (*(long*) base_ptrs[rank] != NINC*nproc) {
     errors++;
-    printf("%3d -- Got %d, expected %d\n", rank, *(long*) base_ptrs[rank], NINC*nproc);
+    printf("%3d -- Got %ld, expected %d\n", rank, *(long*) base_ptrs[rank], NINC*nproc);
   }
   ARMCI_Access_end(base_ptrs[rank]);
 
