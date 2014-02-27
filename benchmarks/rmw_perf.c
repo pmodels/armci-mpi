@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <mpi.h>
 #include <armci.h>
@@ -39,6 +40,9 @@ int main(int argc, char* argv[])
     ARMCI_Init();
 
     int count = ( argc > 1 ? atoi(argv[1]) : 1000000 );
+
+    char * cfair = getenv ("CHECK_FAIRNESS");
+    int check_fairness = (cfair!=NULL) ? 1 : 0;
 
     int * complete = (int *) malloc(sizeof(int) * count);
     for(int i=0; i<count; i++) complete[i] = 0;
@@ -86,7 +90,7 @@ int main(int argc, char* argv[])
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (0==rank) {
+    if (0==rank && check_fairness==1) {
         printf("Checking for fairness...\n");
         fflush(stdout);
         for(int i=0; i<count; i++) {
