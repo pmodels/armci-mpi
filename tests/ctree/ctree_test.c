@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
   printf("========== REVERSE INSERT CHECK ==========\n");
 
-  for (i = (uint8_t*) MAX+INC; i-INC <= (uint8_t*) MAX+INC; i-=INC) {
+  for (i = (uint8_t*) MAX+INC; i-INC >= (uint8_t*) 0 && i-INC <= (uint8_t*) MAX; i-=INC) {
     printf("----- Inserting [%10p, %10p] -----\n", i-INC, i-1);
     int conflict = ctree_insert(&ctree, i-INC, i-1);
     ctree_print(ctree);
