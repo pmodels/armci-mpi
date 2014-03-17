@@ -14,7 +14,7 @@ int ARMCI_Finalize(void) {
 
 void ARMCI_Barrier(void) {
   parmci_calls++;
-#ifdef _CRAYC
+#if defined(_CRAYC) || defined(__PGI)
   PARMCI_Barrier();
   return;
 #else
