@@ -140,13 +140,25 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   MPI_Win_lock_all(MPI_MODE_NOCHECK, mreg->window);
 
   {
-    int attribute_val, attr_flag;
+    void    *attr_ptr;
+    int     *attr_val;
+    int      attr_flag;
     /* this function will always return flag=false in MPI-2 */
-    MPI_Win_get_attr(mreg->window, MPI_WIN_MODEL, (void *)&attribute_val, &attr_flag);
-    if (0 /* disable */ && !attr_flag && world_me==0)
-        ARMCII_Warning("MPI_WIN_MODEL flag missing! \n");
-    if (attr_flag && attribute_val!=MPI_WIN_UNIFIED && world_me==0)
-        ARMCII_Warning("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
+    MPI_Win_get_attr(mreg->window, MPI_WIN_MODEL, &attr_ptr, &attr_flag);
+    if (attr_flag) {
+      attr_val = (int*)attr_ptr;
+      if (world_me==0) {
+        if ( (*attr_val)==MPI_WIN_UNIFIED )
+          printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
+        else if ( (*attr_val)==MPI_WIN_SEPARATE )
+          printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
+        else
+          printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
+      }
+    } else {
+      if (world_me==0)
+        printf("MPI_WIN_MODEL attribute missing \n");
+    }
   }
 
   /* Append the new region onto the region list */
