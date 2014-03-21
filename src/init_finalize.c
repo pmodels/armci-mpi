@@ -122,6 +122,12 @@ int PARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_STRIDED_METHOD (%s)\n", var);
   }
 
+#ifdef OPEN_MPI
+  if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT ||
+      ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT)
+      ARMCII_Warning("MPI Datatypes are broken in RMA in OpenMPI!!!!\n");
+#endif
+
   /* Shared buffer handling method */
 
   ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
