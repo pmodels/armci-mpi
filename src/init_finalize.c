@@ -81,11 +81,15 @@ int PARMCI_Init(void) {
     ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
   }
 
-  var = ARMCII_Getenv("ARMCI_IOV_METHOD");
-
-  /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used */
+#ifdef OPEN_MPI
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+#else
+  /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
+   * Jeff: Is this still true? */
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
+#endif
 
+  var = ARMCII_Getenv("ARMCI_IOV_METHOD");
   if (var != NULL) {
     if (strcmp(var, "AUTO") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
@@ -101,10 +105,14 @@ int PARMCI_Init(void) {
 
   /* Check for Strided flags */
 
-  var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
 
+#ifdef OPEN_MPI
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
+#else
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
+#endif
 
+  var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
   if (var != NULL) {
     if (strcmp(var, "IOV") == 0)
       ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
@@ -116,10 +124,9 @@ int PARMCI_Init(void) {
 
   /* Shared buffer handling method */
 
-  var = ARMCII_Getenv("ARMCI_SHR_BUF_METHOD");
-
   ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
 
+  var = ARMCII_Getenv("ARMCI_SHR_BUF_METHOD");
   if (var != NULL) {
     if (strcmp(var, "COPY") == 0)
       ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
