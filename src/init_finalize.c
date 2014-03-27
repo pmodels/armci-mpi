@@ -81,7 +81,7 @@ int PARMCI_Init(void) {
     ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
   }
 
-#ifdef OPEN_MPI
+#if defined(OPEN_MPI)
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
 #else
   /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
@@ -106,7 +106,7 @@ int PARMCI_Init(void) {
   /* Check for Strided flags */
 
 
-#ifdef OPEN_MPI
+#if defined(OPEN_MPI)
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
 #else
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
