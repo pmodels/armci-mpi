@@ -82,9 +82,11 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 #else
   MPI_Win_allocate( (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
-  /* TODO: Is this necessary?  Is it a good idea anymore? */
   if (local_size == 0) {
+    /* TODO: Is this necessary?  Is it a good idea anymore? */
     alloc_slices[alloc_me].base = NULL;
+  } else {
+    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
   }
 #endif
 
