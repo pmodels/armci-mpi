@@ -92,7 +92,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
-    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
     ARMCII_Bzero(alloc_slices[alloc_me].base, local_size);
   }
 
