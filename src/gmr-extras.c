@@ -57,6 +57,7 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
 
   grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
   if (dst == MPI_BOTTOM) 
@@ -93,6 +94,7 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
 
   grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   /* built-in types only so no chance of seeing MPI_BOTTOM */
   disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
@@ -115,6 +117,7 @@ int gmr_lockall(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   MPI_Win_lock_all(MPI_MODE_NOCHECK, mreg->window);
 
@@ -130,6 +133,7 @@ int gmr_unlockall(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   MPI_Win_unlock_all(mreg->window);
 
@@ -148,6 +152,7 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   if (local_only)
     MPI_Win_flush_local(grp_proc, mreg->window);
@@ -166,6 +171,7 @@ int gmr_flushall(gmr_t *mreg, int local_only) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   if (local_only)
     MPI_Win_flush_local_all(mreg->window);
@@ -184,6 +190,7 @@ int gmr_sync(gmr_t *mreg) {
   int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
 
   ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   MPI_Win_sync(mreg->window);
 
@@ -227,6 +234,7 @@ int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
   if (dst == MPI_BOTTOM)
@@ -286,6 +294,7 @@ int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
 
   grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
   if (src == MPI_BOTTOM)
@@ -346,6 +355,7 @@ int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
   ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
   if (dst == MPI_BOTTOM)
