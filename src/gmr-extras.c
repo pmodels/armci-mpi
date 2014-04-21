@@ -153,6 +153,7 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
 
   ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+  ARMCII_Assert_msg(grp_proc < mreg->group.size, "grp_proc exceeds group size!");
 
   if (local_only)
     MPI_Win_flush_local(grp_proc, mreg->window);
