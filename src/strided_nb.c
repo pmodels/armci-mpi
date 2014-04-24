@@ -108,6 +108,10 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       handle->target = proc;
   }
 
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
+
   return err;
 }
 
@@ -207,6 +211,10 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = proc;
   }
+
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
 
   return err;
 }
@@ -347,6 +355,10 @@ int PARMCI_NbAccS(int datatype, void *scale,
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = proc;
   }
+
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
 
   return err;
 }

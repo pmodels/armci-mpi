@@ -50,6 +50,10 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
       handle->target = proc;
   }
 
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
+
   return 0;
 }
 
@@ -95,6 +99,10 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
       handle->target = proc;
   }
 
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
+
   return 0;
 }
 
@@ -138,6 +146,10 @@ int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = proc;
   }
+
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
 
   return 0;
 }
