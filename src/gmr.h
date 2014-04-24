@@ -51,19 +51,6 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
     void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type,
     MPI_Op op, int proc);
 
-int gmr_iget(gmr_t *mreg, void *src, void *dst, int size, int target);
-int gmr_iput(gmr_t *mreg, void *src, void *dst, int size, int target);
-int gmr_iaccumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc);
-int gmr_iget_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, MPI_Op op, int proc);
-int gmr_iget_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
-int gmr_iput_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
-int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc);
-int gmr_iget_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *out, int out_count, MPI_Datatype out_type, void *dst, int dst_count, MPI_Datatype dst_type, MPI_Op op, int proc);
-
 int gmr_lockall(gmr_t *mreg);
 int gmr_unlockall(gmr_t *mreg);
 int gmr_flush(gmr_t *mreg, int proc, int local_only);
