@@ -41,4 +41,6 @@ void ARMCIX_Lock_hdl(armcix_mutex_hdl_t hdl, int mutex, int proc);
 int  ARMCIX_Trylock_hdl(armcix_mutex_hdl_t hdl, int mutex, int proc);
 void ARMCIX_Unlock_hdl(armcix_mutex_hdl_t hdl, int mutex, int proc);
 
+void ARMCIX_Progress(void);
+
 #endif /* _ARMCIX_H_ */

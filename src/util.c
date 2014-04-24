@@ -206,3 +206,8 @@ int ARMCII_Getenv_int(char *varname, int default_value) {
   else
     return default_value;
 }
+
+void ARMCIX_Progress(void)
+{
+    gmr_progress();
+}
