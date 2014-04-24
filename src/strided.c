@@ -159,8 +159,9 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     MPI_Type_free(&dst_type);
 
     /* COPY: Free temporary buffer */
-    if (src_buf != src_ptr)
+    if (src_buf != src_ptr) {
       MPI_Free_mem(src_buf);
+    }
 
     err = 0;
 
@@ -383,14 +384,15 @@ int PARMCI_AccS(int datatype, void *scale,
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
     gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-    gmr_flush(mreg, proc, 0);
+    gmr_flush(mreg, proc, 1); /* flush_local */
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
     /* COPY/SCALE: Free temp buffer */
-    if (src_buf != src_ptr)
+    if (src_buf != src_ptr) {
       MPI_Free_mem(src_buf);
+    }
 
     err = 0;
 
