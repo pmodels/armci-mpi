@@ -66,6 +66,10 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       gmr_iput(dst_mreg, src, dst, size, target);
   }
 
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
+
   return 0;
 }
 
@@ -102,6 +106,10 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
   else {
     gmr_iget(src_mreg, src, dst, size, target);
   }
+
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
 
   return 0;
 }
@@ -172,6 +180,10 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
     gmr_flush(dst_mreg, proc, 1); /* flush local only, unlike Fence */
     MPI_Free_mem(src_buf);
   }
+
+#ifdef EXPLICIT_PROGRESS
+  gmr_progress();
+#endif
 
   return 0;
 }
