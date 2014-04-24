@@ -82,14 +82,20 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
     gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-    gmr_flush(mreg, proc, 1); /* flush_local */
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
     /* COPY: Free temporary buffer */
-    if (src_buf != src_ptr)
+    if (src_buf != src_ptr) {
+      gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
+    }
+
+    if (handle!=NULL) {
+        /* Regular (not aggregate) handles merely store the target for future flushing. */
+        handle->target = proc;
+    }
 
     err = 0;
 
@@ -97,15 +103,10 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = PARMCI_PutV(&iov, 1, proc);
+    err = PARMCI_NbPutV(&iov, 1, proc, handle);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = proc;
   }
 
 #ifdef EXPLICIT_PROGRESS
@@ -184,10 +185,10 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
     gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
-    gmr_flush(mreg, proc, 0);
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
+      gmr_flush(mreg, proc, 0);
       armci_read_strided(dst_ptr, stride_levels, dst_stride_ar, count, dst_buf);
       MPI_Free_mem(dst_buf);
     }
@@ -195,21 +196,21 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
+    if (handle!=NULL) {
+        /* Regular (not aggregate) handles merely store the target for future flushing. */
+        handle->target = proc;
+    }
+
     err = 0;
 
   } else {
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = PARMCI_GetV(&iov, 1, proc);
+    err = PARMCI_NbGetV(&iov, 1, proc, handle);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = proc;
   }
 
 #ifdef EXPLICIT_PROGRESS
@@ -330,14 +331,20 @@ int PARMCI_NbAccS(int datatype, void *scale,
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
     gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
-    gmr_flush(mreg, proc, 0);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
 
     /* COPY/SCALE: Free temp buffer */
-    if (src_buf != src_ptr)
+    if (src_buf != src_ptr) {
+      gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
+    }
+
+    if (handle!=NULL) {
+        /* Regular (not aggregate) handles merely store the target for future flushing. */
+        handle->target = proc;
+    }
 
     err = 0;
 
@@ -345,15 +352,10 @@ int PARMCI_NbAccS(int datatype, void *scale,
     armci_giov_t iov;
 
     ARMCII_Strided_to_iov(&iov, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels);
-    err = PARMCI_AccV(datatype, scale, &iov, 1, proc);
+    err = PARMCI_NbAccV(datatype, scale, &iov, 1, proc, handle);
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = proc;
   }
 
 #ifdef EXPLICIT_PROGRESS
