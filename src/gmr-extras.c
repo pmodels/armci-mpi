@@ -373,3 +373,11 @@ int gmr_iaccumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype sr
 
   return 0;
 }
+
+void gmr_progress(void)
+{
+    int flag;
+    MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, ARMCI_GROUP_WORLD.comm, &flag, MPI_STATUS_IGNORE);
+    return;
+}
+

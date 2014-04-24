@@ -70,4 +70,6 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only);
 int gmr_flushall(gmr_t *mreg, int local_only);
 int gmr_sync(gmr_t *mreg);
 
+void gmr_progress(void);
+
 #endif /* HAVE_GMR_H */
