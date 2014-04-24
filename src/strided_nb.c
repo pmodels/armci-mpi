@@ -103,6 +103,11 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     free(iov.dst_ptr_array);
   }
 
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = proc;
+  }
+
   return err;
 }
 
@@ -196,6 +201,11 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
+  }
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = proc;
   }
 
   return err;
@@ -331,6 +341,11 @@ int PARMCI_NbAccS(int datatype, void *scale,
 
     free(iov.src_ptr_array);
     free(iov.dst_ptr_array);
+  }
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = proc;
   }
 
   return err;

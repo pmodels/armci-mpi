@@ -66,8 +66,10 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       gmr_iput(dst_mreg, src, dst, size, target);
   }
 
-  /* Regular (not aggregate) handles merely store the target for future flushing. */
-  handle->target = target;
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = target;
+  }
 
 #ifdef EXPLICIT_PROGRESS
   gmr_progress();
@@ -110,8 +112,11 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
     gmr_iget(src_mreg, src, dst, size, target);
   }
 
-  /* Regular (not aggregate) handles merely store the target for future flushing. */
-  handle->target = target;
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = target;
+  }
+
 
 #ifdef EXPLICIT_PROGRESS
   gmr_progress();
@@ -187,8 +192,10 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
     MPI_Free_mem(src_buf);
   }
 
-  /* Regular (not aggregate) handles merely store the target for future flushing. */
-  handle->target = target;
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = target;
+  }
 
 #ifdef EXPLICIT_PROGRESS
   gmr_progress();
