@@ -155,10 +155,8 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
 int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int same_alloc, int proc);
 
-int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc);
 int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc);
+    MPI_Datatype type, int proc, int consrv /* if 1, batched = safe */);
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc);
 

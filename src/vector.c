@@ -146,7 +146,11 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
   if (overlapping || !same_alloc || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_CONSRV) {
     if (overlapping) ARMCII_Warning("IOV remote buffers overlap\n");
     if (!same_alloc) ARMCII_Warning("IOV remote buffers are not within the same allocation\n");
+#if 0
     return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
+#else
+    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 1 /* consrv */);
+#endif
   }
 
   // OPTIMIZED CASE: It's safe for us to issue all the operations under a
@@ -157,7 +161,7 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
     return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc);
 
   } else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED) {
-    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc);
+    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 0 /* not consrv */);
 
   } else {
     ARMCII_Error("unknown iov method (%d)\n", ARMCII_GLOBAL_STATE.iov_method);
@@ -165,12 +169,12 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
   }
 }
 
-
+#if 0
 /** Safe implementation of the ARMCI IOV operation
   */
 int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
     MPI_Datatype type, int proc) {
-  
+
   int i;
   int flush_local = 0; /* used only for MPI-3 */
 
@@ -179,14 +183,12 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
     void *shr_ptr;
 
     switch(op) {
+      case ARMCII_OP_ACC:
       case ARMCII_OP_PUT:
         shr_ptr = dst[i];
         break;
       case ARMCII_OP_GET:
         shr_ptr = src[i];
-        break;
-      case ARMCII_OP_ACC:
-        shr_ptr = dst[i];
         break;
       default:
         ARMCII_Error("unknown operation (%d)", op);
@@ -219,13 +221,13 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
 
   return 0;
 }
-
+#endif
 
 /** Optimized implementation of the ARMCI IOV operation that uses a single
   * lock/unlock pair.
   */
 int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc) {
+    MPI_Datatype type, int proc, int consrv) {
 
   int i;
   int flush_local = 1; /* used only for MPI-3 */
@@ -233,14 +235,12 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
   void *shr_ptr;
 
   switch(op) {
+    case ARMCII_OP_ACC:
     case ARMCII_OP_PUT:
       shr_ptr = dst[0];
       break;
     case ARMCII_OP_GET:
       shr_ptr = src[0];
-      break;
-    case ARMCII_OP_ACC:
-      shr_ptr = dst[0];
       break;
     default:
       ARMCII_Error("unknown operation (%d)", op);
@@ -252,9 +252,11 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
 
   for (i = 0; i < count; i++) {
 
-    if (   ARMCII_GLOBAL_STATE.iov_batched_limit > 0 
-        && i % ARMCII_GLOBAL_STATE.iov_batched_limit == 0
-        && i > 0 )
+    if ( i > 0 &&
+        ( consrv ||
+         ( ARMCII_GLOBAL_STATE.iov_batched_limit > 0 && i % ARMCII_GLOBAL_STATE.iov_batched_limit == 0)
+        )
+       )
     {
       gmr_flush(mreg, proc, flush_local);
     }
