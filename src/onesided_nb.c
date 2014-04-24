@@ -133,7 +133,7 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
 
 /** Non-blocking accumulate operation.  Note: the implementation is not non-blocking
   */
-int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int proc, armci_hdl_t *handle) {
+int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int target, armci_hdl_t *handle) {
   void  *src_buf;
   int    count, type_size, scaled;
   MPI_Datatype type;
@@ -145,7 +145,7 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
   else
     src_mreg = NULL;
 
-  dst_mreg = gmr_lookup(dst, proc);
+  dst_mreg = gmr_lookup(dst, target);
 
   ARMCII_Assert_msg(dst_mreg != NULL, "Invalid remote pointer");
 
@@ -179,11 +179,11 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  gmr_iaccumulate(dst_mreg, src_buf, dst, count, type, proc);
+  gmr_iaccumulate(dst_mreg, src_buf, dst, count, type, target);
 
   if (src_buf != src) {
     /* must wait for local completion to free source buffer */
-    gmr_flush(dst_mreg, proc, 1); /* flush local only, unlike Fence */
+    gmr_flush(dst_mreg, target, 1); /* flush local only, unlike Fence */
     MPI_Free_mem(src_buf);
   }
 
