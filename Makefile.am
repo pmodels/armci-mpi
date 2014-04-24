@@ -25,10 +25,12 @@ libarmci_la_SOURCES = src/buffer.c        \
                       src/onesided_nb.c   \
                       src/rmw.c           \
                       src/strided.c       \
+                      src/strided_nb.c    \
                       src/topology.c      \
                       src/util.c          \
                       src/value_ops.c     \
                       src/vector.c        \
+                      src/vector_nb.c     \
                       src/init_finalize.c \
                       src/conflict_tree.c \
                       src/parmci.c
