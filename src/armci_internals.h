@@ -146,8 +146,11 @@ int  ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc);
 
 void ARMCII_Strided_to_iov(armci_giov_t *iov,
                void *src_ptr, int src_stride_ar[/*stride_levels*/],
-               void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+               void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                int count[/*stride_levels+1*/], int stride_levels);
+
+void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
+                             int stride_levels, MPI_Datatype old_type, MPI_Datatype *new_type);
 
 int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
     int datatype, int overlapping, int same_alloc, int proc);
