@@ -748,6 +748,8 @@ int PARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  int count[/*stride_levels+1*/], int stride_levels, 
                  int *flag, int value, int proc) {
 
+  /* TODO: This can be optimized with a more direct implementation, especially in the
+   *       case where RMA is ordered; in that case, the Fence (Flush) is not necessary. */
   PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
   PARMCI_Fence(proc);
   PARMCI_Put(&value, flag, sizeof(int), proc);

@@ -291,6 +291,8 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
   * @return          0 on success, non-zero on failure
   */
 int PARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc) {
+  /* TODO: This can be optimized with a more direct implementation, especially in the
+   *       case where RMA is ordered; in that case, the Fence (Flush) is not necessary. */
   PARMCI_Put(src, dst, size, proc);
   PARMCI_Fence(proc);
   PARMCI_Put(&value, flag, sizeof(int), proc);
