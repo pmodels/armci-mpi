@@ -37,8 +37,15 @@ void ARMCI_Error(char *msg, int code) {
   * group!).
   */
 void PARMCI_Barrier(void) {
+  gmr_t *cur_mreg = gmr_list;
+
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+
+  while (cur_mreg) {
+    gmr_sync(cur_mreg);
+    cur_mreg = cur_mreg->next;
+  }
 }
 
 /* -- begin weak symbols block -- */
