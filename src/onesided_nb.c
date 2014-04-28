@@ -12,7 +12,11 @@
 /** Initialize Non-blocking handle.
   */
 void ARMCI_INIT_HANDLE(armci_hdl_t *handle) {
-  handle->target = -1;
+  if (handle!=NULL) {
+    handle->target = -1;
+  } else {
+    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+  }
   return;
 }
 
@@ -20,7 +24,11 @@ void ARMCI_INIT_HANDLE(armci_hdl_t *handle) {
 /** Mark a handle as aggregate.
   */
 void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
-  handle->target = -1;
+  if (handle!=NULL) {
+    handle->target = -1;
+  } else {
+    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+  }
   return;
 }
 
@@ -28,7 +36,11 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
 /** Clear an aggregate handle.
   */
 void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
-  handle->target = -1;
+  if (handle!=NULL) {
+    handle->target = -1;
+  } else {
+    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+  }
   return;
 }
 
