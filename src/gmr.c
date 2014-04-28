@@ -64,7 +64,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
-#if USE_WIN_CREATE
+#ifdef USE_WIN_CREATE
   if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
   } else {
@@ -252,7 +252,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   /* Destroy the window and free all buffers */
   MPI_Win_free(&mreg->window);
 
-#if USE_WIN_CREATE
+#ifdef USE_WIN_CREATE
   if (mreg->slices[world_me].base != NULL)
     MPI_Free_mem(mreg->slices[world_me].base);
 #endif
