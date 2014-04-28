@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
 
     for (i = 0; i < DATA_NELTS; i++) {
       if (buf[i] != ((rank+1) % nproc)*test_iter) {
-        printf("%d: GET expected %d, got %d\n", rank, (rank+1) % nproc, buf[i]);
+        printf("%d: GET expected %d, got %d\n", rank, ((rank+1) % nproc)*test_iter, buf[i]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
     ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != ((rank+1) % nproc)*test_iter) {
-        printf("%d: PUT expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
+        printf("%d: PUT expected %d, got %d\n", rank, ((rank+1) % nproc)*test_iter, my_data[i]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
@@ -87,7 +87,7 @@ int main(int argc, char ** argv) {
     ARMCI_Access_begin(my_data);
     for (i = 0; i < DATA_NELTS; i++) {
       if (my_data[i] != rank + ((rank+1) % nproc)*test_iter) {
-        printf("%d: ACC expected %d, got %d\n", rank, (rank+1) % nproc, my_data[i]);
+        printf("%d: ACC expected %d, got %d\n", rank, ((rank+1) % nproc)*test_iter, my_data[i]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
     }
