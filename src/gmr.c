@@ -15,7 +15,7 @@
 
 /* Jeff: Using win_allocate leads to correctness issues with some
  *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
-#define USE_WIN_CREATE
+//#define USE_WIN_CREATE
 
 /** Linked list of shared memory regions.
   */
@@ -71,15 +71,21 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
   } else {
+#ifdef USE_ALLOC_SHM
     /* http://mvapich.cse.ohio-state.edu/support/user_guide_mvapich2-2.0a.html#x1-600006.7 */
-    MPI_Info win_info;
-    MPI_Info_create(&win_info); 
-    MPI_Info_set(win_info, "alloc_shm", "true"); 
+    MPI_Info alloc_info;
+    MPI_Info_create(&alloc_info);
+    MPI_Info_set(alloc_info, "alloc_shm", "true");
+#else
+    MPI_Info alloc_info = MPI_INFO_NULL;
+#endif
 
-    MPI_Alloc_mem(local_size, win_info, &(alloc_slices[alloc_me].base));
+    MPI_Alloc_mem(local_size, alloc_info, &(alloc_slices[alloc_me].base));
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
 
-    MPI_Info_free(&win_info);
+#ifdef USE_ALLOC_SHM
+    MPI_Info_free(&alloc_info);
+#endif
   }
   MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
 #else
@@ -256,8 +262,9 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   MPI_Win_free(&mreg->window);
 
 #ifdef USE_WIN_CREATE
-  if (mreg->slices[world_me].base != NULL)
+  if (mreg->slices[world_me].base != NULL) {
     MPI_Free_mem(mreg->slices[world_me].base);
+  }
 #endif
 
   free(mreg->slices);
