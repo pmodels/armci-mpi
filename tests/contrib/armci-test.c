@@ -1714,7 +1714,6 @@ int main(int argc, char* argv[])
 /*
        if(me==1)armci_die("process 1 committing suicide",1);
 */
-#if 0
         if(me==0){
            printf("\nTesting strided gets and puts\n");
            printf("(Only std output for process 0 is printed)\n\n"); 
@@ -1792,8 +1791,6 @@ int main(int argc, char* argv[])
         test_swap(); // FIXME
         ARMCI_AllFence();
         MP_BARRIER();
-
-#endif
 
         if(me==0){
            printf("\nTesting register-originated put and get\n");
