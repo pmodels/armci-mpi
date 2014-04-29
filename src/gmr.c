@@ -102,6 +102,10 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   MPI_Win_allocate( (MPI_Aint) local_size, 1, win_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
+#ifdef USE_ALLOC_SHM
+    MPI_Info_free(&alloc_info);
+#endif
+
   if (local_size == 0) {
     /* TODO: Is this necessary?  Is it a good idea anymore? */
     alloc_slices[alloc_me].base = NULL;
