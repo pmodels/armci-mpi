@@ -71,6 +71,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
   } else {
+
 #ifdef USE_ALLOC_SHM
     /* http://mvapich.cse.ohio-state.edu/support/user_guide_mvapich2-2.0a.html#x1-600006.7 */
     MPI_Info alloc_info;
@@ -88,8 +89,18 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 #endif
   }
   MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
+
+#else // !USE_WIN_CREATE
+
+#ifdef USE_ALLOC_SHM
+  MPI_Info win_info;
+  MPI_Info_create(&win_info);
+  MPI_Info_set(win_info, "alloc_shm", "true");
 #else
-  MPI_Win_allocate( (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
+  MPI_Info win_info = MPI_INFO_NULL;
+#endif
+
+  MPI_Win_allocate( (MPI_Aint) local_size, 1, win_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
   if (local_size == 0) {
     /* TODO: Is this necessary?  Is it a good idea anymore? */
@@ -97,7 +108,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   } else {
     ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
   }
-#endif
+#endif // USE_WIN_CREATE?
 
   /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
