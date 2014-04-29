@@ -63,7 +63,8 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
 typedef struct armci_hdl_s
 {
-    int target; /* we do not actually support individual completion */
+    int target;    /* we do not actually support individual completion */
+    int aggregate;
 }
 armci_hdl_t;
 

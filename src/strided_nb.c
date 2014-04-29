@@ -188,7 +188,7 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
-      gmr_flush(mreg, proc, 0);
+      gmr_flush(mreg, proc, 1);
       armci_read_strided(dst_ptr, stride_levels, dst_stride_ar, count, dst_buf);
       MPI_Free_mem(dst_buf);
     }
