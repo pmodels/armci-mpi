@@ -12,6 +12,8 @@
 
 #include <armci.h>
 
+#define ELEMS 500
+
 #define DIM1 5
 #define DIM2 3
 #ifdef __sun
