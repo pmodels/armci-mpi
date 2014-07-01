@@ -15,7 +15,8 @@
 
 /* Jeff: Using win_allocate leads to correctness issues with some
  *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
-//#define USE_WIN_CREATE
+/* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
+#define USE_WIN_CREATE
 
 /** Linked list of shared memory regions.
   */
