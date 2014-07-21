@@ -93,17 +93,22 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     is_long = 1;
     type = MPI_LONG;
   }
-  else
+  else {
+    is_long = 0;
     type = MPI_INT;
+  }
 
   if (op == ARMCI_SWAP || op == ARMCI_SWAP_LONG) {
     is_swap = 1;
     rop = MPI_REPLACE;
   }
-  else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG)
+  else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG) {
+    is_swap = 0;
     rop = MPI_SUM;
-  else
+  }
+  else {
     ARMCII_Error("invalid operation (%d)", op);
+  }
 
   /* We hold the DLA lock if (src_mreg != NULL). */
 
@@ -111,11 +116,12 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     long out_val_l, src_val_l = *((long*)ploc);
     int  out_val_i, src_val_i = *((int*)ploc);
 
-    gmr_fetch_and_op(dst_mreg, 
+    gmr_lock(dst_mreg, target);
+    gmr_fetch_and_op(dst_mreg,
                      is_long ? (void*) &src_val_l : (void*) &src_val_i /* src */,
                      is_long ? (void*) &out_val_l : (void*) &out_val_i /* out */,
     		     prem /* dst */, type, rop, proc);
-    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
+    gmr_unlock(dst_mreg, target);
     if (is_long)
       *(long*) ploc = out_val_l;
     else
@@ -125,16 +131,19 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     long fetch_val_l, add_val_l = value;
     int  fetch_val_i, add_val_i = value;
 
+    gmr_lock(dst_mreg, target);
     gmr_fetch_and_op(dst_mreg,
                      is_long ? (void*) &add_val_l   : (void*) &add_val_i   /* src */,
                      is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i /* out */,
                      prem /* dst */, type, rop, proc);
-    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
+    gmr_unlock(dst_mreg, target);
 
-    if (is_long)
+    if (is_long) {
       *(long*) ploc = fetch_val_l;
-    else
+    }
+    else {
       *(int*) ploc = fetch_val_i;
+    }
   }
 
   return 0;
@@ -157,7 +166,7 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     int  swap_val_i;
 
     ARMCIX_Lock_hdl(mreg->rmw_mutex, 0, proc);
-    PARMCI_Get(prem, is_long ? (void*) &swap_val_l : (void*) &swap_val_i, 
+    PARMCI_Get(prem, is_long ? (void*) &swap_val_l : (void*) &swap_val_i,
               is_long ? sizeof(long) : sizeof(int), proc);
     PARMCI_Put(ploc, prem, is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_hdl(mreg->rmw_mutex, 0, proc);
@@ -171,17 +180,17 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   else if (op == ARMCI_FETCH_AND_ADD || op == ARMCI_FETCH_AND_ADD_LONG) {
     long fetch_val_l, new_val_l;
     int  fetch_val_i, new_val_i;
-    
+
     ARMCIX_Lock_hdl(mreg->rmw_mutex, 0, proc);
     PARMCI_Get(prem, is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i,
               is_long ? sizeof(long) : sizeof(int), proc);
-    
+
     if (is_long)
       new_val_l = fetch_val_l + value;
     else
       new_val_i = fetch_val_i + value;
 
-    PARMCI_Put(is_long ? (void*) &new_val_l : (void*) &new_val_i, prem, 
+    PARMCI_Put(is_long ? (void*) &new_val_l : (void*) &new_val_i, prem,
               is_long ? sizeof(long) : sizeof(int), proc);
     ARMCIX_Unlock_hdl(mreg->rmw_mutex, 0, proc);
 
