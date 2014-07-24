@@ -63,7 +63,12 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
   * currently behave the same as the blocking ops.
   */
 
-typedef int armci_hdl_t;
+typedef struct armci_hdl_s
+{
+    int target;    /* we do not actually support individual completion */
+    int aggregate;
+}
+armci_hdl_t;
 
 void  ARMCI_INIT_HANDLE(armci_hdl_t *hdl);
 void  ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t* handle);
@@ -75,6 +80,7 @@ int   ARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, in
 
 int   ARMCI_Wait(armci_hdl_t* hdl);
 int   ARMCI_Test(armci_hdl_t* hdl);
+int   ARMCI_WaitProc(int proc);
 int   ARMCI_WaitAll(void);
 
 int   ARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
