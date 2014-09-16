@@ -168,6 +168,13 @@ int PARMCI_Init(void) {
 #ifdef NO_SEATBELTS
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
+
+#ifdef USE_WIN_ALLOCATE
+      printf("  WINDOW type used       = %s\n", "ALLOCATE");
+#else
+      printf("  WINDOW type used       = %s\n", "CREATE");
+#endif
+
       printf("  STRIDED_METHOD         = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD             = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
