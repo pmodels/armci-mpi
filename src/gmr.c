@@ -13,11 +13,6 @@
 #include <debug.h>
 #include <gmr.h>
 
-/* Jeff: Using win_allocate leads to correctness issues with some
- *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
-/* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
-#define USE_WIN_CREATE
-
 /** Linked list of shared memory regions.
   */
 gmr_t *gmr_list = NULL;
@@ -68,7 +63,35 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
-#ifdef USE_WIN_CREATE
+#ifdef USE_WIN_ALLOCATE
+
+/* Jeff: Using win_allocate leads to correctness issues with some
+ *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
+/* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
+#warning MPI_Win_allocate can lead to correctness issues on some MPI \
+         implementations.  Please check your results carefully.
+
+#ifdef USE_ALLOC_SHM
+  MPI_Info win_info;
+  MPI_Info_create(&win_info);
+  MPI_Info_set(win_info, "alloc_shm", "true");
+#else
+  MPI_Info win_info = MPI_INFO_NULL;
+#endif
+
+  MPI_Win_allocate( (MPI_Aint) local_size, 1, win_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
+
+#ifdef USE_ALLOC_SHM
+    MPI_Info_free(&win_info);
+#endif
+
+  if (local_size == 0) {
+    /* TODO: Is this necessary?  Is it a good idea anymore? */
+    alloc_slices[alloc_me].base = NULL;
+  } else {
+    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+  }
+#else // USE_WIN_ALLOCATE
   if (local_size == 0) {
     alloc_slices[alloc_me].base = NULL;
   } else {
@@ -91,29 +114,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   }
   MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
 
-#else // !USE_WIN_CREATE
-
-#ifdef USE_ALLOC_SHM
-  MPI_Info win_info;
-  MPI_Info_create(&win_info);
-  MPI_Info_set(win_info, "alloc_shm", "true");
-#else
-  MPI_Info win_info = MPI_INFO_NULL;
-#endif
-
-  MPI_Win_allocate( (MPI_Aint) local_size, 1, win_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
-
-#ifdef USE_ALLOC_SHM
-    MPI_Info_free(&win_info);
-#endif
-
-  if (local_size == 0) {
-    /* TODO: Is this necessary?  Is it a good idea anymore? */
-    alloc_slices[alloc_me].base = NULL;
-  } else {
-    ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
-  }
-#endif // USE_WIN_CREATE?
+#endif // USE_WIN_ALLOCATE
 
   /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {
