@@ -127,6 +127,7 @@ fi
 
 AC_CHECK_HEADERS([execinfo.h stdint.h inttypes.h])
 AC_TYPE_UINT8_T
+AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected]))
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),

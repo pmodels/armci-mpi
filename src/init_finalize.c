@@ -46,6 +46,7 @@ int PARMCI_Init(void) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
+#if   HAVE_PTHREADS
   /* Check progress thread settings */
   {
     int mpi_thread_level;
@@ -59,6 +60,7 @@ int PARMCI_Init(void) {
         ARMCII_GLOBAL_STATE.progress_thread = 0;
     }
   }
+#endif
 
   /* Set defaults */
 #ifdef ARMCI_GROUP
@@ -183,10 +185,12 @@ int PARMCI_Init(void) {
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
 
+#ifdef HAVE_PTHREADS
       printf("  PROGRESS_THREAD        = %s\n", ARMCII_GLOBAL_STATE.progress_thread ? "ENABLED" : "DISABLED");
       if (ARMCII_GLOBAL_STATE.progress_thread) {
           printf("  PROGRESS_USLEEP        = %d\n", ARMCII_GLOBAL_STATE.progress_usleep);
       }
+#endif
 
 #ifdef USE_WIN_ALLOCATE
       printf("  WINDOW type used       = %s\n", "ALLOCATE");

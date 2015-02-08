@@ -14,6 +14,10 @@
 #  include <inttypes.h>
 #endif
 
+#if   HAVE_PTHREADS
+#  include <pthread.h>
+#endif
+
 /* Likely/Unlikely macros borrowed from MPICH:
  */
 
@@ -74,8 +78,10 @@ typedef struct {
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
+#if   HAVE_PTHREADS
   int           progress_thread;        /* Create progress thread                                               */
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
+#endif
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
@@ -92,7 +98,9 @@ extern MPI_Op         MPI_ABSMAX_OP;
 extern MPI_Op         MPI_SELMIN_OP;
 extern MPI_Op         MPI_SELMAX_OP;
 extern global_state_t ARMCII_GLOBAL_STATE;
-  
+#if   HAVE_PTHREADS
+extern pthread_t      ARMCI_Progress_thread;
+#endif
 
 /* Utility functions */
 
