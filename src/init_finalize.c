@@ -46,6 +46,20 @@ int PARMCI_Init(void) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
+  /* Check progress thread settings */
+  {
+    int mpi_thread_level;
+    MPI_Query_thread(&mpi_thread_level);
+
+    ARMCII_GLOBAL_STATE.progress_thread    = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
+    ARMCII_GLOBAL_STATE.progress_usleep    = ARMCII_Getenv_bool("ARMCI_PROGRESS_USLEEP", 0);
+
+    if (mpi_thread_level!=MPI_THREAD_MULTIPLE && ARMCII_GLOBAL_STATE.progress_thread) {
+        ARMCII_Warning("ARMCI progress thread requires MPI_THREAD_MULTIPLE; progress thread disabled.\n");
+        ARMCII_GLOBAL_STATE.progress_thread = 0;
+    }
+  }
+
   /* Set defaults */
 #ifdef ARMCI_GROUP
   ARMCII_GLOBAL_STATE.noncollective_groups = 1;
@@ -168,6 +182,11 @@ int PARMCI_Init(void) {
 #ifdef NO_SEATBELTS
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
+
+      printf("  PROGRESS_THREAD        = %s\n", ARMCII_GLOBAL_STATE.progress_thread ? "ENABLED" : "DISABLED");
+      if (ARMCII_GLOBAL_STATE.progress_thread) {
+          printf("  PROGRESS_USLEEP        = %d\n", ARMCII_GLOBAL_STATE.progress_usleep);
+      }
 
 #ifdef USE_WIN_ALLOCATE
       printf("  WINDOW type used       = %s\n", "ALLOCATE");

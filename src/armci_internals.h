@@ -74,6 +74,8 @@ typedef struct {
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
+  int           progress_thread;        /* Create progress thread                                               */
+  int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
