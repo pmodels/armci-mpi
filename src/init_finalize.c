@@ -46,7 +46,7 @@ int PARMCI_Init(void) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
-#if   HAVE_PTHREADS
+#ifdef HAVE_PTHREADS
   /* Check progress thread settings */
   {
     int mpi_thread_level;
