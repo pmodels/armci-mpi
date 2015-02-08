@@ -12,6 +12,28 @@
 #include <debug.h>
 #include <gmr.h>
 
+#ifdef HAVE_PTHREADS
+#include <pthread.h>
+#include <unistd.h> /* usleep */
+
+int progress_active;
+
+static void * progress_function(void * arg)
+{
+    volatile int * active = (volatile int*)arg;
+    int naptime = ARMCII_GLOBAL_STATE.progress_usleep;
+
+    while(*active) {
+        ARMCIX_Progress();
+        if (naptime) usleep(naptime);
+    }
+
+    pthread_exit(NULL);
+
+    return NULL;
+}
+#endif
+
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
 #  pragma weak ARMCI_Init = PARMCI_Init
@@ -53,11 +75,18 @@ int PARMCI_Init(void) {
     MPI_Query_thread(&mpi_thread_level);
 
     ARMCII_GLOBAL_STATE.progress_thread    = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
-    ARMCII_GLOBAL_STATE.progress_usleep    = ARMCII_Getenv_bool("ARMCI_PROGRESS_USLEEP", 0);
+    ARMCII_GLOBAL_STATE.progress_usleep    = ARMCII_Getenv_int("ARMCI_PROGRESS_USLEEP", 0);
 
-    if (mpi_thread_level!=MPI_THREAD_MULTIPLE && ARMCII_GLOBAL_STATE.progress_thread) {
-        ARMCII_Warning("ARMCI progress thread requires MPI_THREAD_MULTIPLE; progress thread disabled.\n");
+    if (ARMCII_GLOBAL_STATE.progress_thread && (mpi_thread_level!=MPI_THREAD_MULTIPLE)) {
+        ARMCII_Warning("ARMCI progress thread requires MPI_THREAD_MULTIPLE (%d); progress thread disabled.\n",
+                       mpi_thread_level);
         ARMCII_GLOBAL_STATE.progress_thread = 0;
+    }
+
+    if (ARMCII_GLOBAL_STATE.progress_thread && (ARMCII_GLOBAL_STATE.progress_usleep < 0)) {
+        ARMCII_Warning("ARMCI progress thread is not a time machine. (%d)\n",
+                       ARMCII_GLOBAL_STATE.progress_usleep);
+        ARMCII_GLOBAL_STATE.progress_usleep = -ARMCII_GLOBAL_STATE.progress_usleep;
     }
   }
 #endif
@@ -220,6 +249,17 @@ int PARMCI_Init(void) {
     }
 
     MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+
+#ifdef HAVE_PTHREADS
+    /* Create the asynchronous progress thread */
+    {
+        progress_active = 1;
+        int rc = pthread_create(&ARMCI_Progress_thread, NULL, &progress_function, &progress_active);
+        if (rc) {
+            ARMCII_Warning("ARMCI progress thread creation failed (%d).\n", rc);
+        }
+    }
+#endif
   }
 
   return 0;
@@ -297,6 +337,17 @@ int PARMCI_Finalize(void) {
   if (ARMCII_GLOBAL_STATE.init_count > 0) {
     return 0;
   }
+
+#ifdef HAVE_PTHREADS
+    /* Destroy the asynchronous progress thread */
+    {
+        progress_active = 0;
+        int rc = pthread_join(ARMCI_Progress_thread, NULL);
+        if (rc) {
+            ARMCII_Warning("ARMCI progress thread join failed (%d).\n", rc);
+        }
+    }
+#endif
 
   nfreed = gmr_destroy_all();
 
