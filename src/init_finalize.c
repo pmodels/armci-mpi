@@ -142,6 +142,15 @@ int PARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
   }
 
+  /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
+
+#ifdef USE_WIN_ALLOCATE
+  int win_alloc_default = 1;
+#else
+  int win_alloc_default = 0;
+#endif
+  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
+
   /* Setup groups and communicators */
 
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
@@ -169,12 +178,7 @@ int PARMCI_Init(void) {
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
 
-#ifdef USE_WIN_ALLOCATE
-      printf("  WINDOW type used       = %s\n", "ALLOCATE");
-#else
-      printf("  WINDOW type used       = %s\n", "CREATE");
-#endif
-
+      printf("  WINDOW type used       = %s\n", ARMCII_GLOBAL_STATE.use_win_allocate ? "ALLOCATE" : "CREATE");
       printf("  STRIDED_METHOD         = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD             = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
