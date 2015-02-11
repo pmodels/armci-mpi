@@ -63,13 +63,13 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
-#ifdef USE_ALLOC_SHM
+  if (ARMCII_GLOBAL_STATE.use_alloc_shm) {
       MPI_Info alloc_shm_info;
       MPI_Info_create(&alloc_shm_info);
       MPI_Info_set(alloc_shm_info, "alloc_shm", "true");
-#else
+  } else /* no alloc_shm */ {
       MPI_Info alloc_shm_info = MPI_INFO_NULL;
-#endif
+  }
 
   if (ARMCII_GLOBAL_STATE.use_win_allocate) {
 
@@ -92,9 +92,9 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   } /* win allocate/create */
 
-#ifdef USE_ALLOC_SHM
-  MPI_Info_free(&alloc_shm_info);
-#endif
+  if (ARMCII_GLOBAL_STATE.use_alloc_shm) {
+      MPI_Info_free(&alloc_shm_info);
+  }
 
   /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {

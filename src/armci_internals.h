@@ -75,6 +75,7 @@ typedef struct {
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
   int           use_win_allocate;       /* Use win_allocate or win_create                                       */
+  int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */

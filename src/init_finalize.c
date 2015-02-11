@@ -151,6 +151,10 @@ int PARMCI_Init(void) {
 #endif
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
 
+  /* Pass alloc_shm to win_allocate / alloc_mem */
+
+  ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);
+
   /* Setup groups and communicators */
 
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
@@ -178,6 +182,7 @@ int PARMCI_Init(void) {
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
 
+      printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
       printf("  WINDOW type used       = %s\n", ARMCII_GLOBAL_STATE.use_win_allocate ? "ALLOCATE" : "CREATE");
       if (ARMCII_GLOBAL_STATE.use_win_allocate) {
           /* Jeff: Using win_allocate leads to correctness issues with some
