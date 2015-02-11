@@ -151,6 +151,15 @@ int PARMCI_Init(void) {
 #endif
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
 
+  if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+      /* Jeff: Using win_allocate leads to correctness issues with some
+       *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
+      /* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
+      /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and 
+       *                     it is fixed upstream. */
+      ARMCII_Warning("MPI_Win_allocate can lead to correctness issues.\n");
+  }
+
   /* Setup groups and communicators */
 
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);

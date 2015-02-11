@@ -72,12 +72,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 #endif
 
   if (ARMCII_GLOBAL_STATE.use_win_allocate) {
-      /* Jeff: Using win_allocate leads to correctness issues with some
-       *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
-      /* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
-      /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and 
-       *                     it is fixed upstream. */
-      ARMCII_Warning("MPI_Win_allocate can lead to correctness issues.\n");
 
       MPI_Win_allocate( (MPI_Aint) local_size, 1, alloc_shm_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
