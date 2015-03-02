@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+#include <pthread.h>
+
 #include <debug.h>
 #include <armci.h>
 #include <armci_internals.h>
@@ -21,6 +23,7 @@
   */
 static armcix_mutex_hdl_t armci_mutex_hdl = NULL; /* RACE */
 
+static pthread_mutex_t armci_mutex_hdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -37,15 +40,19 @@ static armcix_mutex_hdl_t armci_mutex_hdl = NULL; /* RACE */
   * @param[in] count Number of mutexes to create on the calling process
   */
 int PARMCI_Create_mutexes(int count) {
+
+  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+
   if (armci_mutex_hdl != NULL)
     ARMCII_Error("attempted to create ARMCI mutexes multiple times");
 
   armci_mutex_hdl = ARMCIX_Create_mutexes_hdl(count, &ARMCI_GROUP_WORLD);
 
-  if (armci_mutex_hdl != NULL)
-    return 0;
-  else
-    return 1;
+  int rc = ((armci_mutex_hdl != NULL) ? 0 : 1);
+
+  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+
+  return rc;
 }
 
 
@@ -62,13 +69,16 @@ int PARMCI_Create_mutexes(int count) {
 /** Destroy/free ARMCI mutexes.  Collective.
   */
 int PARMCI_Destroy_mutexes(void) {
-  int err;
+
+  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
 
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to free unallocated ARMCI mutexes");
   
-  err = ARMCIX_Destroy_mutexes_hdl(armci_mutex_hdl);
+  int err = ARMCIX_Destroy_mutexes_hdl(armci_mutex_hdl);
   armci_mutex_hdl = NULL;
+
+  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
 
   return err;
 }
@@ -90,10 +100,15 @@ int PARMCI_Destroy_mutexes(void) {
   * @param[in] proc  Target process for the lock operation
   */
 void PARMCI_Lock(int mutex, int proc) {
+
+  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to lock on unallocated ARMCI mutexes");
   
   ARMCIX_Lock_hdl(armci_mutex_hdl, mutex, proc);
+
+  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
 }
 
 
@@ -113,8 +128,13 @@ void PARMCI_Lock(int mutex, int proc) {
   * @param[in] proc  Target process for the unlock operation
   */
 void PARMCI_Unlock(int mutex, int proc) {
+
+  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to unlock on unallocated ARMCI mutexes");
   
   ARMCIX_Unlock_hdl(armci_mutex_hdl, mutex, proc);
+
+  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
 }
