@@ -471,12 +471,13 @@ int proc;
 
 void test_nbdim()
 {
-int elems=1,elems1=1;
-int i,j, proc,ndim,rc;
-void *b[MAXDIMS+1][MAXPROC];
-void *a[MAXDIMS+1], *c[MAXDIMS+1];
-armci_hdl_t hdl_put[MAXDIMS+1],hdl_get[MAXDIMS+1];
-int idx1=0, idx2=0, idx3=0;
+    int elems=1,elems1=1;
+    int i,j, proc,ndim,rc;
+    void *b[MAXDIMS+1][MAXPROC];
+    void *a[MAXDIMS+1], *c[MAXDIMS+1];
+    armci_hdl_t hdl_put[MAXDIMS+1],hdl_get[MAXDIMS+1];
+    int idx1=0, idx2=0, idx3=0;
+
     /* create shared and local arrays */
     for(ndim=1;ndim<=MAXDIMS;ndim++){
        elems1*= dimsB[ndim-1];
@@ -534,7 +535,7 @@ int idx1=0, idx2=0, idx3=0;
                           strideB, count, ndim-1, proc,(hdl_put+ndim));
        }
     }
-sleep(5);
+    sleep(5);
     MP_BARRIER();
     /*before we do gets, we have to make sure puts are complete 
       on the remote processor*/
@@ -606,8 +607,8 @@ sleep(5);
 
 void verify_vector_data(double *data,int procs,int isput,int datalen)
 {
-double facto=2.89;
-int i,j=0,k=0,kc=0,dst=0;
+    double facto=2.89;
+    int i,j=0,k=0,kc=0,dst=0;
     if(isput)facto=1.89;
     for(i=0;i<datalen;i++){
        if(dst!=me)
@@ -1714,6 +1715,7 @@ int main(int argc, char* argv[])
 /*
        if(me==1)armci_die("process 1 committing suicide",1);
 */
+    /*
         if(me==0){
            printf("\nTesting strided gets and puts\n");
            printf("(Only std output for process 0 is printed)\n\n"); 
@@ -1723,7 +1725,7 @@ int main(int argc, char* argv[])
         for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim);
         ARMCI_AllFence();
         MP_BARRIER();
-
+    */
         if(me==0){
            printf("\nTesting non-blocking gets and puts\n");
            fflush(stdout);
