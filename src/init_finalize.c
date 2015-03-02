@@ -14,11 +14,11 @@
 
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
-#  pragma weak ARMCI_Init = PARMCI_Init
+#  pragma weak ARMCI_Init_thread = PARMCI_Init_thread
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#  pragma _HP_SECONDARY_DEF PARMCI_Init ARMCI_Init
+#  pragma _HP_SECONDARY_DEF PARMCI_Init_thread ARMCI_Init_thread
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#  pragma _CRI duplicate ARMCI_Init as PARMCI_Init
+#  pragma _CRI duplicate ARMCI_Init_thread as PARMCI_Init_thread
 #endif
 /* -- end weak symbols block -- */
 
@@ -28,10 +28,9 @@
   *
   * @return            Zero on success
   */
-int PARMCI_Init(void) {
-  char *var;
+int PARMCI_Init_thread(int armci_requested) {
 
-  /* GA/TCGMSG end up calling ARMCI_Init() multiple times. */
+  /* GA/TCGMSG end up calling ARMCI_Init_thread() multiple times. */
   if (ARMCII_GLOBAL_STATE.init_count > 0) {
     ARMCII_GLOBAL_STATE.init_count++;
     return 0;
@@ -44,6 +43,15 @@ int PARMCI_Init(void) {
     MPI_Finalized(&mpi_is_fin);
     if (!mpi_is_init || mpi_is_fin) 
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
+  }
+
+  /* Check for MPI thread-support */
+  {
+    int mpi_provided;
+    MPI_Query_thread(&mpi_provided);
+
+    if (mpi_provided<armci_requested)
+      ARMCII_Error("MPI thread level below ARMCI thread level!");
   }
 
   /* Set defaults */
@@ -89,7 +97,7 @@ int PARMCI_Init(void) {
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
 #endif
 
-  var = ARMCII_Getenv("ARMCI_IOV_METHOD");
+  char *var = ARMCII_Getenv("ARMCI_IOV_METHOD");
   if (var != NULL) {
     if (strcmp(var, "AUTO") == 0)
       ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_AUTO;
@@ -240,7 +248,28 @@ int PARMCI_Init(void) {
   * @return            Zero on success
   */
 int PARMCI_Init_args(int *argc, char ***argv) {
-  return PARMCI_Init();
+  return PARMCI_Init_thread(MPI_THREAD_SINGLE);
+}
+
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Init = PARMCI_Init
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Init ARMCI_Init
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Init as PARMCI_Init
+#endif
+/* -- end weak symbols block -- */
+
+/** Initialize ARMCI.  MPI must be initialized before this can be called.  It
+  * is invalid to make ARMCI calls before initialization.  Collective on the
+  * world group.
+  *
+  * @return            Zero on success
+  */
+int PARMCI_Init(void) {
+  return PARMCI_Init_thread(MPI_THREAD_SINGLE);
 }
 
 
