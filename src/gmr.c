@@ -194,6 +194,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   int ptrc;
   ptrc = pthread_mutex_lock(&gmr_list_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   /* Append the new region onto the region list */
   if (gmr_list == NULL) {
@@ -210,6 +211,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   }
 
   ptrc = pthread_mutex_unlock(&gmr_list_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   return mreg;
 }
@@ -266,6 +268,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
 
   int ptrc;
   ptrc = pthread_mutex_lock(&gmr_list_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   /* Remove from the list of mem regions */
   if (mreg->prev == NULL) {
@@ -282,6 +285,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   }
 
   ptrc = pthread_mutex_unlock(&gmr_list_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
   MPI_Win_unlock_all(mreg->window);

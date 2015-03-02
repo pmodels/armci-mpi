@@ -42,6 +42,7 @@ static pthread_mutex_t armci_mutex_hdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 int PARMCI_Create_mutexes(int count) {
 
   int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   if (armci_mutex_hdl != NULL)
     ARMCII_Error("attempted to create ARMCI mutexes multiple times");
@@ -51,6 +52,7 @@ int PARMCI_Create_mutexes(int count) {
   int rc = ((armci_mutex_hdl != NULL) ? 0 : 1);
 
   ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   return rc;
 }
@@ -71,6 +73,7 @@ int PARMCI_Create_mutexes(int count) {
 int PARMCI_Destroy_mutexes(void) {
 
   int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to free unallocated ARMCI mutexes");
@@ -79,6 +82,7 @@ int PARMCI_Destroy_mutexes(void) {
   armci_mutex_hdl = NULL;
 
   ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   return err;
 }
@@ -102,6 +106,7 @@ int PARMCI_Destroy_mutexes(void) {
 void PARMCI_Lock(int mutex, int proc) {
 
   int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to lock on unallocated ARMCI mutexes");
@@ -109,6 +114,7 @@ void PARMCI_Lock(int mutex, int proc) {
   ARMCIX_Lock_hdl(armci_mutex_hdl, mutex, proc);
 
   ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 }
 
 
@@ -130,6 +136,7 @@ void PARMCI_Lock(int mutex, int proc) {
 void PARMCI_Unlock(int mutex, int proc) {
 
   int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 
   if (armci_mutex_hdl == NULL)
     ARMCII_Error("attempted to unlock on unallocated ARMCI mutexes");
@@ -137,4 +144,5 @@ void PARMCI_Unlock(int mutex, int proc) {
   ARMCIX_Unlock_hdl(armci_mutex_hdl, mutex, proc);
 
   ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+  ARMCII_Assert(ptrc == 0);
 }
