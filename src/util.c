@@ -137,7 +137,7 @@ void ARMCII_Bzero(void *buf, armci_size_t size) {
 }
 
 
-static const unsigned char log2_table[256] = 
+static const unsigned char log2_table[256] = /* NO RACE */
     { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
       4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
       5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6,

@@ -7,6 +7,8 @@
 #include <string.h>
 #include <mpi.h>
 
+#include <pthread.h>
+
 #include <armci.h>
 #include <armcix.h>
 #include <armci_internals.h>
@@ -17,6 +19,7 @@
   */
 gmr_t *gmr_list = NULL;
 
+static pthread_mutex_t gmr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /** Create a distributed shared memory region. Collective on ARMCI group.
   *
@@ -171,6 +174,9 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     }
   }
 
+  int ptrc;
+  ptrc = pthread_mutex_lock(&gmr_list_mutex);
+
   /* Append the new region onto the region list */
   if (gmr_list == NULL) {
     gmr_list = mreg;
@@ -184,6 +190,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     parent->next = mreg;
     mreg->prev   = parent;
   }
+
+  ptrc = pthread_mutex_unlock(&gmr_list_mutex);
 
   return mreg;
 }
@@ -238,6 +246,9 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   /* If it's still not found, the user may have passed the wrong group */
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
+  int ptrc;
+  ptrc = pthread_mutex_lock(&gmr_list_mutex);
+
   /* Remove from the list of mem regions */
   if (mreg->prev == NULL) {
     ARMCII_Assert(gmr_list == mreg);
@@ -251,6 +262,8 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
     if (mreg->next != NULL)
       mreg->next->prev = mreg->prev;
   }
+
+  ptrc = pthread_mutex_unlock(&gmr_list_mutex);
 
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
   MPI_Win_unlock_all(mreg->window);
