@@ -19,7 +19,7 @@
 /** This is the handle for the "default" group of mutexes used by the
   * standard ARMCI mutex API
   */
-static armcix_mutex_hdl_t armci_mutex_hdl = NULL;
+static armcix_mutex_hdl_t armci_mutex_hdl = NULL; /* RACE */
 
 
 /* -- begin weak symbols block -- */
