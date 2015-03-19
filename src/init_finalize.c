@@ -187,6 +187,31 @@ int PARMCI_Init(void) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
   }
 
+  /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
+
+#ifdef USE_WIN_ALLOCATE
+  int win_alloc_default = 1;
+#else
+  int win_alloc_default = 0;
+#endif
+  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
+
+  /* Pass alloc_shm to win_allocate / alloc_mem */
+
+  ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);
+
+  /* Enable RMA element-wise atomicity */
+
+  ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
+
+  /* Flush_local becomes flush */
+
+  ARMCII_GLOBAL_STATE.end_to_end_flush=ARMCII_Getenv_bool("ARMCI_NO_FLUSH_LOCAL", 0);
+
+  /* Use MPI_MODE_NOCHECK assertion */
+
+  ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
+
   /* Setup groups and communicators */
 
   MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
@@ -221,11 +246,16 @@ int PARMCI_Init(void) {
       }
 #endif
 
-#ifdef USE_WIN_ALLOCATE
-      printf("  WINDOW type used       = %s\n", "ALLOCATE");
-#else
-      printf("  WINDOW type used       = %s\n", "CREATE");
-#endif
+      printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
+      printf("  WINDOW type used       = %s\n", ARMCII_GLOBAL_STATE.use_win_allocate ? "ALLOCATE" : "CREATE");
+      if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+          /* Jeff: Using win_allocate leads to correctness issues with some
+           *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
+          /* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
+          /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and 
+           *                     it is fixed upstream. */
+          ARMCII_Warning("MPI_Win_allocate can lead to correctness issues.\n");
+      }
 
       printf("  STRIDED_METHOD         = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD             = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
