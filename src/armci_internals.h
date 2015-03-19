@@ -76,6 +76,9 @@ typedef struct {
   int           verbose;                /* ARMCI should produce extra status output                             */
   int           use_win_allocate;       /* Use win_allocate or win_create                                       */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
+  int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
+  int           end_to_end_flush;       /* All flush_local calls become flush                                   */
+  int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
