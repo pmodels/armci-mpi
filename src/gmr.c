@@ -144,7 +144,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   MPI_Group_free(&world_group);
   MPI_Group_free(&alloc_group);
 
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, mreg->window);
+  MPI_Win_lock_all((ARMCII_GLOBAL_STATE.rma_nocheck) ? MPI_MODE_NOCHECK : 0,
+                   mreg->window);
 
   {
     void    *attr_ptr;
@@ -364,11 +365,13 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-#ifdef RMA_PROPER_ATOMICITY
-  MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window);
-#else
-  MPI_Put(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, mreg->window);
-#endif
+  if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+      MPI_Accumulate(src, src_count, src_type, grp_proc,
+                     (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window);
+  } else {
+      MPI_Put(src, src_count, src_type, grp_proc,
+              (MPI_Aint) disp, dst_count, dst_type, mreg->window);
+  }
 
   return 0;
 }
@@ -424,11 +427,13 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-#ifdef RMA_PROPER_ATOMICITY
-  MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
-#else
-  MPI_Get(dst, dst_count, dst_type, grp_proc, (MPI_Aint) disp, src_count, src_type, mreg->window);
-#endif
+  if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+    MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc,
+                       (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
+  } else {
+      MPI_Get(dst, dst_count, dst_type, grp_proc,
+              (MPI_Aint) disp, src_count, src_type, mreg->window);
+  }
 
   return 0;
 }

@@ -119,7 +119,8 @@ int gmr_lockall(gmr_t *mreg) {
   ARMCII_Assert(grp_me >= 0);
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, mreg->window);
+  MPI_Win_lock_all((ARMCII_GLOBAL_STATE.rma_nocheck) ? MPI_MODE_NOCHECK : 0,
+                   mreg->window);
 
   return 0;
 }
@@ -155,10 +156,11 @@ int gmr_flush(gmr_t *mreg, int proc, int local_only) {
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
   ARMCII_Assert_msg(grp_proc < mreg->group.size, "grp_proc exceeds group size!");
 
-  if (local_only)
-    MPI_Win_flush_local(grp_proc, mreg->window);
-  else
+  if (!local_only || ARMCII_GLOBAL_STATE.end_to_end_flush) {
     MPI_Win_flush(grp_proc, mreg->window);
+  } else {
+    MPI_Win_flush_local(grp_proc, mreg->window);
+  }
 
   return 0;
 }
@@ -174,10 +176,11 @@ int gmr_flushall(gmr_t *mreg, int local_only) {
   ARMCII_Assert(grp_me >= 0);
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
-  if (local_only)
-    MPI_Win_flush_local_all(mreg->window);
-  else
+  if (!local_only || ARMCII_GLOBAL_STATE.end_to_end_flush) {
     MPI_Win_flush_all(mreg->window);
+  } else {
+    MPI_Win_flush_local_all(mreg->window);
+  }
 
   return 0;
 }
