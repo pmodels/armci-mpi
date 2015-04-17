@@ -428,8 +428,8 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
   if (ARMCII_GLOBAL_STATE.rma_atomicity) {
-    MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc,
-                       (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
+      MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc,
+                         (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
   } else {
       MPI_Get(dst, dst_count, dst_type, grp_proc,
               (MPI_Aint) disp, src_count, src_type, mreg->window);
