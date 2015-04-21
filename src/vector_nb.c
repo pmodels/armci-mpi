@@ -29,6 +29,11 @@
   */
 int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   int v;
+  int blocking = 0;
+
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+      blocking = 1;
+  }
 
   for (v = 0; v < iov_len; v++) {
     void **src_buf;
@@ -42,7 +47,7 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 
     ARMCII_Buf_prepare_read_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_PUT, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, 0,
-                           overlapping, same_alloc, proc, 0 /* nonblocking */);
+                           overlapping, same_alloc, proc, blocking);
     ARMCII_Buf_finish_read_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -78,6 +83,11 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
   */
 int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   int v;
+  int blocking = 0;
+
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+      blocking = 1;
+  }
 
   for (v = 0; v < iov_len; v++) {
     void **dst_buf;
@@ -92,7 +102,7 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
 
     ARMCII_Buf_prepare_write_vec(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_GET, iov[v].src_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes, 0,
-                           overlapping, same_alloc, proc, 0 /* nonblocking */);
+                           overlapping, same_alloc, proc, blocking);
     ARMCII_Buf_finish_write_vec(iov[v].dst_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -128,6 +138,11 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
   */
 int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
   int v;
+  int blocking = 0;
+
+  if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
+      blocking = 1;
+  }
 
   for (v = 0; v < iov_len; v++) {
     void **src_buf;
@@ -141,7 +156,7 @@ int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int
 
     ARMCII_Buf_prepare_acc_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);
     ARMCII_Iov_op_dispatch(ARMCII_OP_ACC, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, datatype,
-                           overlapping, same_alloc, proc, 0 /* nonblocking */);
+                           overlapping, same_alloc, proc, blocking);
     ARMCII_Buf_finish_acc_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
