@@ -141,6 +141,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   MPI_Comm     comm;
   int          mpi_type_size;
 
+  /* FIXME: scope argument presently ignored */
   if (scope == SCOPE_ALL || scope == SCOPE_MASTERS)
     comm = group->comm;
   else
@@ -200,7 +201,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     out = malloc(n*mpi_type_size);
     ARMCII_Assert(out != NULL);
 
-    MPI_Allreduce(x_buf[0], out, n, mpi_type, mpi_op, group->comm);
+    MPI_Allreduce(x_buf[0], out, n, mpi_type, mpi_op, comm);
 
     ARMCI_Copy(out, x_buf[0], n*mpi_type_size);
     free(out);
