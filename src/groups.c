@@ -125,11 +125,10 @@ static inline void ARMCI_Group_create_comm_noncollective(int grp_size, int *pid_
     ARMCI_Group *armci_grp_parent) {
 
   const int INTERCOMM_TAG = 42;
-  int       i, grp_me, me, nproc, merge_size;
+  int       i, grp_me, me, merge_size;
   MPI_Comm  pgroup, inter_pgroup;
 
   me    = armci_grp_parent->rank;
-  nproc = armci_grp_parent->size;
 
   /* CHECK: If I'm not a member, return COMM_NULL */
   grp_me = -1;
