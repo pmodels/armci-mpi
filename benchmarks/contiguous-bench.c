@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
 
   for (target_rank = 1; rank == 0 && target_rank < nproc; target_rank++) {
     for (data_size = sizeof(double); data_size <= MAX_DATA_SIZE; data_size *= 2) {
-      double t_get, t_put, t_acc;
+      double t_get=0, t_put=0, t_acc=0;
 
       for (test_iter = 0; test_iter < NUM_ITERATIONS + NUM_WARMUP_ITER; test_iter++) {
         if (test_iter == NUM_WARMUP_ITER)
