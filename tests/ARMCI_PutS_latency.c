@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
    int xdim, ydim;
    long bufsize;
    double **buffer;
-   double t_start, t_stop;
+   double t_start=0.0, t_stop=0.0;
    int count[2], src_stride, trg_stride, stride_level, peer;
    double expected, actual;
    int provided;
