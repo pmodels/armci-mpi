@@ -310,12 +310,10 @@ int ARMCII_Buf_acc_is_scaled(int datatype, void *scale) {
 void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale) {
   int   j, nelem;
   int   type_size = -1;
-  MPI_Datatype type;
 
   switch (datatype) {
     case ARMCI_ACC_INT:
       MPI_Type_size(MPI_INT, &type_size);
-      type = MPI_INT;
       nelem= size/type_size;
 
       {
@@ -330,7 +328,6 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
     case ARMCI_ACC_LNG:
       MPI_Type_size(MPI_LONG, &type_size);
-      type = MPI_LONG;
       nelem= size/type_size;
 
       {
@@ -345,7 +342,6 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
     case ARMCI_ACC_FLT:
       MPI_Type_size(MPI_FLOAT, &type_size);
-      type = MPI_FLOAT;
       nelem= size/type_size;
 
       {
@@ -360,7 +356,6 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
     case ARMCI_ACC_DBL:
       MPI_Type_size(MPI_DOUBLE, &type_size);
-      type = MPI_DOUBLE;
       nelem= size/type_size;
 
       {
@@ -375,7 +370,6 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
     case ARMCI_ACC_CPL:
       MPI_Type_size(MPI_FLOAT, &type_size);
-      type = MPI_FLOAT;
       nelem= size/type_size;
 
       {
@@ -400,7 +394,6 @@ void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, v
 
     case ARMCI_ACC_DCP:
       MPI_Type_size(MPI_DOUBLE, &type_size);
-      type = MPI_DOUBLE;
       nelem= size/type_size;
 
       {
