@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     size_t xdim, ydim;
     unsigned long bufsize;
     double **buffer, *src_buf;
-    double t_start, t_stop;
+    double t_start=0.0, t_stop;
     int count[2], src_stride, trg_stride, stride_level;
     double scaling;
     int provided;

@@ -77,7 +77,7 @@ int main(int argc, char ** argv) {
 
       for (ydim = 1; ydim <= MAX_YDIM; ydim *= 2) {
         const int data_size = xdim*ydim*sizeof(double);
-        double    t_get, t_put, t_acc;
+        double    t_get=0.0, t_put=0.0, t_acc=0.0;
 
         count[1] = ydim;
 
