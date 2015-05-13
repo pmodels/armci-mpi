@@ -206,8 +206,6 @@ char *ARMCII_Getenv(const char *varname) {
 
 /** Retrieve the value of an integer environment variable.
   */
-int ARMCII_Getenv_int(char *varname, int default_value) {
-  char *var = getenv(varname);
 int ARMCII_Getenv_int(const char *varname, int default_value) {
   const char *var = getenv(varname);
   if (var) 
