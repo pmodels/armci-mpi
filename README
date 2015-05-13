@@ -133,6 +133,14 @@ ARMCI_CACHE_RANK_TRANSLATION (boolean)
 
   Create a table to more quickly translate between absolute and group ranks.
 
+ARMCI_PROGRESS_THREAD (boolean)
+
+  Create a Pthread to poke the MPI progress engine.
+
+ARMCI_PROGRESS_USLEEP (int)
+
+  Argument to usleep() to pause the progress polling loop.
+
  --------------------------
 : Noncollective Groups     :
  --------------------------
