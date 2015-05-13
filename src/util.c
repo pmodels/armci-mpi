@@ -16,7 +16,7 @@
 /** Fatal error, print the message and abort the program with the provided
   * error code.
   */
-void ARMCI_Error(char *msg, int code) {
+void ARMCI_Error(const char *msg, int code) {
   fprintf(stderr, "[%d] ARMCI Error: %s\n", ARMCI_GROUP_WORLD.rank, msg);
   fflush(NULL);
   MPI_Abort(ARMCI_GROUP_WORLD.comm, code);
@@ -120,7 +120,7 @@ int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
   * @param[out] dst  Destination buffer
   * @param[in]  size Number of bytes to copy
   */
-void ARMCI_Copy(void *src, void *dst, int size) {
+void ARMCI_Copy(const void *src, void *dst, int size) {
 #ifndef COPY_WITH_SENDRECV
   memcpy(dst, src, size);
 #else
@@ -183,8 +183,8 @@ int ARMCII_Log2(unsigned int val) {
 
 /** Retrieve the value of a boolean environment variable.
   */
-int ARMCII_Getenv_bool(char *varname, int default_value) {
-  char *var = getenv(varname);
+int ARMCII_Getenv_bool(const char *varname, int default_value) {
+  const char *var = getenv(varname);
 
   if (var == NULL)
     return default_value;
@@ -199,7 +199,7 @@ int ARMCII_Getenv_bool(char *varname, int default_value) {
 
 /** Retrieve the value of a environment variable.
   */
-char *ARMCII_Getenv(char *varname) {
+char *ARMCII_Getenv(const char *varname) {
   return getenv(varname);
 }
 
@@ -208,6 +208,8 @@ char *ARMCII_Getenv(char *varname) {
   */
 int ARMCII_Getenv_int(char *varname, int default_value) {
   char *var = getenv(varname);
+int ARMCII_Getenv_int(const char *varname, int default_value) {
+  const char *var = getenv(varname);
   if (var) 
     return atoi(var);
   else
