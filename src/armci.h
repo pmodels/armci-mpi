@@ -17,6 +17,7 @@ typedef long armci_size_t;
 
 int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);
+int   ARMCI_Init_thread(int armci_requested);
 int   ARMCI_Initialized(void);
 
 int   ARMCI_Finalize(void);
