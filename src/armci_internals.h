@@ -101,9 +101,9 @@ extern global_state_t ARMCII_GLOBAL_STATE;
 
 void  ARMCII_Bzero(void *buf, armci_size_t size);
 int   ARMCII_Log2(unsigned int val);
-char *ARMCII_Getenv(char *varname);
-int   ARMCII_Getenv_bool(char *varname, int default_value);
-int   ARMCII_Getenv_int(char *varname, int default_value);
+char *ARMCII_Getenv(const char *varname);
+int   ARMCII_Getenv_bool(const char *varname, int default_value);
+int   ARMCII_Getenv_int(const char *varname, int default_value);
 
 /* Synchronization */
 
