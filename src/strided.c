@@ -20,7 +20,7 @@
   * @param[in]  old_type        Type of the data element described by count and stride_array
   * @param[out] new_type        New MPI type for the given strided access
   */
-void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
+static void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
                              int stride_levels, MPI_Datatype old_type, MPI_Datatype *new_type)
 {
   int sizes   [stride_levels+1];
@@ -310,6 +310,7 @@ int PARMCI_AccS(int datatype, void *scale,
     gmr_t *mreg, *gmr_loc = NULL;
     MPI_Datatype src_type, dst_type, mpi_datatype;
     int          scaled, mpi_datatype_size;
+    int          src_size, dst_size;
 
     ARMCII_Acc_type_translate(datatype, &mpi_datatype, &mpi_datatype_size);
     scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
@@ -376,8 +377,6 @@ int PARMCI_AccS(int datatype, void *scale,
 
     MPI_Type_commit(&src_type);
     MPI_Type_commit(&dst_type);
-
-    int src_size, dst_size;
 
     MPI_Type_size(src_type, &src_size);
     MPI_Type_size(dst_type, &dst_size);
