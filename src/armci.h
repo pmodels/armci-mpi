@@ -20,7 +20,7 @@ int   ARMCI_Initialized(void);
 int   ARMCI_Finalize(void);
 void  ARMCI_Cleanup(void);
 
-void  ARMCI_Error(char *msg, int code);
+void  ARMCI_Error(const char *msg, int code);
 
 int   ARMCI_Malloc(void **base_ptrs, armci_size_t size);
 int   ARMCI_Free(void *ptr);
@@ -35,7 +35,7 @@ void  ARMCI_AllFence(void);
 void  ARMCI_Access_begin(void *ptr); /* NEW API */
 void  ARMCI_Access_end(void *ptr);   /* NEW API */
 
-void  ARMCI_Copy(void *src, void *dst, int size);
+void  ARMCI_Copy(const void *src, void *dst, int size);
 
 int   ARMCI_Get(void *src, void *dst, int size, int target);
 int   ARMCI_Put(void *src, void *dst, int size, int target);
