@@ -259,11 +259,11 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   /* Destroy the window and free all buffers */
   MPI_Win_free(&mreg->window);
 
-#ifdef USE_WIN_CREATE
-  if (mreg->slices[world_me].base != NULL) {
-    MPI_Free_mem(mreg->slices[world_me].base);
+  if (!ARMCII_GLOBAL_STATE.use_win_allocate) {
+    if (mreg->slices[world_me].base != NULL) {
+      MPI_Free_mem(mreg->slices[world_me].base);
+    }
   }
-#endif
 
   free(mreg->slices);
   free(mreg);
