@@ -14,7 +14,10 @@
 
 #ifdef HAVE_PTHREADS
 #include <pthread.h>
+
+#ifndef _BSD_SOURCE
 #define _BSD_SOURCE
+#endif
 #include <unistd.h> /* usleep */
 
 int progress_active;
