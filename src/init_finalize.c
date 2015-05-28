@@ -21,6 +21,7 @@
 #include <unistd.h> /* usleep */
 
 int progress_active;
+pthread_t ARMCI_Progress_thread;
 
 static void * progress_function(void * arg)
 {
