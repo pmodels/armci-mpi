@@ -38,9 +38,9 @@ void bmodd(double *, double*, int, int, int, int);
 void bmod(double *, double *, double *, int, int, int, int, int, int);
 void daxpy(double *, double *, int, double);
 int block_owner(int, int);
-void init_array();
+void init_array(void);
 double touch_array(int, int);
-void print_block();
+void print_block(void);
 void print_array(int);
 void get_remote(double *, int, int);
 
@@ -423,7 +423,7 @@ int block_owner(int I, int J)
     return((I+J*nblocks)/num);
 }
 
-void init_array()
+void init_array(void)
 {
     int i, j;
     int ii, jj;
@@ -553,7 +553,7 @@ void print_array(int myid)
     free(buf);
 }
 
-void print_block()
+void print_block(void)
 {
     int i, j, k;
 
