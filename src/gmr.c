@@ -159,7 +159,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
         if ( (*attr_val)==MPI_WIN_SEPARATE ) {
           printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
         } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
-#if DEBUG
+#ifdef DEBUG
           printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
 #endif
         } else {
