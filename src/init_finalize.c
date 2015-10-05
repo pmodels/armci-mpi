@@ -34,7 +34,7 @@ static void * progress_function(void * arg)
     volatile int * active = (volatile int*)arg;
 #if defined(HAVE_NANOSLEEP)
     int naptime = 1000 * ARMCII_GLOBAL_STATE.progress_usleep;
-    struct timespec napstruct = { .tv_sec  = 0, 
+    struct timespec napstruct = { .tv_sec  = 0,
                                   .tv_nsec = naptime };
 #elif defined(HAVE_USLEEP)
     int naptime = ARMCII_GLOBAL_STATE.progress_usleep;
