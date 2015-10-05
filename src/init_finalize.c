@@ -15,10 +15,16 @@
 #ifdef HAVE_PTHREADS
 #include <pthread.h>
 
+#if defined(HAVE_NANOSLEEP)
+#include <time.h>
+#elif defined(HAVE_USLEEP)
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
 #include <unistd.h> /* usleep */
+#else
+#warning No naptime available!
+#endif
 
 int progress_active;
 pthread_t ARMCI_Progress_thread;
@@ -26,11 +32,21 @@ pthread_t ARMCI_Progress_thread;
 static void * progress_function(void * arg)
 {
     volatile int * active = (volatile int*)arg;
+#if defined(HAVE_NANOSLEEP)
+    int naptime = 1000 * ARMCII_GLOBAL_STATE.progress_usleep;
+    struct timespec napstruct = { .tv_sec  = 0, 
+                                  .tv_nsec = naptime };
+#elif defined(HAVE_USLEEP)
     int naptime = ARMCII_GLOBAL_STATE.progress_usleep;
+#endif
 
     while(*active) {
         ARMCIX_Progress();
+#if defined(HAVE_NANOSLEEP)
+        if (naptime) nanosleep(&napstruct,NULL);
+#elif defined(HAVE_USLEEP)
         if (naptime) usleep(naptime);
+#endif
     }
 
     pthread_exit(NULL);
