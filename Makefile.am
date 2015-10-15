@@ -5,6 +5,8 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/src
 
+EXTRA_DIST = VERSION
+
 lib_LTLIBRARIES = libarmci.la
 
 # Needed to connect with the GA build system
