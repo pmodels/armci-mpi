@@ -42,7 +42,7 @@ libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
 libarmcii_la_SOURCES = $(libarmci_la_SOURCES)
 libarmcii_la_LDFLAGS = $(libarmci_abi_version)
 
-include_HEADERS = src/armci.h src/message.h src/armcix.h
+include_HEADERS = src/armciconf.h src/armci.h src/armci_internals.h src/armcix.h src/conflict_tree.h src/debug.h src/gmr.h src/message.h src/mp3.h
 
 bin_PROGRAMS =
 check_PROGRAMS = 
