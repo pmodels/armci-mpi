@@ -128,6 +128,8 @@ fi
 AC_CHECK_HEADERS([execinfo.h stdint.h inttypes.h unistd.h time.h])
 AC_TYPE_UINT8_T
 AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+LIBS="$PTHREAD_LIBS $LIBS"
 AC_CHECK_FUNC([usleep], [AC_DEFINE([HAVE_USLEEP], [1], [Define if usleep exists.])])
 AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
 
