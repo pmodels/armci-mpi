@@ -19,4 +19,4 @@ script:
   - sh ./travis/build-run.sh $MPI_IMPL
 after_failure:
   - cat ./config.log
-  - head -n100 ./tests/*.log
+  - find . -name "*.log" -exec head -n 100 {} ";"
