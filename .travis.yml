@@ -8,7 +8,7 @@ compiler:
   #- clang
 env:
   - MPI_IMPL=mpich
-  - MPI_IMPL=openmpi
+  #- MPI_IMPL=openmpi
 before_install:
   # from http://askubuntu.com/questions/420991/install-autoconf-2-69-on-ubuntu-12-04/632769#632769
   - sudo add-apt-repository ppa:dns/gnu -y
