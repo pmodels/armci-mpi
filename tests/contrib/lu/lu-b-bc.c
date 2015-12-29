@@ -3,10 +3,12 @@
  *             Armci Version                      *
  *             Block and Cyclic distribution      *
  **************************************************/
-#   include <stdio.h>
-#   include <math.h>
-#   include <stdlib.h>
-#   include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <unistd.h>
+#include <getopt.h> /* required with C99 */
 
 #include "mp3.h"
 #include <armci.h>

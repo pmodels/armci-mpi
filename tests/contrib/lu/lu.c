@@ -3,12 +3,15 @@
  *             Armci Version                      *
  **************************************************/
 
-#   include <stdio.h>
-#   include <math.h>
-#   include <stdlib.h>
-#   include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <unistd.h>
+#include <getopt.h> /* required with C99 */
+
 #include <mpi.h>
-#include "armci.h"
+#include <armci.h>
 
 /*#define DEBUG*/
 #define MAXRAND   32767.0
