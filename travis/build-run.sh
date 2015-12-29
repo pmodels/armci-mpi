@@ -10,9 +10,21 @@ export CFLAGS="-std=c99"
 #export MPICH_CC=$CC
 export MPICC=mpicc
 
+# Capture details of build
+case "$MPI_IMPL" in
+    mpich*)
+        mpichversion
+        mpicc -show
+        ;;
+    openmpi)
+        ompi_info --arch --config --path
+        mpicc --showme:command
+        ;;
+esac
+
 # Configure and build
 ./autogen.sh
-./configure --enable-g --disable-static
+./configure --disable-static
 
 # Run unit tests
 export ARMCI_VERBOSE=1
