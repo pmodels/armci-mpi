@@ -2,13 +2,15 @@ sudo: true
 language: c
 os:
   - linux
-  #- osx
 compiler:
   - gcc
-  #- clang
+  - clang
+matrix:
+  allow_failures:
+    - env: MPI_IMPL=openmpi
 env:
   - MPI_IMPL=mpich
-  #- MPI_IMPL=openmpi
+  - MPI_IMPL=openmpi
 before_install:
   # from http://askubuntu.com/questions/420991/install-autoconf-2-69-on-ubuntu-12-04/632769#632769
   - sudo add-apt-repository ppa:dns/gnu -y
@@ -19,4 +21,5 @@ script:
   - sh ./travis/build-run.sh $MPI_IMPL
 after_failure:
   - cat ./config.log
+  - cat ./test-suite.log
   - find . -name "*.log" -exec head -n 100 {} ";"
