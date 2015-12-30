@@ -15,7 +15,7 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich|mpich3)
                 brew install mpich
-                ;; 
+                ;;
             openmpi)
                 brew install openmpi
                 ;;
@@ -37,9 +37,16 @@ case "$os" in
                 sudo apt-get install -q cmake gfortran mpich2 libmpich2-3 libmpich2-dev
                 ;;
             mpich|mpich3)
-                sudo apt-get install -q cmake gfortran libcr0 default-jdk
-                wget -q http://www.cebacad.net/files/mpich/ubuntu/mpich-3.2b3/mpich_3.2b3-1ubuntu_amd64.deb
-                sudo dpkg -i ./mpich_3.2b3-1ubuntu_amd64.deb
+                #sudo apt-get install -q cmake gfortran libcr0 default-jdk
+                #wget -q http://www.cebacad.net/files/mpich/ubuntu/mpich-3.2b3/mpich_3.2b3-1ubuntu_amd64.deb
+                #sudo dpkg -i ./mpich_3.2b3-1ubuntu_amd64.deb
+                wget --no-check-certificate -q http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
+                tar -xzf mpich-3.2.tar.gz
+                cd mpich-3.2
+                mkdir build && cd build
+                ../configure CC=$PRK_CC CXX=$PRK_CXX --disable-fortran --prefix=/usr
+                make -j4
+                sudo make install
                 ;;
             openmpi)
                 sudo apt-get install -q cmake gfortran openmpi-bin openmpi-common libopenmpi-dev
