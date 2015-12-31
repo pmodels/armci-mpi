@@ -1,6 +1,3 @@
-# Version
-ARMCI_VERSION=0.1
-
 # For libtool ABI versioning rules see:
 # http://www.nondot.org/sabre/Mirrored/libtool-2.1a/libtool_6.html#SEC36
 
