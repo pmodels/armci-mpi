@@ -25,7 +25,7 @@ env:
 before_install:
   - export TRAVIS_ROOT=$HOME/travis
   - mkdir $TRAVIS_ROOT
-  - sh ./install-autotools.sh $TRAVIS_ROOT
+  - sh ./travis/install-autotools.sh $TRAVIS_ROOT
 install:
   - sh ./travis/install-mpi.sh $TRAVIS_ROOT $MPI_IMPL
 script:
