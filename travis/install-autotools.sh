@@ -15,6 +15,7 @@ case "$os" in
         which glibtool
         which glibtoolize
         glibtool --version
+        mkdir -p ${TOP}/bin
         ln -s `which glibtool` ${TOP}/bin/libtool
         ln -s `which glibtoolize` ${TOP}/bin/libtoolize
         ;;
