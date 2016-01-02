@@ -1,7 +1,8 @@
-sudo: true
+sudo: false
 language: c
 os:
   - linux
+  - osx
 compiler:
   - gcc
   - clang
@@ -10,15 +11,25 @@ matrix:
     - env: MPI_IMPL=openmpi
 env:
   - MPI_IMPL=mpich
+    ARMCI_STRIDED_METHOD=DIRECT
+    ARMCI_IOV_METHOD=DIRECT
+  - MPI_IMPL=mpich
+    ARMCI_STRIDED_METHOD=IOV
+    ARMCI_IOV_METHOD=BATCHED
   - MPI_IMPL=openmpi
+    ARMCI_STRIDED_METHOD=DIRECT
+    ARMCI_IOV_METHOD=DIRECT
+  - MPI_IMPL=openmpi
+    ARMCI_STRIDED_METHOD=IOV
+    ARMCI_IOV_METHOD=BATCHED
 before_install:
-  # from http://askubuntu.com/questions/420991/install-autoconf-2-69-on-ubuntu-12-04/632769#632769
-  - sudo add-apt-repository ppa:dns/gnu -y
-  - sudo apt-get update -q
-  - sudo apt-get install --only-upgrade autoconf
-  - sh ./travis/install-deps.sh $MPI_IMPL
+  - export TRAVIS_ROOT=$HOME/travis
+  - mkdir $TRAVIS_ROOT
+  - sh ./install-autotools.sh $TRAVIS_ROOT
+install:
+  - sh ./travis/install-mpi.sh $TRAVIS_ROOT $MPI_IMPL
 script:
-  - sh ./travis/build-run.sh $MPI_IMPL
+  - sh ./travis/build-run.sh $TRAVIS_ROOT $MPI_IMPL
 after_failure:
   - cat ./config.log
   - cat ./test-suite.log
