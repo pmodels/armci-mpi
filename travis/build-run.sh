@@ -39,13 +39,4 @@ esac
 
 # Run unit tests
 export ARMCI_VERBOSE=1
-case "$MPI_IMPL" in
-    openmpi)
-        # OpenMPI RMA datatype support was (is?) broken...
-        make check
-        ;;
-    *)
-        # MPICH and derivatives support RMA datatypes...
-        make check
-        ;;
-esac
+make check
