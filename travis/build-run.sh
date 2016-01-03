@@ -28,7 +28,8 @@ case "$MPI_IMPL" in
         mpicc -show
         ;;
     openmpi)
-        ompi_info --arch --config
+        # this is missing with Mac build it seems
+        #ompi_info --arch --config
         mpicc --showme:command
         ;;
 esac
