@@ -21,7 +21,28 @@ case "$os" in
                 brew install mpich
                 ;;
             openmpi)
-                brew install openmpi
+                # Homebrew is still at 1.10.1, which is broken.
+                #brew install openmpi
+                if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
+                    wget -q --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
+                    tar -xjf openmpi-1.10.2rc3.tar.bz2
+                    cd openmpi-1.10.2rc3
+                    mkdir build && cd build
+                    ../configure CC=$PRK_CC CFLAGS="-w" CXX=$PRK_CXX --prefix=$TRAVIS_ROOT/open-mpi \
+                                --without-verbs --without-fca --without-mxm --without-ucx \
+                                --without-portals4 --without-psm --without-psm2 --without-libfabric \
+                                --without-udreg --without-ugni --without-alps --without-munge \
+                                --without-sge --without-loadleveler --without-tm \
+                                --without-lsf --without-slurm \
+                                --without-pvfs2 --without-plfs \
+                                --without-cuda --disable-oshmem \
+                                --disable-mpi-fortran --disable-oshmem-fortran \
+                                --disable-static
+                    make -j4
+                    make install
+                else
+                    echo "Open-MPI already installed"
+                fi
                 ;;
             *)
                 echo "Unknown MPI implementation: $MPI_IMPL"
