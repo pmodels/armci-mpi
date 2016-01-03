@@ -47,7 +47,7 @@ case "$os" in
                 fi
                 ;;
             openmpi)
-                if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
+                if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
                     wget -q --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
                     tar -xjf openmpi-1.10.2rc3.tar.bz2
                     cd openmpi-1.10.2rc3
