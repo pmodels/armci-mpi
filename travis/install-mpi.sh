@@ -39,7 +39,7 @@ case "$os" in
                     tar -xzf mpich-3.2.tar.gz
                     cd mpich-3.2
                     mkdir build && cd build
-                    ../configure CC=$PRK_CC CXX=$PRK_CXX --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
+                    ../configure CC=$PRK_CC CFLAGS="-Wnone" CXX=$PRK_CXX --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
                     make -j4
                     make install
                 else
@@ -52,7 +52,7 @@ case "$os" in
                     tar -xjf openmpi-1.10.1.tar.bz2
                     cd openmpi-1.10.1
                     mkdir build && cd build
-                    ../configure CC=$PRK_CC CXX=$PRK_CXX --prefix=$TRAVIS_ROOT/open-mpi \
+                    ../configure CC=$PRK_CC CFLAGS="-Wnone" CXX=$PRK_CXX --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
                                 --without-portals4 --without-psm --without-psm2 --without-libfabric \
                                 --without-udreg --without-ugni --without-alps --without-munge \
