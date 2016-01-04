@@ -50,7 +50,7 @@ TESTS =
 XFAIL_TESTS = 
 
 MPIEXEC = mpiexec -n 2
-TESTS_ENVIRONMENT = $(MPIEXEC)
+LOG_COMPILER=$(MPIEXEC)
 
 include benchmarks/Makefile.mk
 include tests/Makefile.mk
