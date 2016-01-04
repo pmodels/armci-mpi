@@ -36,7 +36,7 @@ esac
 
 # Configure and build
 ./autogen.sh
-./configure --disable-static
+./configure --disable-static --enable-win-allocate
 
 # Run unit tests
 export ARMCI_VERBOSE=1
