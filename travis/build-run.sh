@@ -3,28 +3,41 @@
 # Exit on error
 set -ev
 
-MPI_IMPL="$1"
+os=`uname`
+TRAVIS_ROOT="$1"
+MPI_IMPL="$2"
 
 # Environment variables
 export CFLAGS="-std=c99"
 #export MPICH_CC=$CC
 export MPICC=mpicc
 
+case "$os" in
+    Darwin)
+        ;;
+    Linux)
+       export PATH=$TRAVIS_ROOT/mpich/bin:$PATH
+       export PATH=$TRAVIS_ROOT/open-mpi/bin:$PATH
+       ;;
+esac
+
+# Capture details of build
+case "$MPI_IMPL" in
+    mpich)
+        mpichversion
+        mpicc -show
+        ;;
+    openmpi)
+        # this is missing with Mac build it seems
+        #ompi_info --arch --config
+        mpicc --showme:command
+        ;;
+esac
+
 # Configure and build
 ./autogen.sh
-./configure --enable-g --disable-static
+./configure --disable-static --enable-win-allocate
 
 # Run unit tests
 export ARMCI_VERBOSE=1
-case "$MPI_IMPL" in
-    openmpi)
-        # OpenMPI RMA datatype support was (is?) broken...
-        export ARMCI_STRIDED_METHOD=IOV
-        export ARMCI_IOV_METHOD=BATCHED
-        make check
-        ;;
-    *)
-        # MPICH and derivatives support RMA datatypes...
-        make check
-        ;;
-esac
+make check
