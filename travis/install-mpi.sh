@@ -56,7 +56,7 @@ case "$os" in
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
                                 --without-portals4 --without-psm --without-psm2 \
-                                --without-libfabric --with-usnic \
+                                --without-libfabric --without-usnic \
                                 --without-udreg --without-ugni --without-xpmem \
                                 --without-alps --without-munge \
                                 --without-sge --without-loadleveler --without-tm \
