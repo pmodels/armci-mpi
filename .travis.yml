@@ -12,6 +12,10 @@ compiler:
 matrix:
   allow_failures:
     - env: MPI_IMPL=openmpi
+    - env: MPI_IMPL=openmpi
+           ARMCI_STRIDED_METHOD=DIRECT
+           ARMCI_IOV_METHOD=DIRECT
+           ARMCI_USE_WIN_ALLOCATE=0
 env:
   #
   # MPICH
