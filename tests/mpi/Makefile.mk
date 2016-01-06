@@ -5,6 +5,7 @@
 check_PROGRAMS += \
                   tests/mpi/ping-pong-mpi               \
                   tests/mpi/test_mpi_accs               \
+                  tests/mpi/test_mpi_dim                \
                   tests/mpi/test_mpi_indexed_accs       \
                   tests/mpi/test_mpi_indexed_gets       \
                   tests/mpi/test_mpi_indexed_puts_gets  \
@@ -15,6 +16,7 @@ check_PROGRAMS += \
 
 TESTS          += \
                   tests/mpi/test_mpi_accs               \
+                  tests/mpi/test_mpi_dim                \
                   tests/mpi/test_mpi_indexed_accs       \
                   tests/mpi/test_mpi_indexed_gets       \
                   tests/mpi/test_mpi_indexed_puts_gets  \
