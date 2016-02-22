@@ -36,7 +36,7 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    wget -q --no-check-certificate http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
+                    wget --no-check-certificate http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
                     tar -xzf mpich-3.2.tar.gz
                     cd mpich-3.2
                     mkdir build && cd build
@@ -49,7 +49,7 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    wget -q --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
+                    wget --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
                     tar -xjf openmpi-1.10.2rc3.tar.bz2
                     cd openmpi-1.10.2rc3
                     mkdir build && cd build

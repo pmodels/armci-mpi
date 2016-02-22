@@ -15,6 +15,20 @@ matrix:
            ARMCI_STRIDED_METHOD=DIRECT
            ARMCI_IOV_METHOD=DIRECT
            ARMCI_USE_WIN_ALLOCATE=0
+    - env: MPI_IMPL=openmpi
+           ARMCI_STRIDED_METHOD=DIRECT
+           ARMCI_IOV_METHOD=DIRECT
+           ARMCI_USE_WIN_ALLOCATE=1
+    - env: MPI_IMPL=openmpi
+           ARMCI_STRIDED_METHOD=DIRECT
+           ARMCI_IOV_METHOD=DIRECT
+           ARMCI_USE_WIN_ALLOCATE=0
+           ARMCI_NO_FLUSH_LOCAL=1
+    - env: MPI_IMPL=openmpi
+           ARMCI_STRIDED_METHOD=DIRECT
+           ARMCI_IOV_METHOD=DIRECT
+           ARMCI_USE_WIN_ALLOCATE=1
+           ARMCI_NO_FLUSH_LOCAL=1
 env:
   #
   # Test the default config since that is what Debian users will get.
