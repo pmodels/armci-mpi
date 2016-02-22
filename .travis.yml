@@ -5,10 +5,9 @@ os:
   - osx
   - linux
 compiler:
-  # nothing in ARMCI-MPI should be compiler-dependent,
-  # so test with the more strict of the two...
+  # nothing in ARMCI-MPI should be compiler-dependent...
   - clang
-  #- gcc
+  - gcc
 matrix:
   allow_failures:
     - env: MPI_IMPL=openmpi
@@ -17,6 +16,11 @@ matrix:
            ARMCI_IOV_METHOD=DIRECT
            ARMCI_USE_WIN_ALLOCATE=0
 env:
+  #
+  # Test the default config since that is what Debian users will get.
+  #
+  - MPI_IMPL=mpich
+  - MPI_IMPL=openmpi
   #
   # MPICH
   #
