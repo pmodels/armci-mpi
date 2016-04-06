@@ -49,9 +49,9 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    wget --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
-                    tar -xjf openmpi-1.10.2rc3.tar.bz2
-                    cd openmpi-1.10.2rc3
+                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2.tar.bz2
+                    tar -xjf openmpi-1.10.2.tar.bz2
+                    cd openmpi-1.10.2
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
