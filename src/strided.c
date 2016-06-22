@@ -140,7 +140,8 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       /* Jeff: WIN_UNIFIED should allow overlap to work but we
        *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      gmr_sync(gmr_loc);
+      if (gmr_loc != NULL)
+          gmr_sync(gmr_loc);
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
@@ -240,7 +241,8 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       /* Jeff: WIN_UNIFIED should allow overlap to work but we
        *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
-      gmr_sync(gmr_loc);
+      if (gmr_loc != NULL)
+          gmr_sync(gmr_loc);
     }
 
     /* NOGUARD: If dst_buf hasn't been assigned to a copy, the strided source
@@ -377,7 +379,8 @@ int PARMCI_AccS(int datatype, void *scale,
       /* Jeff: WIN_UNIFIED should allow overlap to work but we
        *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      gmr_sync(gmr_loc);
+      if (gmr_loc != NULL)
+          gmr_sync(gmr_loc);
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
