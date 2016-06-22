@@ -148,6 +148,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
+    int unified;
     void    *attr_ptr;
     int     *attr_val;
     int      attr_flag;
@@ -158,17 +159,28 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       if (world_me==0) {
         if ( (*attr_val)==MPI_WIN_SEPARATE ) {
           printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
+          unified = 0;
         } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
 #ifdef DEBUG
           printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
 #endif
+          unified = 1;
         } else {
           printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
+          unified = 0;
         }
       }
     } else {
-      if (world_me==0)
+      if (world_me==0) {
         printf("MPI_WIN_MODEL attribute missing \n");
+        unified = 0;
+      }
+    }
+    if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
+      if (world_me==0) {
+        printf("Please re-run with ARMCI_SHR_BUF_METHOD=COPY\n");
+      }
+      /* ARMCI_Error("MPI_WIN_SEPARATE with NOGUARD", 1); */
     }
   }
 

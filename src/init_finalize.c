@@ -196,7 +196,8 @@ int PARMCI_Init(void) {
 
   /* Shared buffer handling method */
 
-  ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
+  /* The default used to be COPY.  NOGUARD requires MPI_WIN_UNIFIED. */
+  ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_NOGUARD;
 
   var = ARMCII_Getenv("ARMCI_SHR_BUF_METHOD");
   if (var != NULL) {
