@@ -63,7 +63,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
-  MPI_Info alloc_shm_info;
+  MPI_Info alloc_shm_info = MPI_INFO_NULL;
   if (ARMCII_GLOBAL_STATE.use_alloc_shm) {
       MPI_Info_create(&alloc_shm_info);
       MPI_Info_set(alloc_shm_info, "alloc_shm", "true");
@@ -72,6 +72,11 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   }
 
   if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+
+      /* give hint to CASPER to avoid extra work for lock permission */
+      if (alloc_shm_info == MPI_INFO_NULL)
+          MPI_Info_create(&alloc_shm_info);
+      MPI_Info_set(alloc_shm_info, "epochs_used", "lockall");
 
       MPI_Win_allocate( (MPI_Aint) local_size, 1, alloc_shm_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
@@ -92,7 +97,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   } /* win allocate/create */
 
-  if (ARMCII_GLOBAL_STATE.use_alloc_shm) {
+  if (alloc_shm_info != MPI_INFO_NULL) {
       MPI_Info_free(&alloc_shm_info);
   }
 
