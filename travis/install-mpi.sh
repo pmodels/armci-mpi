@@ -71,7 +71,7 @@ case "$os" in
                                 --disable-libompitrace \
                                 --disable-mpi-io  --disable-io-romio \
                                 --disable-static \
-                                –-enable-mpi-thread-multiple
+                                --enable-mpi-thread-multiple
                     make -j4
                     make install
                 else
