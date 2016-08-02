@@ -16,14 +16,23 @@
 #include <pthread.h>
 
 #if defined(HAVE_NANOSLEEP)
-#include <time.h>
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199309L
+#endif
+#include <time.h> /* nanosleep */
+
 #elif defined(HAVE_USLEEP)
+
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
 #include <unistd.h> /* usleep */
+
 #else
+
 #warning No naptime available!
+
 #endif
 
 int progress_active;
