@@ -1,12 +1,18 @@
 # Authors
 
-James Dinan  (MPI-2 implementation)
-Jeff Hammond (MPI-3 implementation)
+* James Dinan  (MPI-2 implementation)
+* Jeff Hammond (MPI-3 implementation)
 
 # Introduction
 
 This project provides a full, high performance, portable implementation of the
 ARMCI runtime system using MPI's remote memory access (RMA) functionality.
+
+# Quality Assurance
+
+[![Build Status](https://travis-ci.org/jeffhammond/armci-mpi.svg?branch=mpi3rma)](https://travis-ci.org/jeffhammond/armci-mpi)
+
+See Travis for failure details.  All recent failures have been caused by dependencies (system toolchain or MPI library).
 
 # Installing Only ARMCI-MPI
 
@@ -25,7 +31,7 @@ following MPI-2 implementations are known to work correctly with ARMCI-MPI:
  * MVAPICH2 1.6
  * Cray MPI on Cray XE6
  * IBM MPI on BG/P (set `ARMCI_STRIDED_METHOD=IOV` and `ARMCI_IOV_METHOD=BATCHED` for _performance reasons_)
- * OpenMPI 1.5.4 (set `ARMCI_STRIDED_METHOD=IOV` and `ARMCI_IOV_METHOD=BATCHED` for _correctness reasons_)
+ * Open-MPI 1.5.4 (set `ARMCI_STRIDED_METHOD=IOV` and `ARMCI_IOV_METHOD=BATCHED` for _correctness reasons_)
 
 The following MPI-2 implementations are known to fail with ARMCI-MPI:
  * MVAPICH2 prior to 1.6
@@ -36,9 +42,9 @@ with ARMCI-MPI (`mpi3rma` branch):
  * MVAPICH2 2.0a and later on Linux InfiniBand clusters.
  * CrayMPI 6.1.0 and later on Cray XC30.
  * SGI MPT 2.09 on SGI SMPs.
- * OpenMPI development version on Mac (set `ARMCI_STRIDED_METHOD=IOV` and `ARMCI_IOV_METHOD=BATCHED`)
+ * Open-MPI development version on Mac (set `ARMCI_STRIDED_METHOD=IOV` and `ARMCI_IOV_METHOD=BATCHED`)
  
-Note that a bug in MPICH that propagated to MVAPICH2, Cray MPI and Intel MPI affects correctness
+Note that a bug in MPICH 3.0 or 3.1 that propagated to MVAPICH2, Cray MPI and Intel MPI affects correctness
 when windows are backed by shared-memory.  This bug affects `ARMCI_Rmw` and is avoided with the
 default settings, which use `MPI_Win_create`.  This may negatively affect performance in some
 cases and prevents one from using Casper.  To utilize `MPI_Win_allocate`, do one of the following:
