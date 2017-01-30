@@ -104,15 +104,15 @@ Boolean environment variables are enabled when set to a value beginning with
 
 ##Debugging Options
 
-ARMCI_VERBOSE (boolean)
+`ARMCI_VERBOSE` (boolean)
 
   Enable extra status output from ARMCI-MPI.
 
-ARMCI_DEBUG_ALLOC (boolean)
+`ARMCI_DEBUG_ALLOC` (boolean)
 
   Turn on extra shared allocation debugging.
 
-ARMCI_FLUSH_BARRIERS (boolean) (deprecated)
+`ARMCI_FLUSH_BARRIERS` (boolean) (deprecated)
 
   Enable/disable extra communication flushing in ARMCI_Barrier.  Extra flushes
   are present to help make unsafe DLA safer.  (This option is deprecated with
@@ -120,28 +120,28 @@ ARMCI_FLUSH_BARRIERS (boolean) (deprecated)
 
 ## Performance Options
 
-ARMCI_CACHE_RANK_TRANSLATION (boolean)
+`ARMCI_CACHE_RANK_TRANSLATION` (boolean)
 
   Create a table to more quickly translate between absolute and group ranks.
 
-ARMCI_PROGRESS_THREAD (boolean)
+`ARMCI_PROGRESS_THREAD` (boolean)
 
   Create a Pthread to poke the MPI progress engine.
 
-ARMCI_PROGRESS_USLEEP (int)
+`ARMCI_PROGRESS_USLEEP` (int)
 
   Argument to `usleep()` to pause the progress polling loop.
 
 ## Noncollective Groups
 
-ARMCI_NONCOLLECTIVE_GROUPS (boolean)
+`ARMCI_NONCOLLECTIVE_GROUPS` (boolean)
 
   Enable noncollective ARMCI group formation; group creation is collective on
   the output group rather than the parent group.
 
 ## Shared Buffer Protection
 
-ARMCI_SHR_BUF_METHOD = { COPY (default), NOGUARD }
+`ARMCI_SHR_BUF_METHOD` = { `COPY` (default), `NOGUARD` }
 
   ARMCI policy for managing shared origin buffers in communication operations:
   lock the buffer (unsafe, but fast), copy the buffer (safe), or don't guard
@@ -150,13 +150,13 @@ ARMCI_SHR_BUF_METHOD = { COPY (default), NOGUARD }
 
 ## Strided Options
 
-ARMCI_STRIDED_METHOD = { DIRECT (default), IOV }
+`ARMCI_STRIDED_METHOD` = { `DIRECT` (default), `IOV` }
 
   Select the method for processing strided operations.
 
 ## I/O Vector Options
 
-ARMCI_IOV_METHOD = { AUTO (default), CONSRV, BATCHED, DIRECT }
+`ARMCI_IOV_METHOD` = { `AUTO` (default), `CONSRV`, `BATCHED`, `DIRECT` }
 
   Select the IO vector communication strategy: automatic; a "conservative"
   implementation that does lock/unlock around each operation; an implementation
@@ -164,12 +164,12 @@ ARMCI_IOV_METHOD = { AUTO (default), CONSRV, BATCHED, DIRECT }
   direct implementation that generates datatypes for the origin and target and
   issues a single operation using them.
 
-ARMCI_IOV_CHECKS (boolean)
+`ARMCI_IOV_CHECKS` (boolean)
 
   Enable (expensive) IOV safety/debugging checks (not recommended for
   performance runs).
 
-ARMCI_IOV_BATCHED_LIMIT = { 0 (default), 1, ... }
+`ARMCI_IOV_BATCHED_LIMIT` = { 0 (default), 1, ... }
 
   Set the maximum number of one-sided operations per epoch for the BATCHED IOV
   method.  Zero (default) is unlimited.
