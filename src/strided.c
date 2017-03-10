@@ -20,7 +20,7 @@
   * @param[in]  old_type        Type of the data element described by count and stride_array
   * @param[out] new_type        New MPI type for the given strided access
   */
-static void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
+void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*stride_levels+1*/],
                              int stride_levels, MPI_Datatype old_type, MPI_Datatype *new_type)
 {
   int sizes   [stride_levels+1];

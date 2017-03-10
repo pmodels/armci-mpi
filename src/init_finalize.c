@@ -88,6 +88,15 @@ int PARMCI_Init_thread(int armci_requested) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
   }
 
+  /* Check for MPI thread-support */
+  {
+    int mpi_provided;
+    MPI_Query_thread(&mpi_provided);
+
+    if (mpi_provided<armci_requested)
+      ARMCII_Error("MPI thread level below ARMCI thread level!");
+  }
+
 #ifdef HAVE_PTHREADS
   /* Check progress thread settings */
   {

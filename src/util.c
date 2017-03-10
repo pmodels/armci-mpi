@@ -120,13 +120,8 @@ int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
   * @param[out] dst  Destination buffer
   * @param[in]  size Number of bytes to copy
   */
-<<<<<<< HEAD
 void ARMCI_Copy(void *src, void *dst, int size) {
-=======
-void ARMCI_Copy(const void *src, void *dst, int size) {
-#ifndef COPY_WITH_SENDRECV
->>>>>>> 890fc23... fix a bunch of compilation warnings
-  memcpy(dst, src, size);
+  memmove(dst, src, size);
 }
 
 
