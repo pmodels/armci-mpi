@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set +e
 set -x
 
 os=`uname`
@@ -10,8 +10,7 @@ case "$os" in
     Darwin)
         brew update
         brew info autoconf automake libtool
-        #brew install autoconf automake libtool
-        brew upgrade autoconf automake libtool
+        brew install autoconf automake libtool | brew upgrade autoconf automake libtool | true
         which glibtool
         which glibtoolize
         glibtool --version
