@@ -260,7 +260,7 @@ int ARMCII_Buf_acc_is_scaled(int datatype, void *scale) {
       break;
 
     case ARMCI_ACC_FLT:
-      if (fabsf(*((float*)scale)-1.0) < FLT_EPSILON)
+      if (fabsf(*((float*)scale)-1.0f) < FLT_EPSILON)
         return 0;
       break;
 
@@ -270,8 +270,8 @@ int ARMCII_Buf_acc_is_scaled(int datatype, void *scale) {
       break;
 
     case ARMCI_ACC_CPL:
-      if (fabsf(((float*)scale)[0]-1.0) < FLT_EPSILON && 
-          fabsf(((float*)scale)[1]-0.0) < FLT_EPSILON)
+      if (fabsf(((float*)scale)[0]-1.0f) < FLT_EPSILON && 
+          fabsf(((float*)scale)[1]-0.0f) < FLT_EPSILON)
         return 0;
       break;
 
