@@ -38,7 +38,7 @@ void  ARMCI_AllFence(void);
 void  ARMCI_Access_begin(void *ptr); /* NEW API */
 void  ARMCI_Access_end(void *ptr);   /* NEW API */
 
-void  ARMCI_Copy(const void *src, void *dst, int size);
+void  ARMCI_Copy(void *src, void *dst, int size);
 
 int   ARMCI_Get(void *src, void *dst, int size, int target);
 int   ARMCI_Put(void *src, void *dst, int size, int target);
