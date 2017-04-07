@@ -84,9 +84,7 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       handle->target = target;
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return 0;
 }
@@ -130,9 +128,7 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
       handle->target = target;
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return 0;
 }
@@ -209,9 +205,7 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
       handle->target = target;
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return 0;
 }
