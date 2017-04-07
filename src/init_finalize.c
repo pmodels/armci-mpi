@@ -223,6 +223,10 @@ int PARMCI_Init(void) {
   int win_alloc_default = 1;
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
 
+  /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
+
+  ARMCII_GLOBAL_STATE.explicit_nb_progress=ARMCII_Getenv_bool("ARMCI_EXPLICIT_NB_PROGRESS", 1);
+
   /* Pass alloc_shm to win_allocate / alloc_mem */
 
   ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);

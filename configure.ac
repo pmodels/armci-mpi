@@ -164,16 +164,6 @@ if test "$armci_group_enabled" = "yes"; then
    AC_DEFINE(ARMCI_GROUP,1,[Defined when ARMCI subset-collective group formation is enabled])
 fi
 
-## Make explicit progress in nonblocking operations
-AC_ARG_ENABLE(explicit-progress, AC_HELP_STRING([--enable-explicit-progress],[Enable explicit MPI progress during nonblocking calls]),
-                 [ explicit_progress_enabled=$enableval ],
-                 [ explicit_progress_enabled=no ])
-AC_MSG_CHECKING(whether explicit MPI progress during nonblocking calls is enabled)
-AC_MSG_RESULT($explicit_progress_enabled)
-if test "$explicit_progress_enabled" = "yes"; then
-   AC_DEFINE(EXPLICIT_PROGRESS,1,[Defined when explicit MPI progress during nonblocking calls is enabled])
-fi
-
 # Check for support for weak symbols.
 AC_ARG_ENABLE(weak-symbols, AC_HELP_STRING([--enable-weak-symbols],
                  [Use weak symbols to implement PARMCI routines (default)]),,
