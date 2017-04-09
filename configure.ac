@@ -164,16 +164,6 @@ if test "$armci_group_enabled" = "yes"; then
    AC_DEFINE(ARMCI_GROUP,1,[Defined when ARMCI subset-collective group formation is enabled])
 fi
 
-## Active MPI_Win_allocate when we know it works
-AC_ARG_ENABLE(win-allocate, AC_HELP_STRING([--enable-win-allocate],[Use MPI_WIN_ALLOCATE.]),
-                 [ win_allocate_enabled=$enableval ],
-                 [ win_allocate_enabled=no ])
-AC_MSG_CHECKING(whether MPI_WIN_ALLOCATE will be used)
-AC_MSG_RESULT($win_allocate_enabled)
-if test "$win_allocate_enabled" = "yes"; then
-   AC_DEFINE(USE_WIN_ALLOCATE,1,[Defined when the use of MPI_WIN_ALLOCATE is enabled])
-fi
-
 # Check for support for weak symbols.
 AC_ARG_ENABLE(weak-symbols, AC_HELP_STRING([--enable-weak-symbols],
                  [Use weak symbols to implement PARMCI routines (default)]),,

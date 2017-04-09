@@ -220,11 +220,7 @@ int PARMCI_Init(void) {
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
 
-#ifdef USE_WIN_ALLOCATE
   int win_alloc_default = 1;
-#else
-  int win_alloc_default = 0;
-#endif
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
 
   /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
