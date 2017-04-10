@@ -21,7 +21,6 @@ case "$os" in
                 brew install mpich
                 ;;
             openmpi)
-                # Homebrew is still at 1.10.1, which is broken for STRIDED/IOV=DIRECT.
                 brew install openmpi
                 ;;
             *)
@@ -41,7 +40,7 @@ case "$os" in
                     cd mpich-3.2
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "MPICH already installed"
@@ -49,9 +48,9 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    wget -q --no-check-certificate http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2rc3.tar.bz2
-                    tar -xjf openmpi-1.10.2rc3.tar.bz2
-                    cd openmpi-1.10.2rc3
+                    wget -q --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.6.tar.bz2
+                    tar -xjf openmpi-1.10.6.tar.bz2
+                    cd openmpi-1.10.6
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
@@ -67,7 +66,7 @@ case "$os" in
                                 --disable-libompitrace \
                                 --disable-mpi-io  --disable-io-romio \
                                 --disable-static
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "Open-MPI already installed"
