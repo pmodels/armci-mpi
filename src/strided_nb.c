@@ -116,9 +116,7 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     free(iov.dst_ptr_array);
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return err;
 }
@@ -227,9 +225,7 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     free(iov.dst_ptr_array);
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return err;
 }
@@ -379,9 +375,7 @@ int PARMCI_NbAccS(int datatype, void *scale,
     free(iov.dst_ptr_array);
   }
 
-#ifdef EXPLICIT_PROGRESS
   gmr_progress();
-#endif
 
   return err;
 }
