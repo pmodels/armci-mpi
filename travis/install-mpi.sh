@@ -37,12 +37,12 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    wget --no-check-certificate http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
-                    tar -xzf mpich-3.2.tar.gz
-                    cd mpich-3.2
+                    wget --no-check-certificate http://www.mpich.org/static/downloads/3.3a2/mpich-3.3a2.tar.gz
+                    tar -xzf mpich-3.3a2.tar.gz
+                    cd mpich-3*
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "MPICH already installed"
@@ -50,12 +50,9 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    #wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2.tar.bz2
-                    #tar -xjf openmpi-1.10.2.tar.bz2
-                    #cd openmpi-1.10.2
-                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.0.tar.bz2
-                    tar -xjf openmpi-2.0.0.tar.bz2
-                    cd openmpi-2.0.0
+                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2
+                    tar -xjf openmpi-3.0.0.tar.bz2
+                    cd openmpi-3.0.0
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
