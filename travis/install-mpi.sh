@@ -37,8 +37,9 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    wget --no-check-certificate http://www.mpich.org/static/downloads/3.3a2/mpich-3.3a2.tar.gz
-                    tar -xzf mpich-3.3a2.tar.gz
+                    VERSION=3.3a3
+                    wget --no-check-certificate http://www.mpich.org/static/downloads/$VERSION/mpich-$VERSION.tar.gz
+                    tar -xzf mpich-$VERSION.tar.gz
                     cd mpich-3*
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
@@ -50,9 +51,10 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.bz2
-                    tar -xjf openmpi-3.0.0.tar.bz2
-                    cd openmpi-3.0.0
+                    VERSION=3.0.0-1
+                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-$VERSION.tar.bz2
+                    tar -xjf openmpi-$VERSION.tar.bz2
+                    cd openmpi-$VERSION
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
@@ -69,7 +71,7 @@ case "$os" in
                                 --disable-mpi-io  --disable-io-romio \
                                 --disable-static \
                                 --enable-mpi-thread-multiple
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "Open-MPI already installed"
