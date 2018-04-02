@@ -38,7 +38,7 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    VERSION=3.3a3
+                    VERSION=3.3b1
                     wget --no-check-certificate http://www.mpich.org/static/downloads/$VERSION/mpich-$VERSION.tar.gz
                     tar -xzf mpich-$VERSION.tar.gz
                     cd mpich-3*
