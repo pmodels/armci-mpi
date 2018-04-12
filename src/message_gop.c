@@ -161,6 +161,17 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     mpi_op = ARMCI_MPI_ABSMAX_OP;
   } else if (strncmp(op, "absmin", 6) == 0) {
     mpi_op = ARMCI_MPI_ABSMIN_OP;
+  /* The following were added ComEx/ARMCI in 2017. */
+  /* https://github.com/GlobalArrays/ga/commit/14ef3cfa4ea3ffa7ee721c2a98685669359f7044 */
+  /* && and || need to be tested before & and | to avoid the latter matching the former. */
+  } else if ((strncmp(op, "land", 4) == 0) || (strncmp(op, "&&", 2) == 0)) {
+    mpi_op = MPI_LAND;
+  } else if ((strncmp(op, "lor", 3) == 0) || (strncmp(op, "||", 2) == 0)) {
+    mpi_op = MPI_LOR;
+  } else if ((strncmp(op, "band", 4) == 0) || (strncmp(op, "&", 1) == 0)) {
+    mpi_op = MPI_BAND;
+  } else if ((strncmp(op, "bor", 3) == 0) || (strncmp(op, "|", 1) == 0)) {
+    mpi_op = MPI_BOR;
   } else {
     ARMCII_Error("unknown operation \'%s\'", op);
     return;
