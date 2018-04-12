@@ -12,8 +12,8 @@
 #include <armci_internals.h>
 
 /* MPI Operations, registered in Init */
-MPI_Op MPI_ABSMIN_OP;
-MPI_Op MPI_ABSMAX_OP;
+MPI_Op ARMCI_MPI_ABSMIN_OP;
+MPI_Op ARMCI_MPI_ABSMAX_OP;
 
 #define IABS(X)  (((X) > 0  ) ? X : -X)
 #define FABS(X)  (((X) > 0.0) ? X : -X)
@@ -158,9 +158,9 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
   } else if (strncmp(op, "or", 2) == 0) {
     mpi_op = MPI_BOR;
   } else if (strncmp(op, "absmax", 6) == 0) {
-    mpi_op = MPI_ABSMAX_OP;
+    mpi_op = ARMCI_MPI_ABSMAX_OP;
   } else if (strncmp(op, "absmin", 6) == 0) {
-    mpi_op = MPI_ABSMIN_OP;
+    mpi_op = ARMCI_MPI_ABSMIN_OP;
   } else {
     ARMCII_Error("unknown operation \'%s\'", op);
     return;
@@ -193,7 +193,7 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
 
   // ABS MAX/MIN are unary as well as binary.  We need to also apply abs in the
   // single processor case when reduce would normally just be a no-op.
-  if (group->size == 1 && (mpi_op == MPI_ABSMAX_OP || mpi_op == MPI_ABSMIN_OP)) {
+  if (group->size == 1 && (mpi_op == ARMCI_MPI_ABSMAX_OP || mpi_op == ARMCI_MPI_ABSMIN_OP)) {
     ARMCII_Absv_op(x_buf[0], x_buf[0], &n, &mpi_type);
   }
 

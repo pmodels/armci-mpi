@@ -251,11 +251,11 @@ int PARMCI_Init(void) {
 
   /* Create GOP operators */
 
-  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
-  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
+  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &ARMCI_ARMCI_MPI_ABSMIN_OP);
+  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &ARMCI_ARMCI_MPI_ABSMAX_OP);
 
-  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &MPI_SELMIN_OP);
-  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &MPI_SELMAX_OP);
+  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
+  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
   ARMCII_GLOBAL_STATE.init_count++;
 
@@ -421,11 +421,11 @@ int PARMCI_Finalize(void) {
 
   /* Free GOP operators */
 
-  MPI_Op_free(&MPI_ABSMIN_OP);
-  MPI_Op_free(&MPI_ABSMAX_OP);
+  MPI_Op_free(&ARMCI_ARMCI_MPI_ABSMIN_OP);
+  MPI_Op_free(&ARMCI_ARMCI_MPI_ABSMAX_OP);
 
-  MPI_Op_free(&MPI_SELMIN_OP);
-  MPI_Op_free(&MPI_SELMAX_OP);
+  MPI_Op_free(&ARMCI_MPI_SELMIN_OP);
+  MPI_Op_free(&ARMCI_MPI_SELMAX_OP);
 
   ARMCI_Cleanup();
 
