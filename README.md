@@ -22,8 +22,9 @@ ARMCI-MPI uses autoconf and must be configured before compiling:
 ```
 Many configure options are provided, run `configure --help` for details.  After
 configuring the source tree, the code can be built and installed by running:
-
+```
  $ make && make install
+```
 
 The quality of MPI-RMA implementations varies.  As of August, 2011 the
 following MPI-2 implementations are known to work correctly with ARMCI-MPI:
