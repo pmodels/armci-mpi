@@ -108,7 +108,7 @@ processes.
 Boolean environment variables are enabled when set to a value beginning with
 't', 'T', 'y', 'Y', or '1'; any other value is interpreted as false.
 
-##Debugging Options
+## Debugging Options
 
 `ARMCI_VERBOSE` (boolean)
 
