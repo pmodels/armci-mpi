@@ -18,12 +18,13 @@ case "$os" in
         brew update
         case "$MPI_IMPL" in
             mpich)
-                brew install mpich
+                brew install gcc || brew upgrade gcc || true
+                brew link --overwrite gcc || true
+                brew install mpich || true
                 ;;
             openmpi)
-                # Homebrew is at 1.10.2, which is broken for STRIDED/IOV=DIRECT.
-                brew info open-mpi
-                brew install openmpi
+                brew info open-mpi || true
+                brew install openmpi || true
                 ;;
             *)
                 echo "Unknown MPI implementation: $MPI_IMPL"
@@ -37,12 +38,13 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    wget --no-check-certificate http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
-                    tar -xzf mpich-3.2.tar.gz
-                    cd mpich-3.2
+                    VERSION=3.3b1
+                    wget --no-check-certificate http://www.mpich.org/static/downloads/$VERSION/mpich-$VERSION.tar.gz
+                    tar -xzf mpich-$VERSION.tar.gz
+                    cd mpich-3*
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/mpich --disable-fortran --disable-static
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "MPICH already installed"
@@ -50,12 +52,10 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    #wget --no-check-certificate https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2.tar.bz2
-                    #tar -xjf openmpi-1.10.2.tar.bz2
-                    #cd openmpi-1.10.2
-                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.0.tar.bz2
-                    tar -xjf openmpi-2.0.0.tar.bz2
-                    cd openmpi-2.0.0
+                    VERSION=openmpi-3.0.1rc4
+                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-$VERSION.tar.gz
+                    tar -xzf openmpi-$VERSION.tar.gz
+                    cd openmpi-$VERSION
                     mkdir build && cd build
                     ../configure CFLAGS="-w" --prefix=$TRAVIS_ROOT/open-mpi \
                                 --without-verbs --without-fca --without-mxm --without-ucx \
@@ -72,7 +72,7 @@ case "$os" in
                                 --disable-mpi-io  --disable-io-romio \
                                 --disable-static \
                                 --enable-mpi-thread-multiple
-                    make -j4
+                    make -j2
                     make install
                 else
                     echo "Open-MPI already installed"
