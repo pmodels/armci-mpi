@@ -205,3 +205,28 @@ void ARMCIX_Progress(void)
 {
     gmr_progress();
 }
+
+/** Determine if a window supports the unified memory model.
+  *
+  * @param[in]  win  Window
+  * @param[out] ret  1=UNIFIED, 0=SEPARATE, -1=N/A
+  */
+int ARMCII_Is_win_unified(MPI_Win win)
+{
+  void    *attr_ptr;
+  int      attr_flag;
+  /* this function will always return flag=false in MPI-2 */
+  MPI_Win_get_attr(win, MPI_WIN_MODEL, &attr_ptr, &attr_flag);
+  if (attr_flag) {
+    int * attr_val = (int*)attr_ptr;
+    if ( (*attr_val)==MPI_WIN_UNIFIED ) {
+      return 1;
+    } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
+      return 0;
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
