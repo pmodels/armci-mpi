@@ -1714,10 +1714,6 @@ int main(int argc, char* argv[])
 
     ARMCI_Init_args(&argc, &argv);
 
-/*
-       if(me==1)armci_die("process 1 committing suicide",1);
-*/
-    /*
         if(me==0){
            printf("\nTesting strided gets and puts\n");
            printf("(Only std output for process 0 is printed)\n\n"); 
@@ -1727,7 +1723,7 @@ int main(int argc, char* argv[])
         for(ndim=1; ndim<= MAXDIMS; ndim++) test_dim(ndim);
         ARMCI_AllFence();
         MP_BARRIER();
-    */
+
         if(me==0){
            printf("\nTesting non-blocking gets and puts\n");
            fflush(stdout);
