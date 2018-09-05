@@ -120,6 +120,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   if (aggregate_size == 0) {
     free(alloc_slices);
     free(mreg->slices);
+    MPI_Win_free(&mreg->window);
     free(mreg);
 
     for (i = 0; i < alloc_nproc; i++)
