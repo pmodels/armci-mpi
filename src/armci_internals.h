@@ -83,6 +83,7 @@ typedef struct {
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 #endif
   int           use_win_allocate;       /* Use win_allocate or win_create                                       */
+  int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
   int           end_to_end_flush;       /* All flush_local calls become flush                                   */
@@ -98,10 +99,10 @@ typedef struct {
 
 extern ARMCI_Group    ARMCI_GROUP_WORLD;
 extern ARMCI_Group    ARMCI_GROUP_DEFAULT;
-extern MPI_Op         MPI_ABSMIN_OP;
-extern MPI_Op         MPI_ABSMAX_OP;
-extern MPI_Op         MPI_SELMIN_OP;
-extern MPI_Op         MPI_SELMAX_OP;
+extern MPI_Op         ARMCI_MPI_ABSMIN_OP;
+extern MPI_Op         ARMCI_MPI_ABSMAX_OP;
+extern MPI_Op         ARMCI_MPI_SELMIN_OP;
+extern MPI_Op         ARMCI_MPI_SELMAX_OP;
 extern global_state_t ARMCII_GLOBAL_STATE;
 #ifdef HAVE_PTHREADS
 extern pthread_t      ARMCI_Progress_thread;

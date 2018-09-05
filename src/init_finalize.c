@@ -16,14 +16,23 @@
 #include <pthread.h>
 
 #if defined(HAVE_NANOSLEEP)
-#include <time.h>
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199309L
+#endif
+#include <time.h> /* nanosleep */
+
 #elif defined(HAVE_USLEEP)
+
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
 #include <unistd.h> /* usleep */
+
 #else
+
 #warning No naptime available!
+
 #endif
 
 int progress_active;
@@ -141,10 +150,11 @@ int PARMCI_Init_thread(int armci_requested) {
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
   {
-	int junk;
-	junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
-    if (junk != -1)
-      ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.  Use ARMCI_SYNC_AT_BARRIERS instead. \n");
+    int junk;
+    junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
+    if (junk != -1) {
+      ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.\n");
+    }
   }
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
 
@@ -188,7 +198,6 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Check for Strided flags */
 
-
 #if defined(OPEN_MPI)
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
 #else
@@ -208,7 +217,7 @@ int PARMCI_Init_thread(int armci_requested) {
 #ifdef OPEN_MPI
   if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT ||
       ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT)
-      ARMCII_Warning("MPI Datatypes are broken in RMA in OpenMPI!!!!\n");
+      ARMCII_Warning("MPI Datatypes are broken in RMA in older versions of Open-MPI!\n");
 #endif
 
   /* Shared buffer handling method */
@@ -228,12 +237,12 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
 
-#ifdef USE_WIN_ALLOCATE
   int win_alloc_default = 1;
-#else
-  int win_alloc_default = 0;
-#endif
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
+
+  /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
+
+  ARMCII_GLOBAL_STATE.explicit_nb_progress=ARMCII_Getenv_bool("ARMCI_EXPLICIT_NB_PROGRESS", 1);
 
   /* Pass alloc_shm to win_allocate / alloc_mem */
 
@@ -259,11 +268,11 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Create GOP operators */
 
-  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &MPI_ABSMIN_OP);
-  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &MPI_ABSMAX_OP);
+  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &ARMCI_ARMCI_MPI_ABSMIN_OP);
+  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &ARMCI_ARMCI_MPI_ABSMAX_OP);
 
-  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &MPI_SELMIN_OP);
-  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &MPI_SELMAX_OP);
+  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
+  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
   ARMCII_GLOBAL_STATE.init_count++;
 
@@ -450,11 +459,11 @@ int PARMCI_Finalize(void) {
 
   /* Free GOP operators */
 
-  MPI_Op_free(&MPI_ABSMIN_OP);
-  MPI_Op_free(&MPI_ABSMAX_OP);
+  MPI_Op_free(&ARMCI_ARMCI_MPI_ABSMIN_OP);
+  MPI_Op_free(&ARMCI_ARMCI_MPI_ABSMAX_OP);
 
-  MPI_Op_free(&MPI_SELMIN_OP);
-  MPI_Op_free(&MPI_SELMAX_OP);
+  MPI_Op_free(&ARMCI_MPI_SELMIN_OP);
+  MPI_Op_free(&ARMCI_MPI_SELMAX_OP);
 
   ARMCI_Cleanup();
 
