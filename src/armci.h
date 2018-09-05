@@ -17,6 +17,7 @@ typedef long armci_size_t;
 
 int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);
+int   ARMCI_Init_thread(int armci_requested);
 int   ARMCI_Initialized(void);
 
 int   ARMCI_Finalize(void);
@@ -211,6 +212,7 @@ int  ARMCI_Uses_shm_grp(ARMCI_Group *group);
 
 int     PARMCI_Init(void);
 int     PARMCI_Init_args(int *argc, char ***argv);
+int     PARMCI_Init_thread(int armci_requested);
 int     PARMCI_Initialized(void);
 int     PARMCI_Finalize(void);
 
