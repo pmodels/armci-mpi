@@ -14,7 +14,10 @@ int ARMCI_Finalize(void) {
 
 void ARMCI_Barrier(void) {
   parmci_calls++;
+  /* C (ISO 9899:1999) 6.8.6.4/1:
+   * "A return statement with an expression shall not appear in a function whose return type is void." */
   PARMCI_Barrier();
+  return;
 }
 
 int ARMCI_Get(void *src, void *dst, int size, int target) {
