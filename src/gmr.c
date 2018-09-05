@@ -30,7 +30,6 @@ static pthread_mutex_t gmr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
   */
 gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   int           i;
-  gmr_size_t    aggregate_size;
   int           alloc_me, alloc_nproc;
   int           world_me, world_nproc;
   MPI_Group     world_group, alloc_group;
@@ -39,6 +38,21 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   ARMCII_Assert(local_size >= 0);
   ARMCII_Assert(group != NULL);
+
+  /* determine if the GMR construction is pointless and exit early */
+  {
+    gmr_size_t max_local_size = 1<<30;
+
+    /* if gmr_size_t changes from long, this needs to change... */
+    MPI_Allreduce(&local_size, &max_local_size, 1, MPI_LONG, MPI_MAX, group->comm);
+
+    if (max_local_size==0) {
+      for (i = 0; i < alloc_nproc; i++) {
+        base_ptrs[i] = NULL;
+      }
+      return NULL;
+    }
+  }
 
   MPI_Comm_rank(group->comm, &alloc_me);
   MPI_Comm_size(group->comm, &alloc_nproc);
@@ -113,24 +127,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   gmr_slice = alloc_slices[alloc_me];
   MPI_Allgather(  &gmr_slice, sizeof(gmr_slice_t), MPI_BYTE,
                  alloc_slices, sizeof(gmr_slice_t), MPI_BYTE, group->comm);
-
-  /* Check for a global size 0 allocation */
-  for (i = aggregate_size = 0; i < alloc_nproc; i++) {
-    aggregate_size += alloc_slices[i].size;
-  }
-
-  /* Everyone asked for 0 bytes, return a NULL vector */
-  if (aggregate_size == 0) {
-    free(alloc_slices);
-    free(mreg->slices);
-    MPI_Win_free(&mreg->window);
-    free(mreg);
-
-    for (i = 0; i < alloc_nproc; i++)
-      base_ptrs[i] = NULL;
-
-    return NULL;
-  }
 
   /* Populate the base pointers array */
   for (i = 0; i < alloc_nproc; i++)
