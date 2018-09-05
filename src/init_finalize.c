@@ -133,10 +133,11 @@ int PARMCI_Init(void) {
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
   {
-	int junk;
-	junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
-    if (junk != -1)
-      ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.  Use ARMCI_SYNC_AT_BARRIERS instead. \n");
+    int junk;
+    junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
+    if (junk != -1) {
+      ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.\n");
+    }
   }
   ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
 
@@ -180,7 +181,6 @@ int PARMCI_Init(void) {
 
   /* Check for Strided flags */
 
-
 #if defined(OPEN_MPI)
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
 #else
@@ -200,7 +200,7 @@ int PARMCI_Init(void) {
 #ifdef OPEN_MPI
   if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT ||
       ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT)
-      ARMCII_Warning("MPI Datatypes are broken in RMA in OpenMPI!!!!\n");
+      ARMCII_Warning("MPI Datatypes are broken in RMA in older versions of Open-MPI!\n");
 #endif
 
   /* Shared buffer handling method */
