@@ -11,6 +11,7 @@
 #include <armcix.h>
 
 typedef armci_size_t gmr_size_t;
+#define GMR_MPI_SIZE_T ARMCII_MPI_SIZE_T
 
 typedef struct {
   void       *base;
