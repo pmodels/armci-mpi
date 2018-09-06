@@ -14,6 +14,7 @@ enum  ARMCI_Acc_e { ARMCI_ACC_INT /*     int */, ARMCI_ACC_LNG /*           long
                     ARMCI_ACC_CPL /* complex */, ARMCI_ACC_DCP /* double complex */ };
 
 typedef long armci_size_t;
+#define ARMCII_MPI_SIZE_T MPI_LONG
 
 int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);

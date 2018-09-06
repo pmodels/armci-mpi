@@ -41,10 +41,10 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
 
   /* determine if the GMR construction is pointless and exit early */
   {
-    gmr_size_t max_local_size = 1<<30;
+    gmr_size_t max_local_size;
 
     /* if gmr_size_t changes from long, this needs to change... */
-    MPI_Allreduce(&local_size, &max_local_size, 1, MPI_LONG, MPI_MAX, group->comm);
+    MPI_Allreduce(&local_size, &max_local_size, 1, GMR_MPI_SIZE_T, MPI_MAX, group->comm);
 
     if (max_local_size==0) {
       for (i = 0; i < alloc_nproc; i++) {
