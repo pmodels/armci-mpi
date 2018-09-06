@@ -33,7 +33,6 @@ TESTS          += tests/test_onesided         \
                   tests/test_mutex            \
                   tests/test_mutex_rmw        \
                   tests/test_mutex_trylock    \
-                  tests/test_malloc           \
                   tests/test_malloc_irreg     \
                   tests/ARMCI_PutS_latency    \
                   tests/ARMCI_AccS_latency    \
@@ -52,6 +51,7 @@ TESTS          += tests/test_onesided         \
                   # end
 
 XFAIL_TESTS    += tests/test_assert           \
+                  tests/test_malloc           \
                   # end
 
 tests_test_onesided_LDADD = libarmci.la
