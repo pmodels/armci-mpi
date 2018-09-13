@@ -52,7 +52,7 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    VERSION=openmpi-3.0.1rc4
+                    VERSION=3.0.1rc4
                     wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-$VERSION.tar.gz
                     tar -xzf openmpi-$VERSION.tar.gz
                     cd openmpi-$VERSION
