@@ -38,7 +38,7 @@ case "$os" in
         case "$MPI_IMPL" in
             mpich)
                 if [ ! -d "$TRAVIS_ROOT/mpich" ]; then
-                    VERSION=3.3b1
+                    VERSION=3.3b3
                     wget --no-check-certificate http://www.mpich.org/static/downloads/$VERSION/mpich-$VERSION.tar.gz
                     tar -xzf mpich-$VERSION.tar.gz
                     cd mpich-3*
@@ -52,8 +52,8 @@ case "$os" in
                 ;;
             openmpi)
                 if [ ! -d "$TRAVIS_ROOT/open-mpi" ]; then
-                    VERSION=3.0.1rc4
-                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-$VERSION.tar.gz
+                    VERSION=3.1.2
+                    wget --no-check-certificate https://www.open-mpi.org/software/ompi/v3.1/downloads/openmpi-$VERSION.tar.gz
                     tar -xzf openmpi-$VERSION.tar.gz
                     cd openmpi-$VERSION
                     mkdir build && cd build
