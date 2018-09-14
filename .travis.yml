@@ -21,8 +21,8 @@ matrix:
     - env: MPI_IMPL=openmpi
            ARMCI_STRIDED_METHOD=DIRECT
            ARMCI_IOV_METHOD=DIRECT
-           ARMCI_USE_WIN_ALLOCATE=0
            ARMCI_NO_FLUSH_LOCAL=1
+           ARMCI_USE_WIN_ALLOCATE=0
     - env: MPI_IMPL=openmpi
            ARMCI_STRIDED_METHOD=IOV
            ARMCI_IOV_METHOD=BATCHED
