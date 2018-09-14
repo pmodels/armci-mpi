@@ -26,6 +26,7 @@ case "$MPI_IMPL" in
     mpich)
         mpichversion
         mpicc -show
+        export HWLOC_COMPONENTS=no_os
         ;;
     openmpi)
         # this is missing with Mac build it seems
@@ -42,6 +43,5 @@ esac
 ./configure --disable-static --enable-win-allocate
 
 # Run unit tests
-export HWLOC_COMPONENTS=no_os
 export ARMCI_VERBOSE=1
 make check

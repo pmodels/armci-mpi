@@ -8,6 +8,10 @@ compiler:
   # nothing in ARMCI-MPI should be compiler-dependent...
   - clang
   - gcc
+addons:
+  apt:
+    packages:
+      - hwloc
 matrix:
   allow_failures:
     - env: MPI_IMPL=openmpi
