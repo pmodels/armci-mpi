@@ -42,5 +42,6 @@ esac
 ./configure --disable-static --enable-win-allocate
 
 # Run unit tests
+export HWLOC_COMPONENTS=no_os
 export ARMCI_VERBOSE=1
 make check
