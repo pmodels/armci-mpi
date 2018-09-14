@@ -137,3 +137,5 @@ after_failure:
   - cat ./config.log
   - cat ./test-suite.log
   - find . -name "*.log" -exec head -n 100 {} ";"
+  - lstopo
+  - hwloc-gather-topology foo && cat foo.output
