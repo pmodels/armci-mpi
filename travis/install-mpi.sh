@@ -24,7 +24,7 @@ case "$os" in
                 ;;
             openmpi)
                 brew info open-mpi || true
-                brew install openmpi || true
+                brew install open-mpi || true
                 ;;
             *)
                 echo "Unknown MPI implementation: $MPI_IMPL"
@@ -70,8 +70,7 @@ case "$os" in
                                 --disable-mpi-fortran --disable-oshmem-fortran \
                                 --disable-libompitrace \
                                 --disable-mpi-io  --disable-io-romio \
-                                --disable-static \
-                                --enable-mpi-thread-multiple
+                                --disable-static #--enable-mpi-thread-multiple
                     make -j2
                     make install
                 else
