@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     double scaling;
     int provided;
 
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_SINGLE, &provided);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nranks);
