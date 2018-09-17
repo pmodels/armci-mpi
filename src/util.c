@@ -128,13 +128,7 @@ void ARMCI_Copy(void *src, void *dst, int size) {
 /** Zero out the given buffer.
   */
 void ARMCII_Bzero(void *buf, armci_size_t size) {
-  /* Jeff: Why not use memset? */
-  armci_size_t i;
-  uint8_t *buf_b = (uint8_t *)buf;
-
-  for (i = 0; i < size; i++) {
-    buf_b[i] = 0;
-  }
+  memset(buf, 0, (size_t)size);
 }
 
 /** Retrieve the value of a boolean environment variable.
