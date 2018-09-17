@@ -128,59 +128,28 @@ void ARMCI_Copy(void *src, void *dst, int size) {
 /** Zero out the given buffer.
   */
 void ARMCII_Bzero(void *buf, armci_size_t size) {
-	/* Jeff: Why not use memset? */
+  /* Jeff: Why not use memset? */
   armci_size_t i;
   uint8_t *buf_b = (uint8_t *)buf;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     buf_b[i] = 0;
+  }
 }
-
-
-static const unsigned char log2_table[256] = /* NO RACE */
-    { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
-      4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-      5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-      6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-      7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7 };
-
-/** Calculate the base 2 logarithm of a given integer.
-  */
-int ARMCII_Log2(unsigned int val) {
-  unsigned int v16, v8;
-  int lg = 0;
-
-  if (val == 0) return -1;
-
-  if ((v16 = val >> 16))
-    lg = (v8 = v16 >> 8) ? log2_table[v8] + 24 : log2_table[v16] + 16;
-  else
-    lg = (v8 = val >> 8) ? log2_table[v8] + 8 : log2_table[val];
-
-  return lg;
-}
-
 
 /** Retrieve the value of a boolean environment variable.
   */
 int ARMCII_Getenv_bool(const char *varname, int default_value) {
   const char *var = getenv(varname);
 
-  if (var == NULL)
+  if (var == NULL) {
     return default_value;
-  
-  if (var[0] == 'T' || var[0] == 't' || var[0] == '1' || var[0] == 'y' || var[0] == 'Y')
+  }
+  if (var[0] == 'T' || var[0] == 't' || var[0] == '1' || var[0] == 'y' || var[0] == 'Y') {
     return 1;
-
-  else
+  } else {
     return 0;
+  }
 }
 
 
@@ -195,10 +164,11 @@ char *ARMCII_Getenv(const char *varname) {
   */
 int ARMCII_Getenv_int(const char *varname, int default_value) {
   const char *var = getenv(varname);
-  if (var) 
+  if (var) {
     return atoi(var);
-  else
+  } else {
     return default_value;
+  }
 }
 
 void ARMCIX_Progress(void)
