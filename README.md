@@ -10,7 +10,7 @@ ARMCI runtime system using MPI's remote memory access (RMA) functionality.
 
 # Quality Assurance
 
-[![Build Status](https://travis-ci.org/jeffhammond/armci-mpi.svg?branch=master)](https://travis-ci.org/jeffhammond/armci-mpi)
+[![Build Status](https://travis-ci.org/pmodels/armci-mpi.svg?branch=master)](https://travis-ci.org/pmodels/armci-mpi)
 
 See Travis for failure details.  All recent failures have been caused by dependencies (system toolchain or MPI library).
 
