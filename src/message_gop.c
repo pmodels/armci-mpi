@@ -151,6 +151,8 @@ void armci_msg_group_gop_scope(int scope, void *x, int n, char *op, int type, AR
     mpi_op = MPI_SUM;
   } else if (op[0] == '*') {
     mpi_op = MPI_PROD;
+  } else if (strncmp(op, "&&", 2) == 0) {
+    mpi_op = MPI_LAND;
   } else if (strncmp(op, "max", 3) == 0) {
     mpi_op = MPI_MAX;
   } else if (strncmp(op, "min", 3) == 0) {
