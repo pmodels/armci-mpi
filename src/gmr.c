@@ -92,7 +92,17 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       alloc_shm_info = MPI_INFO_NULL;
   }
 
-  if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
+
+      if (local_size == 0) {
+        alloc_slices[alloc_me].base = NULL;
+      } else {
+        MPI_Alloc_mem(local_size, alloc_shm_info, &(alloc_slices[alloc_me].base));
+        ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+      }
+      MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
+  }
+  else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
 
       /* give hint to CASPER to avoid extra work for lock permission */
       if (alloc_shm_info == MPI_INFO_NULL)
@@ -107,16 +117,23 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       } else {
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
-  } else /* use win create */ {
+  }
+#ifdef HAVE_LIBVMEM_H
+  else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+
       if (local_size == 0) {
         alloc_slices[alloc_me].base = NULL;
       } else {
+        // FIXME
         MPI_Alloc_mem(local_size, alloc_shm_info, &(alloc_slices[alloc_me].base));
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
       MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
-
-  } /* win allocate/create */
+  }
+#endif
+  else {
+      ARMCII_Error("invalid window type!\n");
+  }
 
   if (alloc_shm_info != MPI_INFO_NULL) {
       MPI_Info_free(&alloc_shm_info);
@@ -308,11 +325,20 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   /* Destroy the window and free all buffers */
   MPI_Win_free(&mreg->window);
 
-  if (!ARMCII_GLOBAL_STATE.use_win_allocate) {
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
     if (mreg->slices[world_me].base != NULL) {
       MPI_Free_mem(mreg->slices[world_me].base);
     }
   }
+#ifdef HAVE_LIBVMEM_H
+  else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+    // FIXME
+    if (mreg->slices[world_me].base != NULL) {
+      MPI_Free_mem(mreg->slices[world_me].base);
+    }
+  }
+#endif
+
 
   free(mreg->slices);
   free(mreg);

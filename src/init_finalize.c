@@ -229,8 +229,7 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
 
-  int win_alloc_default = 1;
-  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
+  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_int("ARMCI_USE_WIN_ALLOCATE", 1);
 
   /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
 
@@ -287,12 +286,26 @@ int PARMCI_Init_thread(int armci_requested) {
 #endif
 
       printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
-      printf("  WINDOW type used       = %s\n", ARMCII_GLOBAL_STATE.use_win_allocate ? "ALLOCATE" : "CREATE");
-      if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+      if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
+          printf("  WINDOW type used       = %s\n", "CREATE");
+      }
+      else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
+          printf("  WINDOW type used       = %s\n", "ALLOCATE");
+      }
+#ifdef HAVE_LIBVMEM_H
+      else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+          printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
+      }
+#endif
+      else {
+          ARMCII_Error("You have selected an invalid window type!\n");
+      }
+
+      if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
           /* Jeff: Using win_allocate leads to correctness issues with some
            *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
           /* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
-          /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and 
+          /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and
            *                     it is fixed upstream. */
           ARMCII_Warning("MPI_Win_allocate can lead to correctness issues.\n");
       }

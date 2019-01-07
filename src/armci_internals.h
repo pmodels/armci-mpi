@@ -18,6 +18,11 @@
 #  include <pthread.h>
 #endif
 
+#ifdef HAVE_LIBVMEM_H
+#include <libvmem.h>
+#define ARMCII_LIBVMEM_WINDOW_TYPE -100
+#endif
+
 /* Likely/Unlikely macros borrowed from MPICH:
  */
 
@@ -83,7 +88,7 @@ typedef struct {
   int           progress_thread;        /* Create progress thread                                               */
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 #endif
-  int           use_win_allocate;       /* Use win_allocate or win_create                                       */
+  int           use_win_allocate;       /* Use win_allocate or win_create (or special memory...)                */
   int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
