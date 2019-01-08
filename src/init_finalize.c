@@ -267,6 +267,32 @@ int PARMCI_Init_thread(int armci_requested) {
   MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
   MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
+#ifdef HAVE_LIBVMEM_H
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+      if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
+          ARMCII_Error("LIBVMEM requires a finite limit to create a memory pool!\n");
+      } else {
+
+          if (ARMCII_GLOBAL_STATE.memory_limit < VMEM_MIN_POOL) {
+              ARMCII_Warning("ARMCI memory limit too low (%zu) for VMEM increasing to VMEM_MIN_POOL (%zu)\n",
+                             ARMCII_GLOBAL_STATE.memory_limit, VMEM_MIN_POOL);
+          }
+
+          char * pool_path = ARMCII_Getenv("ARMCI_VMEM_POOL_PATH");
+          if (pool_path == NULL) {
+              pool_path = "/pmem-fs";
+          }
+          ARMCII_Dbg_print(DEBUG_CAT_ALL, "VMEM pool_path = %s\n", pool_path);
+
+          /* create the volatile memory pool handle for LIBVMEM to use */
+          ARMCII_GLOBAL_STATE.libvmem_handle = vmem_create(pool_path, ARMCII_GLOBAL_STATE.memory_limit);
+          if (ARMCII_GLOBAL_STATE.libvmem_handle == NULL) {
+              ARMCII_Error("LIBVMEM failed to create create a memory pool!\n");
+          }
+      }
+  }
+#endif
+
   ARMCII_GLOBAL_STATE.init_count++;
 
   if (ARMCII_GLOBAL_STATE.verbose) {
@@ -304,17 +330,6 @@ int PARMCI_Init_thread(int armci_requested) {
 #ifdef HAVE_LIBVMEM_H
       else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
           printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
-          if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
-              ARMCII_Error("LIBVMEM requires a finite limit to create a memory pool!\n");
-          } else {
-              /* create the volatile memory pool handle for LIBVMEM to use */
-              VMEM * vmp = vmem_create("/pmem-fs", ARMCII_GLOBAL_STATE.memory_limit);
-              if (vmp == NULL) {
-                  ARMCII_Error("LIBVMEM failed to create create a memory pool!\n");
-              } else {
-                  ARMCII_GLOBAL_STATE.libvmem_handle = vmp;
-              }
-          }
       }
 #endif
       else {
@@ -466,6 +481,7 @@ int PARMCI_Finalize(void) {
 
 #ifdef HAVE_LIBVMEM_H
   if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+      ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
       vmem_delete(ARMCII_GLOBAL_STATE.libvmem_handle);
   }
 #endif

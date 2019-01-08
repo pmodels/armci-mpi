@@ -82,3 +82,4 @@ tests_test_parmci_SOURCES = tests/test_parmci.c tests/test_parmci_lib.c
 include tests/mpi/Makefile.mk
 include tests/ctree/Makefile.mk
 include tests/contrib/Makefile.mk
+include tests/vmem/Makefile.mk

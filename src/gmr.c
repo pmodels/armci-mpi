@@ -124,8 +124,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       if (local_size == 0) {
         alloc_slices[alloc_me].base = NULL;
       } else {
-        // FIXME
-        MPI_Alloc_mem(local_size, alloc_shm_info, &(alloc_slices[alloc_me].base));
+        ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
+        alloc_slices[alloc_me].base = vmem_malloc(ARMCII_GLOBAL_STATE.libvmem_handle, local_size);
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
       MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
@@ -332,13 +332,12 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   }
 #ifdef HAVE_LIBVMEM_H
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
-    // FIXME
     if (mreg->slices[world_me].base != NULL) {
-      MPI_Free_mem(mreg->slices[world_me].base);
+      ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
+      vmem_free(ARMCII_GLOBAL_STATE.libvmem_handle, mreg->slices[world_me].base);
     }
   }
 #endif
-
 
   free(mreg->slices);
   free(mreg);
