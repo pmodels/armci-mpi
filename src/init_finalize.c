@@ -228,27 +228,29 @@ int PARMCI_Init_thread(int armci_requested) {
   }
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
-
   ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_int("ARMCI_USE_WIN_ALLOCATE", 1);
 
-  /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
+  /* Equivalent to ARMCI_Set_shm_limit - determines the size of:
+   * - MPI_Win_allocate slab in the case of slab allocation
+   * - volatile memory pool in the case of LIBVMEM
+   *
+   * The default must be zero to not break backwards compatibility, although
+   * NWChem should always set a value using ARMCI_Set_shm_limit.  */
+  ARMCII_GLOBAL_STATE.memory_limit=ARMCII_Getenv_long("ARMCI_SHM_LIMIT", 0);
 
+  /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
   ARMCII_GLOBAL_STATE.explicit_nb_progress=ARMCII_Getenv_bool("ARMCI_EXPLICIT_NB_PROGRESS", 1);
 
   /* Pass alloc_shm to win_allocate / alloc_mem */
-
   ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);
 
   /* Enable RMA element-wise atomicity */
-
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
 
   /* Flush_local becomes flush */
-
   ARMCII_GLOBAL_STATE.end_to_end_flush=ARMCII_Getenv_bool("ARMCI_NO_FLUSH_LOCAL", 0);
 
   /* Use MPI_MODE_NOCHECK assertion */
-
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
 
   /* Setup groups and communicators */
@@ -285,7 +287,14 @@ int PARMCI_Init_thread(int armci_requested) {
       }
 #endif
 
+      if (ARMCII_GLOBAL_STATE.memory_limit > 0) {
+          printf("  SHM_LIMIT              = %zu\n", ARMCII_GLOBAL_STATE.memory_limit);
+      } else {
+          printf("  SHM_LIMIT              = %s\n", "UNLIMITED");
+      }
+
       printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
+
       if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
           printf("  WINDOW type used       = %s\n", "CREATE");
       }
@@ -295,6 +304,17 @@ int PARMCI_Init_thread(int armci_requested) {
 #ifdef HAVE_LIBVMEM_H
       else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
           printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
+          if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
+              ARMCII_Error("LIBVMEM requires a finite limit to create a memory pool!\n");
+          } else {
+              /* create the volatile memory pool handle for LIBVMEM to use */
+              VMEM * vmp = vmem_create("/pmem-fs", ARMCII_GLOBAL_STATE.memory_limit);
+              if (vmp == NULL) {
+                  ARMCII_Error("LIBVMEM failed to create create a memory pool!\n");
+              } else {
+                  ARMCII_GLOBAL_STATE.libvmem_handle = vmp;
+              }
+          }
       }
 #endif
       else {
@@ -443,6 +463,12 @@ int PARMCI_Finalize(void) {
   if (ARMCII_GLOBAL_STATE.init_count > 0) {
     return 0;
   }
+
+#ifdef HAVE_LIBVMEM_H
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+      vmem_delete(ARMCII_GLOBAL_STATE.libvmem_handle);
+  }
+#endif
 
 #ifdef HAVE_PTHREADS
     /* Destroy the asynchronous progress thread */
