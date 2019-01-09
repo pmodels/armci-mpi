@@ -46,8 +46,10 @@ static pthread_mutex_t armci_mutex_hdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 int PARMCI_Create_mutexes(int count) {
 
 #ifdef HAVE_PTHREADS
-  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   if (armci_mutex_hdl != NULL) {
@@ -59,8 +61,10 @@ int PARMCI_Create_mutexes(int count) {
   int rc = ((armci_mutex_hdl != NULL) ? 0 : 1);
 
 #ifdef HAVE_PTHREADS
-  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   return rc;
@@ -82,8 +86,10 @@ int PARMCI_Create_mutexes(int count) {
 int PARMCI_Destroy_mutexes(void) {
 
 #ifdef HAVE_PTHREADS
-  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   if (armci_mutex_hdl == NULL) {
@@ -94,8 +100,10 @@ int PARMCI_Destroy_mutexes(void) {
   armci_mutex_hdl = NULL;
 
 #ifdef HAVE_PTHREADS
-  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   return err;
@@ -120,8 +128,10 @@ int PARMCI_Destroy_mutexes(void) {
 void PARMCI_Lock(int mutex, int proc) {
 
 #ifdef HAVE_PTHREADS
-  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   if (armci_mutex_hdl == NULL) {
@@ -131,8 +141,10 @@ void PARMCI_Lock(int mutex, int proc) {
   ARMCIX_Lock_hdl(armci_mutex_hdl, mutex, proc);
 
 #ifdef HAVE_PTHREADS
-  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 }
 
@@ -155,8 +167,10 @@ void PARMCI_Lock(int mutex, int proc) {
 void PARMCI_Unlock(int mutex, int proc) {
 
 #ifdef HAVE_PTHREADS
-  int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 
   if (armci_mutex_hdl == NULL) {
@@ -166,7 +180,9 @@ void PARMCI_Unlock(int mutex, int proc) {
   ARMCIX_Unlock_hdl(armci_mutex_hdl, mutex, proc);
 
 #ifdef HAVE_PTHREADS
-  ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
-  ARMCII_Assert(ptrc == 0);
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&armci_mutex_hdl_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
 #endif
 }
