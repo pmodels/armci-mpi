@@ -3,11 +3,11 @@
 #
 
 check_PROGRAMS += \
-                  tests/vmem/hello         \
+                  tests/memapi/vmem_hello         \
                   # end
 
 TESTS          += \
-                  tests/vmem/hello         \
+                  tests/memapi/vmem_hello         \
                   # end
 
-tests_vmem_hello_LDADD = libarmci.la -lvmem
+tests_memapi_vmem_hello_LDADD = libarmci.la -lvmem
