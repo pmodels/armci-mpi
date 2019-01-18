@@ -267,7 +267,7 @@ int PARMCI_Init_thread(int armci_requested) {
   MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
   MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
   if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
       if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
           ARMCII_Error("LIBVMEM requires a finite limit to create a memory pool!\n");
@@ -327,7 +327,7 @@ int PARMCI_Init_thread(int armci_requested) {
       else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
           printf("  WINDOW type used       = %s\n", "ALLOCATE");
       }
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
       else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
           printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
       }
@@ -479,7 +479,7 @@ int PARMCI_Finalize(void) {
     return 0;
   }
 
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
   if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
       vmem_delete(ARMCII_GLOBAL_STATE.libvmem_handle);

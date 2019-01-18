@@ -118,7 +118,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
   }
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
 
       if (local_size == 0) {
@@ -330,7 +330,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
       MPI_Free_mem(mreg->slices[world_me].base);
     }
   }
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
     if (mreg->slices[world_me].base != NULL) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
