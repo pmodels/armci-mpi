@@ -19,8 +19,8 @@
 #endif
 
 #ifdef HAVE_MEMKIND_H
-#include <libvmem.h>
-#define ARMCII_LIBVMEM_WINDOW_TYPE -100
+#include <memkind.h>
+#define ARMCII_MEMKIND_WINDOW_TYPE -100
 #endif
 
 /* Likely/Unlikely macros borrowed from MPICH:
@@ -97,7 +97,8 @@ typedef struct {
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
 #ifdef HAVE_MEMKIND_H
-  VMEM*         libvmem_handle;         /* libvmem volatile memory pool opaque object                           */
+  struct
+  memkind* memkind_handle;              /* memkind volatile memory pool opaque object                           */
 #endif
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */

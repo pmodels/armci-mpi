@@ -285,8 +285,8 @@ int PARMCI_Init_thread(int armci_requested) {
           ARMCII_Dbg_print(DEBUG_CAT_ALL, "VMEM pool_path = %s\n", pool_path);
 
           /* create the volatile memory pool handle for LIBVMEM to use */
-          ARMCII_GLOBAL_STATE.libvmem_handle = vmem_create(pool_path, ARMCII_GLOBAL_STATE.memory_limit);
-          if (ARMCII_GLOBAL_STATE.libvmem_handle == NULL) {
+          ARMCII_GLOBAL_STATE.memkind_handle = vmem_create(pool_path, ARMCII_GLOBAL_STATE.memory_limit);
+          if (ARMCII_GLOBAL_STATE.memkind_handle == NULL) {
               ARMCII_Error("LIBVMEM failed to create create a memory pool!\n");
           }
       }
@@ -481,8 +481,8 @@ int PARMCI_Finalize(void) {
 
 #ifdef HAVE_MEMKIND_H
   if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
-      ARMCII_Assert(ARMCII_GLOBAL_STATE.libvmem_handle != NULL);
-      vmem_delete(ARMCII_GLOBAL_STATE.libvmem_handle);
+      ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
+      vmem_delete(ARMCII_GLOBAL_STATE.memkind_handle);
   }
 #endif
 
