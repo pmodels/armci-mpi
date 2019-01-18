@@ -18,7 +18,7 @@
 #  include <pthread.h>
 #endif
 
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
 #include <libvmem.h>
 #define ARMCII_LIBVMEM_WINDOW_TYPE -100
 #endif
@@ -96,7 +96,7 @@ typedef struct {
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
-#ifdef HAVE_LIBVMEM_H
+#ifdef HAVE_MEMKIND_H
   VMEM*         libvmem_handle;         /* libvmem volatile memory pool opaque object                           */
 #endif
 
