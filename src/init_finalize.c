@@ -2,11 +2,6 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mpi.h>
-
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
@@ -27,8 +22,10 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#include <unistd.h> /* usleep */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* usleep */
+#endif
 #else
 
 #warning No naptime available!

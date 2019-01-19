@@ -2,15 +2,6 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mpi.h>
-
-#ifdef HAVE_PTHREADS
-#  include <pthread.h>
-#endif
-
 #include <armci.h>
 #include <armcix.h>
 #include <armci_internals.h>
@@ -336,10 +327,7 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
     if (mreg->slices[world_me].base != NULL) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
-      int err = memkind_free(ARMCII_GLOBAL_STATE.memkind_handle, mreg->slices[world_me].base);
-      if (err) {
-          ARMCII_Error("MEMKIND failed to free memory! (err=%d, errno=%d)\n", err, errno);
-      }
+      memkind_free(ARMCII_GLOBAL_STATE.memkind_handle, mreg->slices[world_me].base);
     }
   }
 #endif

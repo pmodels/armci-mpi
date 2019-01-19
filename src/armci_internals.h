@@ -8,19 +8,35 @@
 #include <armci.h>
 #include <armciconf.h>
 
-#if   HAVE_STDINT_H
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#if HAVE_STDINT_H
 #  include <stdint.h>
 #elif HAVE_INTTYPES_H
 #  include <inttypes.h>
 #endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#include <mpi.h>
 
 #ifdef HAVE_PTHREADS
 #  include <pthread.h>
 #endif
 
+
 #ifdef HAVE_MEMKIND_H
 #include <memkind.h>
 #define ARMCII_MEMKIND_WINDOW_TYPE -100
+
+#ifndef MEMKIND_PMEM_MIN_SIZE
+#define MEMKIND_PMEM_MIN_SIZE (1024 * 1024 * 16)
+#endif
+
 #endif
 
 /* Likely/Unlikely macros borrowed from MPICH:
