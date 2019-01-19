@@ -274,7 +274,7 @@ int PARMCI_Init_thread(int armci_requested) {
       } else {
 
           if (ARMCII_GLOBAL_STATE.memory_limit < MEMKIND_PMEM_MIN_SIZE) {
-              ARMCII_Warning("ARMCI memory limit too low (%zu) for VMEM increasing to MEMKIND_PMEM_MIN_SIZE (%zu)\n",
+              ARMCII_Warning("ARMCI memory limit too low (%zu) for MEMKIND increasing to MEMKIND_PMEM_MIN_SIZE (%zu)\n",
                              ARMCII_GLOBAL_STATE.memory_limit, MEMKIND_PMEM_MIN_SIZE);
           }
 
@@ -330,7 +330,7 @@ int PARMCI_Init_thread(int armci_requested) {
       }
 #ifdef HAVE_MEMKIND_H
       else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
-          printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
+          printf("  WINDOW type used       = %s\n", "MEMKIND+CREATE");
       }
 #endif
       else {
@@ -483,7 +483,10 @@ int PARMCI_Finalize(void) {
 #ifdef HAVE_MEMKIND_H
   if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
-      vmem_delete(ARMCII_GLOBAL_STATE.memkind_handle);
+      int err = memkind_destroy_kind(ARMCII_GLOBAL_STATE.memkind_handle);
+      if (err) {
+          ARMCII_Error("MEMKIND failed to create destroy a memory pool! (err=%d, errno=%d)\n", err, errno);
+      }
   }
 #endif
 

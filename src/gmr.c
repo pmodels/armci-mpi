@@ -125,8 +125,10 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
         alloc_slices[alloc_me].base = NULL;
       } else {
         ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
-        alloc_slices[alloc_me].base = vmem_malloc(ARMCII_GLOBAL_STATE.memkind_handle, local_size);
-        ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
+        alloc_slices[alloc_me].base = memkind_malloc(ARMCII_GLOBAL_STATE.memkind_handle, local_size);
+        if (alloc_slices[alloc_me].base != NULL) {
+            ARMCII_Error("MEMKIND failed to allocate memory! (errno=%d)\n", errno);
+        }
       }
       MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
   }
@@ -334,7 +336,10 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
     if (mreg->slices[world_me].base != NULL) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
-      vmem_free(ARMCII_GLOBAL_STATE.memkind_handle, mreg->slices[world_me].base);
+      int err = memkind_free(ARMCII_GLOBAL_STATE.memkind_handle, mreg->slices[world_me].base);
+      if (err) {
+          ARMCII_Error("MEMKIND failed to free memory! (err=%d, errno=%d)\n", err, errno);
+      }
     }
   }
 #endif
