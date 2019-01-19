@@ -232,7 +232,7 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Equivalent to ARMCI_Set_shm_limit - determines the size of:
    * - MPI_Win_allocate slab in the case of slab allocation
-   * - volatile memory pool in the case of LIBVMEM
+   * - volatile memory pool in the case of MEMKIND
    *
    * The default must be zero to not break backwards compatibility, although
    * NWChem should always set a value using ARMCI_Set_shm_limit.  */
@@ -268,26 +268,27 @@ int PARMCI_Init_thread(int armci_requested) {
   MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
 #ifdef HAVE_MEMKIND_H
-  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
       if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
-          ARMCII_Error("LIBVMEM requires a finite limit to create a memory pool!\n");
+          ARMCII_Error("MEMKIND requires a finite limit to create a memory pool!\n");
       } else {
 
-          if (ARMCII_GLOBAL_STATE.memory_limit < VMEM_MIN_POOL) {
-              ARMCII_Warning("ARMCI memory limit too low (%zu) for VMEM increasing to VMEM_MIN_POOL (%zu)\n",
-                             ARMCII_GLOBAL_STATE.memory_limit, VMEM_MIN_POOL);
+          if (ARMCII_GLOBAL_STATE.memory_limit < MEMKIND_PMEM_MIN_SIZE) {
+              ARMCII_Warning("ARMCI memory limit too low (%zu) for VMEM increasing to MEMKIND_PMEM_MIN_SIZE (%zu)\n",
+                             ARMCII_GLOBAL_STATE.memory_limit, MEMKIND_PMEM_MIN_SIZE);
           }
 
-          char * pool_path = ARMCII_Getenv("ARMCI_VMEM_POOL_PATH");
+          char * pool_path = ARMCII_Getenv("ARMCI_MEMKIND_POOL_PATH");
           if (pool_path == NULL) {
-              pool_path = "/pmem-fs";
+              ARMCII_Warning("ARMCI_MEMKIND_POOL_PATH not provided - using default (/tmp)\n");
+              pool_path = "/tmp";
           }
-          ARMCII_Dbg_print(DEBUG_CAT_ALL, "VMEM pool_path = %s\n", pool_path);
+          ARMCII_Dbg_print(DEBUG_CAT_ALL, "MEMKIND pool_path = %s\n", pool_path);
 
-          /* create the volatile memory pool handle for LIBVMEM to use */
-          ARMCII_GLOBAL_STATE.memkind_handle = vmem_create(pool_path, ARMCII_GLOBAL_STATE.memory_limit);
-          if (ARMCII_GLOBAL_STATE.memkind_handle == NULL) {
-              ARMCII_Error("LIBVMEM failed to create create a memory pool!\n");
+          /* create the volatile memory pool handle for MEMKIND to use */
+          int err = memkind_create_pmem(pool_path, ARMCII_GLOBAL_STATE.memory_limit, &ARMCII_GLOBAL_STATE.memkind_handle);
+          if (err) {
+              ARMCII_Error("MEMKIND failed to create create a memory pool! (err=%d, errno=%d)\n", err, errno);
           }
       }
   }
@@ -328,7 +329,7 @@ int PARMCI_Init_thread(int armci_requested) {
           printf("  WINDOW type used       = %s\n", "ALLOCATE");
       }
 #ifdef HAVE_MEMKIND_H
-      else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+      else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
           printf("  WINDOW type used       = %s\n", "LIBVMEM+CREATE");
       }
 #endif
@@ -480,7 +481,7 @@ int PARMCI_Finalize(void) {
   }
 
 #ifdef HAVE_MEMKIND_H
-  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_LIBVMEM_WINDOW_TYPE) {
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
       ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
       vmem_delete(ARMCII_GLOBAL_STATE.memkind_handle);
   }
