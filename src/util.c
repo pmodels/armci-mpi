@@ -104,8 +104,7 @@ int ARMCI_Uses_shm(void) {
 }
 
 /** Limit the amount of memory ARMCI will allocate.
-  * This matters for slab allocation, including LIBVMEM support,
-  * but is otherwise ignored.
+  * This matters for slab allocation but is otherwise ignored.
   *
   * A limit of 0 specifies no limit.
   */
