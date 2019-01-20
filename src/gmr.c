@@ -117,7 +117,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       } else {
         ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
         alloc_slices[alloc_me].base = memkind_malloc(ARMCII_GLOBAL_STATE.memkind_handle, local_size);
-        if (alloc_slices[alloc_me].base != NULL) {
+        if (alloc_slices[alloc_me].base == NULL) {
             ARMCII_Error("MEMKIND failed to allocate memory! (errno=%d)\n", errno);
         }
       }
