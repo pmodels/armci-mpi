@@ -126,13 +126,36 @@ if test "$ac_cv_prog_cc_c99" = "no" ; then
    AC_ERROR([C99 not supported by the compiler])
 fi
 
-AC_CHECK_HEADERS([execinfo.h string.h strings.h stdint.h inttypes.h unistd.h errno.h time.h memkind.h])
+AC_CHECK_HEADERS([execinfo.h string.h strings.h stdint.h inttypes.h unistd.h errno.h time.h])
 AC_TYPE_UINT8_T
 AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 LIBS="$PTHREAD_LIBS $LIBS"
 AC_CHECK_FUNC([usleep], [AC_DEFINE([HAVE_USLEEP], [1], [Define if usleep exists.])])
 AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
+
+## MEMKIND support
+AC_ARG_WITH(memkind,
+            AC_HELP_STRING([--with-memkind],[Enable MEMKIND library]),
+            [use_memkind=$withval],
+            [use_memkind=no])
+AC_MSG_CHECKING(MEMKIND support)
+AC_MSG_RESULT($use_memkind)
+if test "x$use_memkind" != "xno"; then
+    if test "x$use_memkind" = "x"; then
+        AC_CHECK_HEADER([memkind.h])
+        LIBS="$LIBS -lmemkind"
+        AC_CHECK_FUNCS([memkind_destroy_kind], [have_memkind_destroy_kind=yes], [have_memkind_destroy_kind=no])
+    else
+        CPPFLAGS="$CPPFLAGS -I$use_memkind"
+        AC_CHECK_HEADER([memkind.h])
+        LIBS="-L$use_memkind/lib -lmemkind $LIBS"
+        AC_CHECK_FUNCS([memkind_destroy_kind], [have_memkind_destroy_kind=yes], [have_memkind_destroy_kind=no])
+    fi
+    if test "x$have_memkind_destroy_kind" = "xno"; then
+        AC_MSG_ERROR([Your MEMKIND library version is too old and lacks memkind_destroy_kind.  Please install a newer version.])
+    fi
+fi
 
 ## Debugging support
 AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
