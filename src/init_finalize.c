@@ -207,9 +207,12 @@ int PARMCI_Init_thread(int armci_requested) {
   }
 
 #ifdef OPEN_MPI
-  if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT ||
-      ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT)
-      ARMCII_Warning("MPI Datatypes are broken in RMA in older versions of Open-MPI!\n");
+  if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT || ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
+      ARMCII_Warning("MPI Datatypes are broken in RMA in many versions of Open-MPI!\n");
+#if defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
+      ARMCII_Warning("Open-MPI 4.0.0 RMA with datatypes is definitely broken.  See https://github.com/open-mpi/ompi/issues/6275 for details.\n");
+#endif
+  }
 #endif
 
   /* Shared buffer handling method */
