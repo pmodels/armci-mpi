@@ -143,12 +143,12 @@ AC_MSG_CHECKING(MEMKIND support)
 AC_MSG_RESULT($use_memkind)
 if test "x$use_memkind" != "xno"; then
     if test "x$use_memkind" = "x"; then
-        AC_CHECK_HEADER([memkind.h])
+        AC_CHECK_HEADERS([memkind.h])
         LIBS="$LIBS -lmemkind"
         AC_CHECK_FUNCS([memkind_destroy_kind], [have_memkind_destroy_kind=yes], [have_memkind_destroy_kind=no])
     else
-        CPPFLAGS="$CPPFLAGS -I$use_memkind"
-        AC_CHECK_HEADER([memkind.h])
+        CPPFLAGS="$CPPFLAGS -I$use_memkind/include"
+        AC_CHECK_HEADERS([memkind.h])
         LIBS="-L$use_memkind/lib -lmemkind $LIBS"
         AC_CHECK_FUNCS([memkind_destroy_kind], [have_memkind_destroy_kind=yes], [have_memkind_destroy_kind=no])
     fi

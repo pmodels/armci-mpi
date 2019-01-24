@@ -331,7 +331,7 @@ int PARMCI_Init_thread(int armci_requested) {
       }
 #endif
       else {
-          ARMCII_Error("You have selected an invalid window type!\n");
+          ARMCII_Error("You have selected an invalid window type (%d)!\n", ARMCII_GLOBAL_STATE.use_win_allocate);
       }
 
       if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
