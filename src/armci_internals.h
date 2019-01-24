@@ -78,6 +78,7 @@ typedef struct {
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
+  int           thread_level;           /* THREAD_{SINGLE,FUNNELED,SERIALIZED,MULTIPLE} ala MPI                 */
 #ifdef HAVE_PTHREADS
   int           progress_thread;        /* Create progress thread                                               */
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */

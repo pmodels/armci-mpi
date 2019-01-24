@@ -7,7 +7,9 @@
 #include <string.h>
 #include <mpi.h>
 
-#include <pthread.h>
+#ifdef HAVE_PTHREADS
+#  include <pthread.h>
+#endif
 
 #include <armci.h>
 #include <armcix.h>
@@ -19,7 +21,9 @@
   */
 gmr_t *gmr_list = NULL;
 
+#ifdef HAVE_PTHREADS
 static pthread_mutex_t gmr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /** Create a distributed shared memory region. Collective on ARMCI group.
   *
@@ -189,9 +193,12 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     }
   }
 
-  int ptrc;
-  ptrc = pthread_mutex_lock(&gmr_list_mutex);
-  ARMCII_Assert(ptrc == 0);
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
 
   /* Append the new region onto the region list */
   if (gmr_list == NULL) {
@@ -207,8 +214,12 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     mreg->prev   = parent;
   }
 
-  ptrc = pthread_mutex_unlock(&gmr_list_mutex);
-  ARMCII_Assert(ptrc == 0);
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
 
   return mreg;
 }
@@ -263,9 +274,12 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
   /* If it's still not found, the user may have passed the wrong group */
   ARMCII_Assert_msg(mreg != NULL, "Could not locate the desired allocation");
 
-  int ptrc;
-  ptrc = pthread_mutex_lock(&gmr_list_mutex);
-  ARMCII_Assert(ptrc == 0);
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
 
   /* Remove from the list of mem regions */
   if (mreg->prev == NULL) {
@@ -281,8 +295,12 @@ void gmr_destroy(gmr_t *mreg, ARMCI_Group *group) {
       mreg->next->prev = mreg->prev;
   }
 
-  ptrc = pthread_mutex_unlock(&gmr_list_mutex);
-  ARMCII_Assert(ptrc == 0);
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
 
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
   MPI_Win_unlock_all(mreg->window);

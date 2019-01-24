@@ -93,24 +93,25 @@ int PARMCI_Init_thread(int armci_requested) {
     int mpi_is_init, mpi_is_fin;
     MPI_Initialized(&mpi_is_init);
     MPI_Finalized(&mpi_is_fin);
-    if (!mpi_is_init || mpi_is_fin) 
+    if (!mpi_is_init || mpi_is_fin) {
       ARMCII_Error("MPI must be initialized before calling ARMCI_Init");
+    }
   }
 
   /* Check for MPI thread-support */
   {
-    int mpi_provided;
-    MPI_Query_thread(&mpi_provided);
-
-    if (mpi_provided<armci_requested)
-      ARMCII_Error("MPI thread level below ARMCI thread level!");
-  }
-
-#ifdef HAVE_PTHREADS
-  /* Check progress thread settings */
-  {
     int mpi_thread_level;
     MPI_Query_thread(&mpi_thread_level);
+
+    if (mpi_thread_level<armci_requested) {
+      ARMCII_Error("MPI thread level below ARMCI thread level!");
+    }
+
+    ARMCII_GLOBAL_STATE.thread_level = armci_requested;
+
+#ifdef HAVE_PTHREADS
+
+    /* Check progress thread settings */
 
     ARMCII_GLOBAL_STATE.progress_thread    = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
     ARMCII_GLOBAL_STATE.progress_usleep    = ARMCII_Getenv_int("ARMCI_PROGRESS_USLEEP", 0);
@@ -128,15 +129,6 @@ int PARMCI_Init_thread(int armci_requested) {
     }
   }
 #endif
-
-  /* Check for MPI thread-support */
-  {
-    int mpi_provided;
-    MPI_Query_thread(&mpi_provided);
-
-    if (mpi_provided<armci_requested)
-      ARMCII_Error("MPI thread level below ARMCI thread level!");
-  }
 
   /* Set defaults */
 #ifdef ARMCI_GROUP
