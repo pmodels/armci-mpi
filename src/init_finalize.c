@@ -477,16 +477,6 @@ int PARMCI_Finalize(void) {
     return 0;
   }
 
-#ifdef HAVE_MEMKIND_H
-  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
-      ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
-      int err = memkind_destroy_kind(ARMCII_GLOBAL_STATE.memkind_handle);
-      if (err) {
-          ARMCII_Error("MEMKIND failed to create destroy a memory pool! (err=%d, errno=%d)\n", err, errno);
-      }
-  }
-#endif
-
 #ifdef HAVE_PTHREADS
     /* Destroy the asynchronous progress thread */
     {
@@ -516,6 +506,17 @@ int PARMCI_Finalize(void) {
   ARMCI_Cleanup();
 
   ARMCI_Group_free(&ARMCI_GROUP_WORLD);
+
+  /* must come after gmr_destroy_all */
+#ifdef HAVE_MEMKIND_H
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
+      ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
+      int err = memkind_destroy_kind(ARMCII_GLOBAL_STATE.memkind_handle);
+      if (err) {
+          ARMCII_Error("MEMKIND failed to create destroy a memory pool! (err=%d, errno=%d)\n", err, errno);
+      }
+  }
+#endif
 
   return 0;
 }
