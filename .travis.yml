@@ -14,6 +14,39 @@ addons:
       - hwloc
 matrix:
   allow_failures:
+  exclude:
+     - os: osx
+       compiler: gcc
+       env: MPI_IMPL=mpich
+            ARMCI_STRIDED_METHOD=DIRECT
+            ARMCI_IOV_METHOD=DIRECT
+            ARMCI_USE_WIN_ALLOCATE=-100
+            ARMCI_SHM_LIMIT=$((32*1024*1024))
+            ARMCI_MEMKIND_POOL_PATH=/tmp
+     - os: osx
+       compiler: clang
+       env: MPI_IMPL=mpich
+            ARMCI_STRIDED_METHOD=DIRECT
+            ARMCI_IOV_METHOD=DIRECT
+            ARMCI_USE_WIN_ALLOCATE=-100
+            ARMCI_SHM_LIMIT=$((32*1024*1024))
+            ARMCI_MEMKIND_POOL_PATH=/tmp
+     - os: osx
+       compiler: gcc
+       env: MPI_IMPL=openmpi
+            ARMCI_STRIDED_METHOD=IOV
+            ARMCI_IOV_METHOD=BATCHED
+            ARMCI_USE_WIN_ALLOCATE=-100
+            ARMCI_SHM_LIMIT=$((32*1024*1024))
+            ARMCI_MEMKIND_POOL_PATH=/tmp
+     - os: osx
+       compiler: clang
+       env: MPI_IMPL=openmpi
+            ARMCI_STRIDED_METHOD=IOV
+            ARMCI_IOV_METHOD=BATCHED
+            ARMCI_USE_WIN_ALLOCATE=-100
+            ARMCI_SHM_LIMIT=$((32*1024*1024))
+            ARMCI_MEMKIND_POOL_PATH=/tmp
 env:
   #
   # Test the default config since that is what Debian users will get.
@@ -73,6 +106,21 @@ env:
   #  ARMCI_IOV_METHOD=DIRECT
   #  ARMCI_NO_FLUSH_LOCAL=1
   #  ARMCI_USE_WIN_ALLOCATE=1
+  #
+  #  MEMKIND testing
+  #
+  - MPI_IMPL=mpich
+    ARMCI_STRIDED_METHOD=DIRECT
+    ARMCI_IOV_METHOD=DIRECT
+    ARMCI_USE_WIN_ALLOCATE=-100
+    ARMCI_SHM_LIMIT=$((32*1024*1024))
+    ARMCI_MEMKIND_POOL_PATH=/tmp
+  - MPI_IMPL=openmpi
+    ARMCI_STRIDED_METHOD=IOV
+    ARMCI_IOV_METHOD=BATCHED
+    ARMCI_USE_WIN_ALLOCATE=-100
+    ARMCI_SHM_LIMIT=$((32*1024*1024))
+    ARMCI_MEMKIND_POOL_PATH=/tmp
 before_install:
   - export TRAVIS_ROOT=$HOME/travis
   - mkdir $TRAVIS_ROOT
