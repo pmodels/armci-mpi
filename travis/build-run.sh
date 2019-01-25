@@ -35,6 +35,9 @@ case "$MPI_IMPL" in
         # see https://github.com/open-mpi/ompi/issues/2956
         # fixes issues e.g. https://travis-ci.org/jeffhammond/armci-mpi/jobs/211165004
         export TMPDIR=/tmp
+        # see https://github.com/open-mpi/ompi/issues/6275
+        # workaround Open-MPI 4.0.0 RMA bug
+        export OMPI_MCA_osc=sm,pt2pt
         ;;
 esac
 
