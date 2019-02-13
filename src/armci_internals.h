@@ -90,6 +90,8 @@ typedef struct {
   int           end_to_end_flush;       /* All flush_local calls become flush                                   */
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
 
+  size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
+
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
   enum ARMCII_Shr_buf_methods_e shr_buf_method; /* Shared buffer management method      */
@@ -115,6 +117,7 @@ void  ARMCII_Bzero(void *buf, armci_size_t size);
 char *ARMCII_Getenv(const char *varname);
 int   ARMCII_Getenv_bool(const char *varname, int default_value);
 int   ARMCII_Getenv_int(const char *varname, int default_value);
+long  ARMCII_Getenv_long(const char *varname, long default_value);
 
 /* Synchronization */
 
