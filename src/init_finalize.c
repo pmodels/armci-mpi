@@ -27,7 +27,9 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h> /* usleep */
+#endif
 
 #else
 
