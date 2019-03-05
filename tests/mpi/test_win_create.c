@@ -7,8 +7,13 @@
 
 #include <mpi.h>
 
-#define DATA_NELTS  1000
+#if defined(__CRAYXT) || defined(__CRAYXE) || defined(__CRAYXC) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#define NUM_WIN     300    // Cray MPI supports ~900 accordig to Nathan...
+#else
 #define NUM_WIN     1000   // Error starts at 17.  Up to 16 is ok.
+#endif
+
+#define DATA_NELTS  1000
 #define DATA_SZ     (DATA_NELTS*sizeof(int))
 
 int main(int argc, char ** argv) {
