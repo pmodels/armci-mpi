@@ -27,6 +27,7 @@ case "$MPI_IMPL" in
         mpichversion
         mpicc -show
         export HWLOC_COMPONENTS=no_os
+        export OVERSUBSCRIBE=""
         ;;
     openmpi)
         # this is missing with Mac build it seems
@@ -38,13 +39,16 @@ case "$MPI_IMPL" in
         # see https://github.com/open-mpi/ompi/issues/6275
         # workaround Open-MPI 4.0.0 RMA bug
         export OMPI_MCA_osc=sm,pt2pt
+        export OVERSUBSCRIBE="--oversubscribe"
         ;;
 esac
 
 # Configure and build
 ./autogen.sh
 ./configure
+make
 
 # Run unit tests
 export ARMCI_VERBOSE=1
-make check
+make check MPIEXEC="mpirun ${OVERSUBSCRIBE} -n 2"
+make check MPIEXEC="mpirun ${OVERSUBSCRIBE} -n 4"
