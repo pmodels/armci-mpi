@@ -2,11 +2,6 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mpi.h>
-
 #include <armci.h>
 #include <armci_internals.h>
 #include <debug.h>
@@ -112,7 +107,6 @@ int PARMCI_Init_thread(int armci_requested) {
     ARMCII_GLOBAL_STATE.thread_level = armci_requested;
 
 #ifdef HAVE_PTHREADS
-
     /* Check progress thread settings */
 
     ARMCII_GLOBAL_STATE.progress_thread    = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
@@ -200,12 +194,13 @@ int PARMCI_Init_thread(int armci_requested) {
 
   var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
   if (var != NULL) {
-    if (strcmp(var, "IOV") == 0)
+    if (strcmp(var, "IOV") == 0) {
       ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
-    else if (strcmp(var, "DIRECT") == 0)
+    } else if (strcmp(var, "DIRECT") == 0) {
       ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
-    else if (ARMCI_GROUP_WORLD.rank == 0)
+    } else if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_STRIDED_METHOD (%s)\n", var);
+    }
   }
 
 #ifdef OPEN_MPI
@@ -224,37 +219,39 @@ int PARMCI_Init_thread(int armci_requested) {
 
   var = ARMCII_Getenv("ARMCI_SHR_BUF_METHOD");
   if (var != NULL) {
-    if (strcmp(var, "COPY") == 0)
+    if (strcmp(var, "COPY") == 0) {
       ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_COPY;
-    else if (strcmp(var, "NOGUARD") == 0)
+    } else if (strcmp(var, "NOGUARD") == 0) {
       ARMCII_GLOBAL_STATE.shr_buf_method = ARMCII_SHR_BUF_NOGUARD;
-    else if (ARMCI_GROUP_WORLD.rank == 0)
+    } else if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_SHR_BUF_METHOD (%s)\n", var);
+    }
   }
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs (now fixed) in MPICH. */
+  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_int("ARMCI_USE_WIN_ALLOCATE", 1);
 
-  int win_alloc_default = 1;
-  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", win_alloc_default);
+  /* Equivalent to ARMCI_Set_shm_limit - determines the size of:
+   * - MPI_Win_allocate slab in the case of slab allocation
+   * - volatile memory pool in the case of MEMKIND
+   *
+   * The default must be zero to not break backwards compatibility, although
+   * NWChem should always set a value using ARMCI_Set_shm_limit.  */
+  ARMCII_GLOBAL_STATE.memory_limit=ARMCII_Getenv_long("ARMCI_SHM_LIMIT", 0);
 
   /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
-
   ARMCII_GLOBAL_STATE.explicit_nb_progress=ARMCII_Getenv_bool("ARMCI_EXPLICIT_NB_PROGRESS", 1);
 
   /* Pass alloc_shm to win_allocate / alloc_mem */
-
   ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);
 
   /* Enable RMA element-wise atomicity */
-
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
 
   /* Flush_local becomes flush */
-
   ARMCII_GLOBAL_STATE.end_to_end_flush=ARMCII_Getenv_bool("ARMCI_NO_FLUSH_LOCAL", 0);
 
   /* Use MPI_MODE_NOCHECK assertion */
-
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
 
   /* Setup groups and communicators */
@@ -270,6 +267,34 @@ int PARMCI_Init_thread(int armci_requested) {
 
   MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
   MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
+
+#ifdef HAVE_MEMKIND_H
+  char * pool_path;
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
+      if (ARMCII_GLOBAL_STATE.memory_limit == 0) {
+          ARMCII_Error("MEMKIND requires a finite limit to create a memory pool!\n");
+      } else {
+
+          if (ARMCII_GLOBAL_STATE.memory_limit < MEMKIND_PMEM_MIN_SIZE) {
+              ARMCII_Warning("ARMCI memory limit too low (%zu) for MEMKIND increasing to MEMKIND_PMEM_MIN_SIZE (%zu)\n",
+                             ARMCII_GLOBAL_STATE.memory_limit, MEMKIND_PMEM_MIN_SIZE);
+          }
+
+          pool_path = ARMCII_Getenv("ARMCI_MEMKIND_POOL_PATH");
+          if (pool_path == NULL) {
+              ARMCII_Warning("ARMCI_MEMKIND_POOL_PATH not provided - using default (/tmp)\n");
+              pool_path = "/tmp";
+          }
+          ARMCII_Dbg_print(DEBUG_CAT_ALL, "MEMKIND pool_path = %s\n", pool_path);
+
+          /* create the volatile memory pool handle for MEMKIND to use */
+          int err = memkind_create_pmem(pool_path, ARMCII_GLOBAL_STATE.memory_limit, &ARMCII_GLOBAL_STATE.memkind_handle);
+          if (err) {
+              ARMCII_Error("MEMKIND failed to create create a memory pool! (err=%d, errno=%d)\n", err, errno);
+          }
+      }
+  }
+#endif
 
   ARMCII_GLOBAL_STATE.init_count++;
 
@@ -290,14 +315,60 @@ int PARMCI_Init_thread(int armci_requested) {
           printf("  PROGRESS_USLEEP        = %d\n", ARMCII_GLOBAL_STATE.progress_usleep);
       }
 #endif
+      printf("  EXPLICIT_NB_PROGRESS   = %s\n", ARMCII_GLOBAL_STATE.explicit_nb_progress ? "ENABLED" : "DISABLED");
+
+      if (ARMCII_GLOBAL_STATE.memory_limit > 0) {
+          size_t limit  = ARMCII_GLOBAL_STATE.memory_limit;
+          char suffix[4] = {0};
+          int    offset = 0;
+          if (limit && !(limit & (limit-1))) {
+            char * bsuffix[5] = {"", "KiB","MiB","GiB","TiB"};
+            for (int i=0; i<4; i++) {
+              if (limit % 1024 == 0) {
+                offset++;
+                limit /= 1024;
+              }
+            }
+            strncpy(suffix, bsuffix[offset], sizeof(suffix));
+          } else {
+            char * dsuffix[5] = {"","KB","MB","GB","TB"};
+            for (int i=0; i<4; i++) {
+              if (limit % 1000 == 0) {
+                offset++;
+                limit /= 1000;
+              }
+            }
+            strncpy(suffix, dsuffix[offset], sizeof(suffix));
+          }
+          printf("  SHM_LIMIT              = %zu %s\n", limit, suffix);
+      } else {
+          printf("  SHM_LIMIT              = %s\n", "UNLIMITED");
+      }
 
       printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
-      printf("  WINDOW type used       = %s\n", ARMCII_GLOBAL_STATE.use_win_allocate ? "ALLOCATE" : "CREATE");
-      if (ARMCII_GLOBAL_STATE.use_win_allocate) {
+      printf("  MPI_MODE_NOCHECK used  = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck   ? "TRUE" : "FALSE");
+
+      if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
+          printf("  WINDOW type used       = %s\n", "CREATE");
+      }
+      else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
+          printf("  WINDOW type used       = %s\n", "ALLOCATE");
+      }
+#ifdef HAVE_MEMKIND_H
+      else if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
+          printf("  WINDOW type used       = %s\n", "MEMKIND+CREATE");
+          printf("  MEMKIND pool_path      = %s\n", pool_path);
+      }
+#endif
+      else {
+          ARMCII_Error("You have selected an invalid window type (%d)!\n", ARMCII_GLOBAL_STATE.use_win_allocate);
+      }
+
+      if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
           /* Jeff: Using win_allocate leads to correctness issues with some
            *       MPI implementations since 3c4ad2abc8c387fcdec3a7f3f44fa5fd75653ece. */
           /* This is required on Cray systems with CrayMPI 7.0.0 (at least) */
-          /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and 
+          /* Update (Feb. 2015): Xin and Min found the bug in Fetch_and_op and
            *                     it is fixed upstream. */
           ARMCII_Warning("MPI_Win_allocate can lead to correctness issues.\n");
       }
@@ -305,14 +376,16 @@ int PARMCI_Init_thread(int armci_requested) {
       printf("  STRIDED_METHOD         = %s\n", ARMCII_Strided_methods_str[ARMCII_GLOBAL_STATE.strided_method]);
       printf("  IOV_METHOD             = %s\n", ARMCII_Iov_methods_str[ARMCII_GLOBAL_STATE.iov_method]);
 
-      if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED
-          || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO)
-      {
-        if (ARMCII_GLOBAL_STATE.iov_batched_limit > 0)
+      if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO) {
+        if (ARMCII_GLOBAL_STATE.iov_batched_limit > 0) {
           printf("  IOV_BATCHED_LIMIT      = %d\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
-        else
+        } else {
           printf("  IOV_BATCHED_LIMIT      = UNLIMITED\n");
+        }
       }
+
+      printf("  RMA_ATOMICITY          = %s\n", ARMCII_GLOBAL_STATE.rma_atomicity          ? "TRUE" : "FALSE");
+      printf("  NO_FLUSH_LOCAL         = %s\n", ARMCII_GLOBAL_STATE.end_to_end_flush       ? "TRUE" : "FALSE");
 
       printf("  IOV_CHECKS             = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");
       printf("  SHR_BUF_METHOD         = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
@@ -465,6 +538,17 @@ int PARMCI_Finalize(void) {
   ARMCI_Cleanup();
 
   ARMCI_Group_free(&ARMCI_GROUP_WORLD);
+
+  /* must come after gmr_destroy_all */
+#ifdef HAVE_MEMKIND_H
+  if (ARMCII_GLOBAL_STATE.use_win_allocate == ARMCII_MEMKIND_WINDOW_TYPE) {
+      ARMCII_Assert(ARMCII_GLOBAL_STATE.memkind_handle != NULL);
+      int err = memkind_destroy_kind(ARMCII_GLOBAL_STATE.memkind_handle);
+      if (err) {
+          ARMCII_Error("MEMKIND failed to create destroy a memory pool! (err=%d, errno=%d)\n", err, errno);
+      }
+  }
+#endif
 
   return 0;
 }

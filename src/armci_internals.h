@@ -8,14 +8,35 @@
 #include <armci.h>
 #include <armciconf.h>
 
-#if   HAVE_STDINT_H
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#if HAVE_STDINT_H
 #  include <stdint.h>
 #elif HAVE_INTTYPES_H
 #  include <inttypes.h>
 #endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#include <mpi.h>
 
 #ifdef HAVE_PTHREADS
 #  include <pthread.h>
+#endif
+
+
+#ifdef HAVE_MEMKIND_H
+#include <memkind.h>
+#define ARMCII_MEMKIND_WINDOW_TYPE -100
+
+#ifndef MEMKIND_PMEM_MIN_SIZE
+#define MEMKIND_PMEM_MIN_SIZE (1024 * 1024 * 16)
+#endif
+
 #endif
 
 /* Likely/Unlikely macros borrowed from MPICH:
@@ -83,7 +104,7 @@ typedef struct {
   int           progress_thread;        /* Create progress thread                                               */
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 #endif
-  int           use_win_allocate;       /* Use win_allocate or win_create                                       */
+  int           use_win_allocate;       /* Use win_allocate or win_create (or special memory...)                */
   int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
@@ -91,6 +112,10 @@ typedef struct {
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
+#ifdef HAVE_MEMKIND_H
+  struct
+  memkind* memkind_handle;              /* memkind volatile memory pool opaque object                           */
+#endif
 
   enum ARMCII_Strided_methods_e strided_method; /* Strided transfer method              */
   enum ARMCII_Iov_methods_e     iov_method;     /* IOV transfer method                  */
