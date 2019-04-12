@@ -79,7 +79,7 @@ int PARMCI_PutValueDouble(double src, void *dst, int proc) {
 /* -- end weak symbols block -- */
 
 int PARMCI_NbPutValueInt(int src, void *dst, int proc, armci_hdl_t *hdl) {
-  return PARMCI_NbPut(&src, dst, sizeof(int), proc, hdl);
+  return PARMCI_Put(&src, dst, sizeof(int), proc);
 }
 
 /* -- begin weak symbols block -- */
@@ -93,7 +93,7 @@ int PARMCI_NbPutValueInt(int src, void *dst, int proc, armci_hdl_t *hdl) {
 /* -- end weak symbols block -- */
 
 int PARMCI_NbPutValueLong(long src, void *dst, int proc, armci_hdl_t *hdl) {
-  return PARMCI_NbPut(&src, dst, sizeof(long), proc, hdl);
+  return PARMCI_Put(&src, dst, sizeof(long), proc);
 }
 
 /* -- begin weak symbols block -- */
@@ -107,7 +107,7 @@ int PARMCI_NbPutValueLong(long src, void *dst, int proc, armci_hdl_t *hdl) {
 /* -- end weak symbols block -- */
 
 int PARMCI_NbPutValueFloat(float src, void *dst, int proc, armci_hdl_t *hdl) {
-  return PARMCI_NbPut(&src, dst, sizeof(float), proc, hdl);
+  return PARMCI_Put(&src, dst, sizeof(float), proc);
 }
 
 /* -- begin weak symbols block -- */
@@ -121,7 +121,7 @@ int PARMCI_NbPutValueFloat(float src, void *dst, int proc, armci_hdl_t *hdl) {
 /* -- end weak symbols block -- */
 
 int PARMCI_NbPutValueDouble(double src, void *dst, int proc, armci_hdl_t *hdl) {
-  return PARMCI_NbPut(&src, dst, sizeof(double), proc, hdl);
+  return PARMCI_Put(&src, dst, sizeof(double), proc);
 }
 
 /* Get value operations */

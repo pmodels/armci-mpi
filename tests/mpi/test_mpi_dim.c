@@ -501,13 +501,14 @@ void test_dim(int ndim)
             pidx1 = idx1;
             pidx2 = idx2;
             pidx3 = idx3; 
+
+            MPI_Type_free(&typeA);
+            MPI_Type_free(&typeB);
         }
 
         free(c);
         destroy_safe_array();
         free(a);
-        MPI_Type_free(&typeA);
-        MPI_Type_free(&typeB);
 }
 
 
