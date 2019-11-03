@@ -17,6 +17,16 @@ int ARMCI_Init_args(int *argc, char ***argv) {
   return PARMCI_Init_args(argc, argv);
 }
 
+#pragma weak ARMCI_Init_thread
+int ARMCI_Init_thread(int armci_requested) {
+  return PARMCI_Init_thread(armci_requested);
+}
+
+#pragma weak ARMCI_Init_thread_comm
+int ARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
+  return PARMCI_Init_thread_comm(armci_requested, comm);
+}
+
 #pragma weak ARMCI_Initialized
 int ARMCI_Initialized(void) {
   return PARMCI_Initialized();

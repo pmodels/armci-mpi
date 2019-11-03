@@ -63,21 +63,21 @@ static void * progress_function(void * arg)
 
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
-#  pragma weak ARMCI_Init_thread = PARMCI_Init_thread
+#  pragma weak ARMCI_Init_thread_comm = PARMCI_Init_thread_comm
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#  pragma _HP_SECONDARY_DEF PARMCI_Init_thread ARMCI_Init_thread
+#  pragma _HP_SECONDARY_DEF PARMCI_Init_thread_comm ARMCI_Init_thread_comm
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#  pragma _CRI duplicate ARMCI_Init_thread as PARMCI_Init_thread
+#  pragma _CRI duplicate ARMCI_Init_thread_comm as PARMCI_Init_thread_comm
 #endif
 /* -- end weak symbols block -- */
 
 /** Initialize ARMCI.  MPI must be initialized before this can be called.  It
-  * invalid to make ARMCI calls before initialization.  Collective on the world
-  * group.
+  * invalid to make ARMCI calls before initialization.  Collective on the
+  * communicator provided as input.
   *
   * @return            Zero on success
   */
-int PARMCI_Init_thread(int armci_requested) {
+int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* GA/TCGMSG end up calling ARMCI_Init_thread() multiple times. */
   if (ARMCII_GLOBAL_STATE.init_count > 0) {
@@ -256,7 +256,7 @@ int PARMCI_Init_thread(int armci_requested) {
 
   /* Setup groups and communicators */
 
-  MPI_Comm_dup(MPI_COMM_WORLD, &ARMCI_GROUP_WORLD.comm);
+  MPI_Comm_dup(comm, &ARMCI_GROUP_WORLD.comm);
   ARMCII_Group_init_from_comm(&ARMCI_GROUP_WORLD);
   ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
 
@@ -413,6 +413,26 @@ int PARMCI_Init_thread(int armci_requested) {
 #endif
 
   return 0;
+}
+
+/* -- begin weak symbols block -- */
+#if defined(HAVE_PRAGMA_WEAK)
+#  pragma weak ARMCI_Init_thread = PARMCI_Init_thread
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#  pragma _HP_SECONDARY_DEF PARMCI_Init_thread ARMCI_Init_thread
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#  pragma _CRI duplicate ARMCI_Init_thread as PARMCI_Init_thread
+#endif
+/* -- end weak symbols block -- */
+
+/** Initialize ARMCI.  MPI must be initialized before this can be called.  It
+  * is invalid to make ARMCI calls before initialization.  Collective on the
+  * world group.
+  *
+  * @return            Zero on success
+  */
+int PARMCI_Init_thread(int armci_requested) {
+  return PARMCI_Init_thread_comm(armci_requested, MPI_COMM_WORLD);
 }
 
 
