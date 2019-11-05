@@ -12,10 +12,13 @@ export CFLAGS="-std=c99 -Wall -Wextra"
 #export MPICH_CC=$CC
 export MPICC=mpicc
 
+# PROGRESS is disabled for Linux testing
 case "$os" in
     Darwin)
+       PROGRESS=yes
         ;;
     Linux)
+       PROGRESS=no
        export PATH=$TRAVIS_ROOT/mpich/bin:$PATH
        export PATH=$TRAVIS_ROOT/open-mpi/bin:$PATH
        ;;
@@ -45,7 +48,7 @@ esac
 
 # Configure and build
 ./autogen.sh
-./configure
+./configure --with-progress=$PROGRESS
 make V=1
 
 # Run unit tests
