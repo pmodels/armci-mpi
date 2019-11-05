@@ -123,8 +123,8 @@ int PARMCI_Init_thread(int armci_requested) {
                        ARMCII_GLOBAL_STATE.progress_usleep);
         ARMCII_GLOBAL_STATE.progress_usleep = -ARMCII_GLOBAL_STATE.progress_usleep;
     }
-  }
 #endif
+  }
 
   /* Set defaults */
 #ifdef ARMCI_GROUP
