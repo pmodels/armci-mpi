@@ -7,6 +7,7 @@
 #include <debug.h>
 #include <gmr.h>
 
+#ifdef ENABLE_PROGRESS
 #ifdef HAVE_PTHREADS
 #include <pthread.h>
 
@@ -15,7 +16,8 @@
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
 #endif
-#include <time.h> /* nanosleep */
+#include <time.h>     /* nanosleep */
+#include <sys/time.h> /* nanosleep */
 
 #elif defined(HAVE_USLEEP)
 
@@ -59,7 +61,8 @@ static void * progress_function(void * arg)
 
     return NULL;
 }
-#endif
+#endif /* HAVE_PTHREADS */
+#endif /* ENABLE_PROGRESS */
 
 /* -- begin weak symbols block -- */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -106,6 +109,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
     ARMCII_GLOBAL_STATE.thread_level = armci_requested;
 
+#ifdef ENABLE_PROGRESS
 #ifdef HAVE_PTHREADS
     /* Check progress thread settings */
 
@@ -123,8 +127,9 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
                        ARMCII_GLOBAL_STATE.progress_usleep);
         ARMCII_GLOBAL_STATE.progress_usleep = -ARMCII_GLOBAL_STATE.progress_usleep;
     }
+#endif /* HAVE_PTHREADS */
+#endif /* ENABLE_PROGRESS */
   }
-#endif
 
   /* Set defaults */
 #ifdef ARMCI_GROUP
@@ -309,12 +314,14 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("  NO_SEATBELTS           = ENABLED\n");
 #endif
 
+#ifdef ENABLE_PROGRESS
 #ifdef HAVE_PTHREADS
       printf("  PROGRESS_THREAD        = %s\n", ARMCII_GLOBAL_STATE.progress_thread ? "ENABLED" : "DISABLED");
       if (ARMCII_GLOBAL_STATE.progress_thread) {
           printf("  PROGRESS_USLEEP        = %d\n", ARMCII_GLOBAL_STATE.progress_usleep);
       }
-#endif
+#endif /* HAVE_PTHREADS */
+#endif /* ENABLE_PROGRESS */
       printf("  EXPLICIT_NB_PROGRESS   = %s\n", ARMCII_GLOBAL_STATE.explicit_nb_progress ? "ENABLED" : "DISABLED");
 
       if (ARMCII_GLOBAL_STATE.memory_limit > 0) {
@@ -399,6 +406,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     MPI_Barrier(ARMCI_GROUP_WORLD.comm);
   }
 
+#ifdef ENABLE_PROGRESS
 #ifdef HAVE_PTHREADS
     /* Create the asynchronous progress thread */
     {
@@ -410,7 +418,8 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
             }
         }
     }
-#endif
+#endif /* HAVE_PTHREADS */
+#endif /* ENABLE_PROGRESS */
 
   return 0;
 }
@@ -529,6 +538,7 @@ int PARMCI_Finalize(void) {
     return 0;
   }
 
+#ifdef ENABLE_PROGRESS
 #ifdef HAVE_PTHREADS
     /* Destroy the asynchronous progress thread */
     {
@@ -540,7 +550,8 @@ int PARMCI_Finalize(void) {
             }
         }
     }
-#endif
+#endif /* HAVE_PTHREADS */
+#endif /* ENABLE_PROGRESS */
 
   nfreed = gmr_destroy_all();
 
