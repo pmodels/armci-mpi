@@ -8,7 +8,7 @@ TRAVIS_ROOT="$1"
 MPI_IMPL="$2"
 
 # Environment variables
-export CFLAGS="-std=c99"
+export CFLAGS="-std=c99 -Wall -Wextra"
 #export MPICH_CC=$CC
 export MPICC=mpicc
 
@@ -46,7 +46,7 @@ esac
 # Configure and build
 ./autogen.sh
 ./configure
-make
+make V=1
 
 # Run unit tests
 export ARMCI_VERBOSE=1
