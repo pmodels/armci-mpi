@@ -128,11 +128,22 @@ fi
 
 AC_CHECK_HEADERS([execinfo.h string.h strings.h stdint.h inttypes.h unistd.h errno.h time.h sys/time.h])
 AC_TYPE_UINT8_T
-AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-LIBS="$PTHREAD_LIBS $LIBS"
-AC_CHECK_FUNC([usleep], [AC_DEFINE([HAVE_USLEEP], [1], [Define if usleep exists.])])
-AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
+
+# asynchronous progress
+AC_ARG_WITH(progress,
+            AC_HELP_STRING([--with-progress],[Enable asynchronous progress.]),
+            [use_progress=$withval],
+            [use_progress=yes])
+AC_MSG_CHECKING(Asynchronous progress support)
+AC_MSG_RESULT($use_progress)
+if test "x$use_progress" != "xno"; then
+    AC_DEFINE(ENABLE_PROGRESS,1,[Defined when asynchronous progress is enabled])
+    AX_PTHREAD([AC_DEFINE(HAVE_PTHREADS,1,[Defined when Pthread library is detected])])
+    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+    LIBS="$PTHREAD_LIBS $LIBS"
+    AC_CHECK_FUNC([usleep], [AC_DEFINE([HAVE_USLEEP], [1], [Define if usleep exists.])])
+    AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
+fi
 
 ## MEMKIND support
 AC_ARG_WITH(memkind,
