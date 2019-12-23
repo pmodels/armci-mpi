@@ -289,4 +289,14 @@ int     PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc);
 void    parmci_msg_barrier(void);
 void    parmci_msg_group_barrier(ARMCI_Group *group);
 
+/* new memdev related to SICM but undocumented */
+
+int ARMCI_Malloc_memdev(void **ptr_arr, armci_size_t bytes, const char* device);
+int ARMCI_Malloc_group_memdev(void **ptr_arr, armci_size_t bytes, ARMCI_Group *group, const char *device);
+int ARMCI_Free_memdev(void *ptr);
+
+int PARMCI_Malloc_memdev(void **ptr_arr, armci_size_t bytes, const char* device);
+int PARMCI_Malloc_group_memdev(void **ptr_arr, armci_size_t bytes, ARMCI_Group *group, const char *device);
+int PARMCI_Free_memdev(void *ptr);
+
 #endif /* _ARMCI_H_ */

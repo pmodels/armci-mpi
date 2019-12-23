@@ -35,6 +35,7 @@ libarmci_la_SOURCES = src/buffer.c        \
                       src/vector_nb.c     \
                       src/init_finalize.c \
                       src/conflict_tree.c \
+                      src/armci-memdev.c  \
                       src/parmci.c
 
 libarmci_la_LDFLAGS = -version-info $(libarmci_abi_version)
