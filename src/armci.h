@@ -215,6 +215,7 @@ int  ARMCI_Uses_shm_grp(ARMCI_Group *group);
 int     PARMCI_Init(void);
 int     PARMCI_Init_args(int *argc, char ***argv);
 int     PARMCI_Init_thread(int armci_requested);
+int     PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm);
 int     PARMCI_Initialized(void);
 int     PARMCI_Finalize(void);
 
