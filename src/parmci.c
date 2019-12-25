@@ -47,6 +47,21 @@ int ARMCI_Free(void *ptr) {
   return PARMCI_Free(ptr);
 }
 
+#pragma weak ARMCI_Malloc_memdev
+int ARMCI_Malloc_memdev(void **base_ptrs, armci_size_t size, const char *device) {
+  return PARMCI_Malloc_memdev(base_ptrs, size, device);
+}
+
+#pragma weak ARMCI_Malloc_group_memdev
+int ARMCI_Malloc_group_memdev(void **base_ptrs, armci_size_t size, ARMCI_Group *group, const char *device) {
+  return PARMCI_Malloc_group_memdev(base_ptrs, size, group, device);
+}
+
+#pragma weak ARMCI_Free_memdev
+int ARMCI_Free_memdev(void *ptr) {
+  return PARMCI_Free_memdev(ptr);
+}
+
 #pragma weak ARMCI_Malloc_local
 void *ARMCI_Malloc_local(armci_size_t size) {
   return PARMCI_Malloc_local(size);
