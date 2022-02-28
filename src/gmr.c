@@ -34,6 +34,9 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   ARMCII_Assert(local_size >= 0);
   ARMCII_Assert(group != NULL);
 
+  MPI_Comm_rank(group->comm, &alloc_me);
+  MPI_Comm_size(group->comm, &alloc_nproc);
+
   /* determine if the GMR construction is pointless and exit early */
   {
     gmr_size_t max_local_size;
@@ -49,8 +52,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     }
   }
 
-  MPI_Comm_rank(group->comm, &alloc_me);
-  MPI_Comm_size(group->comm, &alloc_nproc);
   MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &world_me);
   MPI_Comm_size(ARMCI_GROUP_WORLD.comm, &world_nproc);
 
@@ -167,7 +168,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
-    int unified;
+    int unified = 0;
     void    *attr_ptr;
     int     *attr_val;
     int      attr_flag;
@@ -192,7 +193,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     } else {
       if (world_me==0) {
         printf("MPI_WIN_MODEL attribute missing \n");
-        unified = 0;
       }
     }
     if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
