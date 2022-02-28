@@ -76,9 +76,7 @@ int main(int argc, char *argv[]) {
           }
           t_stop = MPI_Wtime();
           ARMCI_Fence(peer);
-          char temp[10]; 
-          sprintf(temp,"%dX%d", xdim, ydim);
-          printf("%30s %20.2f", temp, ((t_stop-t_start)*1000000)/ITERATIONS);
+          printf("%dX%d %20.2f", xdim, ydim, ((t_stop-t_start)*1000000)/ITERATIONS);
           fflush(stdout);
 
           ARMCI_Barrier();

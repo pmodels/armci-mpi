@@ -107,9 +107,7 @@ int main(int argc, char **argv)
                 t_stop = MPI_Wtime();
                 ARMCI_Fence(1);
 
-                char temp[10];
-                sprintf(temp, "%dX%d", (int) xdim, (int) ydim);
-                printf("%30s %20.2f ", temp, ((t_stop - t_start) * 1000000)
+                printf("%zuX%zu %20.2f ", xdim, ydim, ((t_stop - t_start) * 1000000)
                         / ITERATIONS);
                 fflush(stdout);
 
