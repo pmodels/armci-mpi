@@ -2,7 +2,7 @@ dnl
 dnl Copyright (C) 2010. See COPYRIGHT in top-level directory.
 dnl
 
-AC_PREREQ([2.71])
+AC_PREREQ(2.62)
 
 AC_INIT([armci],[0.1])
 AC_CONFIG_AUX_DIR(m4)
@@ -90,7 +90,7 @@ ARMCI_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
 AC_SUBST(ARMCI_NUMVERSION)
 AC_SUBST(ARMCI_VERSION)
 
-AC_CONFIG_HEADERS([src/armciconf.h])
+AC_CONFIG_HEADER(src/armciconf.h)
 AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
@@ -106,7 +106,7 @@ PAC_CC_FUNCTION_NAME_SYMBOL
 
 ## Error checking functionality
 #AC_ARG_ENABLE(error-checking,
-	#AS_HELP_STRING([--enable-error-checking],[Enable error checking functionality]),
+	#AC_HELP_STRING([--enable-error-checking],[Enable error checking functionality]),
 	#enable_error_checking=$enableval,
 	#enable_error_checking=yes)
 #if test "$enable_error_checking" = "yes" ; then
@@ -121,9 +121,9 @@ AC_C_CONST
 AC_C_RESTRICT
 
 ## Check for C99
-AC_REQUIRE(AC_PROG_CC)
+AC_PROG_CC_C99
 if test "$ac_cv_prog_cc_c99" = "no" ; then
-   AC_MSG_ERROR(C99 not supported by the compiler)
+   AC_ERROR([C99 not supported by the compiler])
 fi
 
 AC_CHECK_HEADERS([execinfo.h string.h strings.h stdint.h inttypes.h unistd.h errno.h time.h sys/time.h])
@@ -131,7 +131,7 @@ AC_TYPE_UINT8_T
 
 # asynchronous progress
 AC_ARG_WITH(progress,
-            AS_HELP_STRING([--with-progress],[Enable asynchronous progress.]),
+            AC_HELP_STRING([--with-progress],[Enable asynchronous progress.]),
             [use_progress=$withval],
             [use_progress=yes])
 AC_MSG_CHECKING(Asynchronous progress support)
@@ -147,7 +147,7 @@ fi
 
 ## MEMKIND support
 AC_ARG_WITH(memkind,
-            AS_HELP_STRING([--with-memkind],[Enable MEMKIND library]),
+            AC_HELP_STRING([--with-memkind],[Enable MEMKIND library]),
             [use_memkind=$withval],
             [use_memkind=no])
 AC_MSG_CHECKING(MEMKIND support)
@@ -169,7 +169,7 @@ if test "x$use_memkind" != "xno"; then
 fi
 
 ## Debugging support
-AC_ARG_ENABLE(g, AS_HELP_STRING([--enable-g],[Enable Debugging]),
+AC_ARG_ENABLE(g, AC_HELP_STRING([--enable-g],[Enable Debugging]),
                  [ debug=$enableval ],
                  [ debug=no ])
 AC_MSG_CHECKING(debugging support)
@@ -179,7 +179,7 @@ if test "$debug" = "yes"; then
 fi
 
 ## Safety checks
-AC_ARG_ENABLE(safety-checks, AS_HELP_STRING([--disable-safety-checks],[Disable safety checks for better performance]),
+AC_ARG_ENABLE(safety-checks, AC_HELP_STRING([--disable-safety-checks],[Disable safety checks for better performance]),
                  [ safety_enabled=$enableval ],
                  [ safety_enabled=yes ])
 AC_MSG_CHECKING(whether safety checks are enabled)
@@ -189,7 +189,7 @@ if test "$safety_enabled" = "no"; then
 fi
 
 ## ARMCI Groups
-AC_ARG_ENABLE(armci-group, AS_HELP_STRING([--enable-armci-group],[Enable ARMCI subset-collective group formation]),
+AC_ARG_ENABLE(armci-group, AC_HELP_STRING([--enable-armci-group],[Enable ARMCI subset-collective group formation]),
                  [ armci_group_enabled=$enableval ],
                  [ armci_group_enabled=no ])
 AC_MSG_CHECKING(whether ARMCI subset-collective group formation is enabled)
@@ -199,7 +199,8 @@ if test "$armci_group_enabled" = "yes"; then
 fi
 
 # Check for support for weak symbols.
-AC_ARG_ENABLE(weak-symbols, AS_HELP_STRING([--enable-weak-symbols],[Use weak symbols to implement PARMCI routines (default)]),,
+AC_ARG_ENABLE(weak-symbols, AC_HELP_STRING([--enable-weak-symbols],
+                 [Use weak symbols to implement PARMCI routines (default)]),,
                  enable_weak_symbols=yes)
 if test $enable_weak_symbols = yes ; then
     # Turn off weak symbols if they aren't available
@@ -220,5 +221,4 @@ AC_SUBST(DOXYGEN)
 AC_SUBST(top_srcdir)
 
 ## Final output
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+AC_OUTPUT(Makefile)
