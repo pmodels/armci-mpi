@@ -110,6 +110,7 @@ typedef struct {
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
   int           end_to_end_flush;       /* All flush_local calls become flush                                   */
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
+  int           disable_shm_accumulate; /* Set the disable_shm_accumulate info key to true                      */
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
 #ifdef HAVE_MEMKIND_H

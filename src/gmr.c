@@ -38,9 +38,9 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   MPI_Comm_size(group->comm, &alloc_nproc);
 
   /* determine if the GMR construction is pointless and exit early */
+  /* use max_local_size later for info hints.                      */
+  gmr_size_t max_local_size;
   {
-    gmr_size_t max_local_size;
-
     /* if gmr_size_t changes from long, this needs to change... */
     MPI_Allreduce(&local_size, &max_local_size, 1, GMR_MPI_SIZE_T, MPI_MAX, group->comm);
 
@@ -76,32 +76,65 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
 
-  MPI_Info alloc_shm_info = MPI_INFO_NULL;
+  MPI_Info win_info = MPI_INFO_NULL;
+  MPI_Info_create(&win_info);
+
+  /* may be used by both MPI_Alloc_mem and MPI_Win_allocate */
   if (ARMCII_GLOBAL_STATE.use_alloc_shm) {
-      MPI_Info_create(&alloc_shm_info);
-      MPI_Info_set(alloc_shm_info, "alloc_shm", "true");
-  } else /* no alloc_shm */ {
-      alloc_shm_info = MPI_INFO_NULL;
+      MPI_Info_set(win_info, "alloc_shm", "true");
+  } else {
+      MPI_Info_set(win_info, "alloc_shm", "false");
   }
+
+  /* MPICH info options:
+   * which_accumulate_ops (OFI only)
+   * optimized_mr (OFI only)
+   * perf_preference (unused)
+   **/
+
+  /* tell MPICH that the disp_unit is always the same (and always 1) */
+  MPI_Info_set(win_info, "same_disp_unit", "true");
+
+  /* tell MPICH that we do not need a contiguous shared memory domain */
+  MPI_Info_set(win_info, "alloc_shared_noncontig", "false");
+
+  /* tell MPICH when we are not going to use datatypes */
+  if ((ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_CONSRV ||
+       ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED) &&
+      (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_IOV)) {
+      MPI_Info_set(win_info, "accumulate_noncontig_dtype", "false");
+  }
+
+  /* tell MPICH that nobody is going to send more than the size of the window */
+  {
+      if (max_local_size > 2147483647) max_local_size = -1;
+      char max_local_size_string[16] = {0};
+      snprintf(max_local_size_string,sizeof(max_local_size_string)-1,"%ld",max_local_size);
+      MPI_Info_set(win_info, "accumulate_max_bytes", max_local_size_string);
+  }
+
+  /* tell MPICH to not use shm accumulate, which might work around some bugs
+   * in that code path with less of a penalty than disabling shm altogether. */
+  if (ARMCII_GLOBAL_STATE.disable_shm_accumulate) {
+      MPI_Info_set(win_info, "disable_shm_accumulate", "true");
+  }
+
+  /* give hint to CASPER to avoid extra work for lock permission */
+  MPI_Info_set(win_info, "epochs_used", "lockall");
 
   if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
 
       if (local_size == 0) {
         alloc_slices[alloc_me].base = NULL;
       } else {
-        MPI_Alloc_mem(local_size, alloc_shm_info, &(alloc_slices[alloc_me].base));
+        MPI_Alloc_mem(local_size, win_info, &(alloc_slices[alloc_me].base));
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
       MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
   }
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
 
-      /* give hint to CASPER to avoid extra work for lock permission */
-      if (alloc_shm_info == MPI_INFO_NULL)
-          MPI_Info_create(&alloc_shm_info);
-      MPI_Info_set(alloc_shm_info, "epochs_used", "lockall");
-
-      MPI_Win_allocate( (MPI_Aint) local_size, 1, alloc_shm_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
+      MPI_Win_allocate( (MPI_Aint) local_size, 1, win_info, group->comm, &(alloc_slices[alloc_me].base), &mreg->window);
 
       if (local_size == 0) {
         /* TODO: Is this necessary?  Is it a good idea anymore? */
@@ -129,9 +162,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       ARMCII_Error("invalid window type!\n");
   }
 
-  if (alloc_shm_info != MPI_INFO_NULL) {
-      MPI_Info_free(&alloc_shm_info);
-  }
+  MPI_Info_free(&win_info);
 
   /* Debugging: Zero out shared memory if enabled */
   if (ARMCII_GLOBAL_STATE.debug_alloc && local_size > 0) {

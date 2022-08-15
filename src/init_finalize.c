@@ -353,8 +353,11 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Poke the MPI progress engine at the end of nonblocking (NB) calls */
   ARMCII_GLOBAL_STATE.explicit_nb_progress=ARMCII_Getenv_bool("ARMCI_EXPLICIT_NB_PROGRESS", 1);
 
-  /* Pass alloc_shm to win_allocate / alloc_mem */
+  /* Pass alloc_shm=<this> to win_allocate / alloc_mem */
   ARMCII_GLOBAL_STATE.use_alloc_shm=ARMCII_Getenv_bool("ARMCI_USE_ALLOC_SHM", 1);
+
+  /* Pass disable_shm_accumulate=<this> to window constructor */
+  ARMCII_GLOBAL_STATE.disable_shm_accumulate=ARMCII_Getenv_bool("ARMCI_DISABLE_SHM_ACC", 0);
 
   /* Enable RMA element-wise atomicity */
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
