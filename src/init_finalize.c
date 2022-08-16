@@ -260,8 +260,9 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Group formation options */
 
   ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
-  if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS"))
+  if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS")) {
     ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS", 0);
+  }
 
   /* Check for IOV flags */
 
@@ -476,9 +477,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
           printf("  SHM_LIMIT              = %s\n", "UNLIMITED");
       }
 
-      printf("  ALLOC_SHM used         = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm ? "TRUE" : "FALSE");
-      printf("  MPI_MODE_NOCHECK used  = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck   ? "TRUE" : "FALSE");
-
       if (ARMCII_GLOBAL_STATE.use_win_allocate == 0) {
           printf("  WINDOW type used       = %s\n", "CREATE");
       }
@@ -506,9 +504,16 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
         }
       }
 
+      /* MPI RMA semantics */
       printf("  RMA_ATOMICITY          = %s\n", ARMCII_GLOBAL_STATE.rma_atomicity          ? "TRUE" : "FALSE");
       printf("  NO_FLUSH_LOCAL         = %s\n", ARMCII_GLOBAL_STATE.end_to_end_flush       ? "TRUE" : "FALSE");
 
+      /* MPI info set on window */
+      printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
+      printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
+      printf("  DISABLE_SHM_ACC        = %s\n", ARMCII_GLOBAL_STATE.disable_shm_accumulate ? "TRUE" : "FALSE");
+
+      /* ARMCI-MPI internal options */
       printf("  IOV_CHECKS             = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");
       printf("  SHR_BUF_METHOD         = %s\n", ARMCII_Shr_buf_methods_str[ARMCII_GLOBAL_STATE.shr_buf_method]);
       printf("  NONCOLLECTIVE_GROUPS   = %s\n", ARMCII_GLOBAL_STATE.noncollective_groups   ? "TRUE" : "FALSE");
@@ -686,8 +691,9 @@ int PARMCI_Finalize(void) {
 
   nfreed = gmr_destroy_all();
 
-  if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0)
+  if (nfreed > 0 && ARMCI_GROUP_WORLD.rank == 0) {
     ARMCII_Warning("Freed %d leaked allocations\n", nfreed);
+  }
 
   /* Free GOP operators */
 
