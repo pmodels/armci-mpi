@@ -110,7 +110,9 @@ typedef struct {
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
   int           end_to_end_flush;       /* All flush_local calls become flush                                   */
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
-  int           disable_shm_accumulate; /* Set the disable_shm_accumulate info key to true                      */
+  int           disable_shm_accumulate; /* Set the disable_shm_accumulate window info key to true               */
+  int           use_same_op;            /* Set accumulate_ops=same_op window info key                           */
+  char          rma_ordering[20];       /* Set accumulate_ordering=<this> window info key                       */
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
 #ifdef HAVE_MEMKIND_H
@@ -144,6 +146,7 @@ char *ARMCII_Getenv(const char *varname);
 int   ARMCII_Getenv_bool(const char *varname, int default_value);
 int   ARMCII_Getenv_int(const char *varname, int default_value);
 long  ARMCII_Getenv_long(const char *varname, long default_value);
+void ARMCII_Getenv_char(char * output, const char *varname, const char *default_value, int length);
 
 /* Synchronization */
 

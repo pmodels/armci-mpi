@@ -175,7 +175,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     }
   }
 
-  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_int("ARMCI_VERBOSE", 0);
+  ARMCII_GLOBAL_STATE.verbose = ARMCII_Getenv_int("ARMCI_VERBOSE", 0);
 
   /* Figure out what MPI library we are using, in an attempt to work around bugs. */
   char mpi_library_version[MPI_MAX_LIBRARY_VERSION_STRING] = {0};
@@ -352,8 +352,15 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Pass disable_shm_accumulate=<this> to window constructor */
   ARMCII_GLOBAL_STATE.disable_shm_accumulate=ARMCII_Getenv_bool("ARMCI_DISABLE_SHM_ACC", 0);
 
-  /* Enable RMA element-wise atomicity */
+  /* Pass accumulate_ops = same_op info key to window constructor */
+  ARMCII_GLOBAL_STATE.use_same_op=ARMCII_Getenv_bool("ARMCI_USE_SAME_OP", 0);
+
+  /* Enable RMA element-wise atomicity (affects ARMCI Put/Get) */
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
+
+  /* RMA ordering info key - this is the actual string we pass to MPI */
+  ARMCII_Getenv_char(ARMCII_GLOBAL_STATE.rma_ordering, "ARMCI_RMA_ORDERING", "rar,raw,war,waw",
+                     sizeof(ARMCII_GLOBAL_STATE.rma_ordering)-1);
 
   /* Flush_local becomes flush */
   ARMCII_GLOBAL_STATE.end_to_end_flush=ARMCII_Getenv_bool("ARMCI_NO_FLUSH_LOCAL", 0);
@@ -503,11 +510,13 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       /* MPI RMA semantics */
       printf("  RMA_ATOMICITY          = %s\n", ARMCII_GLOBAL_STATE.rma_atomicity          ? "TRUE" : "FALSE");
       printf("  NO_FLUSH_LOCAL         = %s\n", ARMCII_GLOBAL_STATE.end_to_end_flush       ? "TRUE" : "FALSE");
+      printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
 
       /* MPI info set on window */
-      printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
       printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
       printf("  DISABLE_SHM_ACC        = %s\n", ARMCII_GLOBAL_STATE.disable_shm_accumulate ? "TRUE" : "FALSE");
+      printf("  USE_SAME_OP            = %s\n", ARMCII_GLOBAL_STATE.use_same_op            ? "TRUE" : "FALSE");
+      printf("  RMA_ORDERING           = %s\n", ARMCII_GLOBAL_STATE.rma_ordering);
 
       /* ARMCI-MPI internal options */
       printf("  IOV_CHECKS             = %s\n", ARMCII_GLOBAL_STATE.iov_checks             ? "TRUE" : "FALSE");

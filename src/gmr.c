@@ -119,6 +119,20 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       MPI_Info_set(win_info, "disable_shm_accumulate", "true");
   }
 
+  /* tell MPI that only one type of access will happen concurrently during accumulate.
+     this violates the ARMCI "spec" but is empirically true in applications, e.g. NWChem.
+     for example, NXTVAL/GA_Read_inc/ARMCI_Rmw is *always* a fetch-and-add of 1 within
+     an epoch.  all other accesses are collective and set the counter to zero.
+     all GA_Acc operations are MPI_SUM and no apps rely on location consistency.
+     note that location consistency can also be achieved with ARMCI_NO_FLUSH_LOCAL=1. */
+  if (ARMCII_GLOBAL_STATE.use_same_op) {
+      MPI_Info_set(win_info, "accumulate_ops", "same_op");
+  }
+
+  if (strlen(ARMCII_GLOBAL_STATE.rma_ordering) > 0) {
+      MPI_Info_set(win_info, "accumulate_ordering", ARMCII_GLOBAL_STATE.rma_ordering);
+  }
+
   /* give hint to CASPER to avoid extra work for lock permission */
   MPI_Info_set(win_info, "epochs_used", "lockall");
 
