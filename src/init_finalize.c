@@ -64,7 +64,7 @@ static void * progress_function(void * arg)
 #endif /* HAVE_PTHREADS */
 #endif /* ENABLE_PROGRESS */
 
-// Some of these are preprocessor symbols without the namespace...
+/* Some of these are preprocessor symbols without the namespace... */
 enum ARMCII_MPI_Impl_e { ARMCII_MPICH,
                          ARMCII_OPEN_MPI,
                          ARMCII_MVAPICH2,
@@ -99,7 +99,6 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
           sprintf(version_string,"%d.%d",major,minor);
           char * p = strstr(library_version,version_string);
           if (p != NULL) {
-            //printf("  MPICH version          = %s (string)\n",p);
             mpich_major = atoi(p);
             mpich_minor = atoi(p+2);
             strncpy(mpich_patch,p+3,4);
@@ -107,8 +106,6 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
           }
         }
       }
-      //printf("  MPICH                  = %s\n", is_mpich ? "yes" : "no" );
-      //printf("  MPICH version          = %d.%d%s\n",mpich_major, mpich_minor, mpich_patch);
       *major = mpich_major;
       *minor = mpich_minor;
       strncpy(patch, mpich_patch, sizeof(mpich_patch));
@@ -118,7 +115,7 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
       *impl = ARMCII_OPEN_MPI;
       int ompi_major = 0;
       int ompi_minor = 0;
-      char ompi_patch[6] = {0}; // ".PrcX" is max since major=2+
+      char ompi_patch[6] = {0}; /* ".PrcX" is max since major=2+ */
       for (int major = 9; major >= 2; major--) {
         for (int minor = 9; minor >= 0; minor--) {
           char version_string[4] = {0};
@@ -138,8 +135,6 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
           }
         }
       }
-      //printf("  Open MPI               = %s\n", is_ompi ? "yes" : "no" );
-      //printf("  Open MPI version       = %d.%d%s\n",ompi_major, ompi_minor, ompi_patch);
       *major = ompi_major;
       *minor = ompi_minor;
       strncpy(patch, ompi_patch, sizeof(ompi_patch));
@@ -180,6 +175,8 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     }
   }
 
+  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
+
   /* Figure out what MPI library we are using, in an attempt to work around bugs. */
   char mpi_library_version[MPI_MAX_LIBRARY_VERSION_STRING] = {0};
   enum ARMCII_MPI_Impl_e mpi_implementation;
@@ -187,13 +184,12 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   int mpi_impl_minor = 0;
   char mpi_impl_patch[8] = {0};
   {
-    int len; // unused
+    int len;
     MPI_Get_library_version(mpi_library_version, &len);
-#ifdef DEBUG
-    printf("  MPI library version    = %s\n", mpi_library_version);
-#endif
-    // Only print one line of the version string, since MPICH includes the entire configure invocation.
-    // Truncate after 32 columns since more is rarely useful.
+    if ((ARMCII_GLOBAL_STATE.verbose > 1) && (ARMCI_GROUP_WORLD.rank == 0)) {
+      printf("  MPI library version    = %s\n", mpi_library_version);
+    }
+    /* Truncate after 32 columns of 1 line to simplify parsing. */
     for (int c=0; c<sizeof(mpi_library_version); c++) {
       if (mpi_library_version[c] == '\r' || mpi_library_version[c] == '\n' || c > 32) {
         mpi_library_version[c] = '\0';
@@ -255,7 +251,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       ARMCII_Warning("ARMCI_FLUSH_BARRIERS is deprecated.\n");
     }
   }
-  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
 
   /* Group formation options */
 
@@ -422,7 +417,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("ARMCI-MPI initialized with %d process%s, MPI v%d.%d\n",
              ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
 
-      // tell user what MPI library they are using
+      /* tell user what MPI library they are using */
       {
         if (mpi_implementation == ARMCII_OPEN_MPI) {
           printf("  Open MPI version       = %d.%d%s\n", mpi_impl_major, mpi_impl_minor, mpi_impl_patch);
