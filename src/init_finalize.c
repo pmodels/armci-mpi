@@ -175,10 +175,11 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     }
   }
 
-  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_bool("ARMCI_VERBOSE", 0);
+  ARMCII_GLOBAL_STATE.verbose              = ARMCII_Getenv_int("ARMCI_VERBOSE", 0);
 
   /* Figure out what MPI library we are using, in an attempt to work around bugs. */
   char mpi_library_version[MPI_MAX_LIBRARY_VERSION_STRING] = {0};
+  char mpi_library_version_short[32] = {0};
   enum ARMCII_MPI_Impl_e mpi_implementation;
   int mpi_impl_major = 0;
   int mpi_impl_minor = 0;
@@ -186,17 +187,15 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   {
     int len;
     MPI_Get_library_version(mpi_library_version, &len);
-    if ((ARMCII_GLOBAL_STATE.verbose > 1) && (ARMCI_GROUP_WORLD.rank == 0)) {
-      printf("  MPI library version    = %s\n", mpi_library_version);
-    }
     /* Truncate after 32 columns of 1 line to simplify parsing. */
-    for (int c=0; c<sizeof(mpi_library_version); c++) {
-      if (mpi_library_version[c] == '\r' || mpi_library_version[c] == '\n' || c > 32) {
-        mpi_library_version[c] = '\0';
+    strncpy(mpi_library_version_short, mpi_library_version, 31);
+    for (int c=0; c<sizeof(mpi_library_version_short); c++) {
+      if (mpi_library_version[c] == '\r' || mpi_library_version[c] == '\n') {
+        mpi_library_version_short[c] = '\0';
         break;
       }
     }
-    ARMCII_Parse_library_version(mpi_library_version, &mpi_implementation,
+    ARMCII_Parse_library_version(mpi_library_version_short, &mpi_implementation,
                                  &mpi_impl_major, &mpi_impl_minor, mpi_impl_patch);
   }
 
@@ -233,14 +232,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 #endif /* ENABLE_PROGRESS */
   }
 
-  /* Set defaults */
-#ifdef ARMCI_GROUP
-  ARMCII_GLOBAL_STATE.noncollective_groups = 1;
-#endif
-#ifdef NO_SEATBELTS
-  ARMCII_GLOBAL_STATE.iov_checks           = 0;
-#endif
-
   /* Check for debugging flags */
 
   ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
@@ -254,13 +245,19 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* Group formation options */
 
-  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
+#ifdef ARMCI_GROUP
+  ARMCII_GLOBAL_STATE.noncollective_groups = 1;
+#endif
   if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS")) {
     ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS", 0);
   }
+  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
 
   /* Check for IOV flags */
 
+#ifdef NO_SEATBELTS
+  ARMCII_GLOBAL_STATE.iov_checks           = 0;
+#endif
   ARMCII_GLOBAL_STATE.iov_checks           = ARMCII_Getenv_bool("ARMCI_IOV_CHECKS", 0);
   ARMCII_GLOBAL_STATE.iov_batched_limit    = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
@@ -408,7 +405,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   ARMCII_GLOBAL_STATE.init_count++;
 
-  if (ARMCII_GLOBAL_STATE.verbose) {
+  if (ARMCII_GLOBAL_STATE.verbose > 0) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
       int major, minor;
 
@@ -418,7 +415,11 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
              ARMCI_GROUP_WORLD.size, ARMCI_GROUP_WORLD.size > 1 ? "es":"", major, minor);
 
       /* tell user what MPI library they are using */
-      {
+      if (ARMCII_GLOBAL_STATE.verbose > 1) {
+        printf("=======\n");
+        printf("  MPI library version    = %s", mpi_library_version);
+        printf("=======\n");
+      } else {
         if (mpi_implementation == ARMCII_OPEN_MPI) {
           printf("  Open MPI version       = %d.%d%s\n", mpi_impl_major, mpi_impl_minor, mpi_impl_patch);
         }
