@@ -37,9 +37,27 @@ typedef struct
 } 
 ARMCII_Histogram_s;
 
+typedef struct
+{
+    size_t num_calls;
+    double total_time;
+    double min_time;
+    double max_time;
+}
+ARMCII_Statistics_s;
+
+typedef struct
+{
+    ARMCII_Histogram_s get;
+    ARMCII_Histogram_s put;
+    ARMCII_Histogram_s acc;
+    ARMCII_Statistics_s rmw;
+    ARMCII_Statistics_s barrier;
+}
+ARMCII_Profiling_s;
+
 static void ARMCII_Profile_init(void)
 {
-
 
 }
 
