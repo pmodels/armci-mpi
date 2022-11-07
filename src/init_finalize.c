@@ -79,13 +79,15 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
     *major = -1;
     *minor = -1;
 
-    int is_mpich = 0, is_ompi = 0;
+    int is_mpich = 0, is_ompi = 0, is_impi = 0;
     {
         char * p = NULL;
         p = strstr(library_version,"MPICH");
         is_mpich = (p != NULL);
         p = strstr(library_version,"Open MPI");
         is_ompi = (p != NULL);
+        p = strstr(library_version,"Intel(R) MPI Library");
+        is_impi = (p != NULL);
     }
 
     if (is_mpich) {
@@ -138,6 +140,28 @@ static void ARMCII_Parse_library_version(char * library_version, enum ARMCII_MPI
       *major = ompi_major;
       *minor = ompi_minor;
       strncpy(patch, ompi_patch, sizeof(ompi_patch));
+    }
+
+    if (is_impi) {
+      *impl = ARMCII_INTEL_MPI;
+      int impi_major = 0;
+      int impi_minor = 0;
+      char impi_patch[6] = {0}; /* ".PrcX" is max since major=2+ */
+      for (int major = 2030; major >= 2000; major--) {
+        for (int minor = 30; minor >= 0; minor--) {
+          char version_string[7] = {0};
+          sprintf(version_string,"%d.%d",major,minor);
+          char * p = strstr(library_version,version_string);
+          if (p != NULL) {
+            impi_major = atoi(p);
+            impi_minor = atoi(p+5);
+            break;
+          }
+        }
+      }
+      *major = impi_major;
+      *minor = impi_minor;
+      *patch = '\0';
     }
 }
 
@@ -432,6 +456,9 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
         }
         else if (mpi_implementation == ARMCII_MPICH) {
           printf("  MPICH version          = %d.%d%s\n", mpi_impl_major, mpi_impl_minor, mpi_impl_patch);
+        }
+        else if (mpi_implementation == ARMCII_INTEL_MPI) {
+          printf("  Intel MPI version      = %d.%d%s\n", mpi_impl_major, mpi_impl_minor, mpi_impl_patch);
         }
         else if (mpi_implementation == ARMCII_UNKNOWN_MPI) {
           printf("  Unknown MPI version    = %s\n", mpi_library_version);
