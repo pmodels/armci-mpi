@@ -39,30 +39,28 @@
 
 static inline int ARMCII_Get_size_bin(int size)
 {
-  int bin = 0;
-  if (size > 0) {
-    bin = (int)log10f((int)size);
-  }
-  if (bin >= ARMCI_SIZE_BINS) {
-    bin = ARMCI_SIZE_BINS - 1;
-  }
-  return bin;
+    int bin = 0;
+    if (size > 0) {
+        bin = (int)log10f((int)size);
+        if (bin >= ARMCI_SIZE_BINS) {
+          bin = ARMCI_SIZE_BINS - 1;
+        }
+    }
+    return bin;
 }
 
 static inline int ARMCII_Get_time_bin(double time)
 {
-  int bin = 0;
-  if (time > 0) {
-      bin = 6 + (int)log10(time);
-  }
-  if (bin < 0) {
-    fprintf(stderr,"time = %12.9lf, log10 = %lf, bin = %d\n", time, log10(time), bin);
-    bin = 0;
-  } else if (bin >= ARMCI_TIME_BINS) {
-    fprintf(stderr,"time = %12.9lf, log10 = %lf, bin = %d\n", time, log10(time), bin);
-    bin = ARMCI_TIME_BINS - 1;
-  }
-  return bin;
+    int bin = 0;
+    if (time > 0) {
+        bin = 6 + (int)log10(time);
+        if (bin < 0) {
+            bin = 0;
+        } else if (bin >= ARMCI_TIME_BINS) {
+            bin = ARMCI_TIME_BINS - 1;
+        }
+    }
+    return bin;
 }
 
 static inline int64_t ARMCII_Strided_count(int count[], int stride_levels)
@@ -275,93 +273,100 @@ int ARMCI_Finalize(void) {
 
 int ARMCI_Malloc(void **base_ptrs, armci_size_t size) {
   profiling_state.globmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc(base_ptrs, size);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.globmem.total_time += (t1-t0);
   return rc;
 }
 
 int ARMCI_Free(void *ptr) {
   profiling_state.globmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free(ptr);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.globmem.total_time += (t1-t0);
   return rc;
 }
 
 int ARMCI_Malloc_memdev(void **base_ptrs, armci_size_t size, const char *device) {
   profiling_state.globmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc_memdev(base_ptrs, size, device);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.globmem.total_time += (t1-t0);
   return rc;
 }
 
 int ARMCI_Malloc_group_memdev(void **base_ptrs, armci_size_t size, ARMCI_Group *group, const char *device) {
   profiling_state.globmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc_group_memdev(base_ptrs, size, group, device);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.globmem.total_time += (t1-t0);
   return rc;
 }
 
 int ARMCI_Free_memdev(void *ptr) {
   profiling_state.globmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free_memdev(ptr);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.globmem.total_time += (t1-t0);
   return rc;
 }
 
 void *ARMCI_Malloc_local(armci_size_t size) {
   profiling_state.localmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   void * rc = PARMCI_Malloc_local(size);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.localmem.total_time += (t1-t0);
   return rc;
 }
 
 int ARMCI_Free_local(void *ptr) {
   profiling_state.localmem.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free_local(ptr);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.localmem.total_time += (t1-t0);
   return rc;
 }
 
-void ARMCI_Barrier(void) {
+void ARMCI_Barrier(void)
+{
   profiling_state.barrier.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   PARMCI_Barrier();
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.barrier.total_time += (t1-t0);
 }
 
-void ARMCI_Fence(int proc) {
+void ARMCI_Fence(int proc)
+{
+  profiling_state.fence.num_calls++;
+  const double t0 = MPI_Wtime();
   PARMCI_Fence(proc);
-  return;
+  const double t1 = MPI_Wtime();
+  profiling_state.fence.total_time += (t1-t0);
 }
 
-void ARMCI_AllFence(void) {
+void ARMCI_AllFence(void)
+{
+  profiling_state.fence.num_calls++;
+  const double t0 = MPI_Wtime();
   PARMCI_AllFence();
-  return;
+  const double t1 = MPI_Wtime();
+  profiling_state.fence.total_time += (t1-t0);
 }
 
 void ARMCI_Access_begin(void *ptr) {
   PARMCI_Access_begin(ptr);
-  return;
 }
 
 void ARMCI_Access_end(void *ptr) {
   PARMCI_Access_end(ptr);
-  return;
 }
 
 int ARMCI_Get(void *src, void *dst, int size, int target) {
@@ -528,15 +533,30 @@ int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int pr
 }
 
 int ARMCI_Wait(armci_hdl_t* hdl) {
-  return PARMCI_Wait(hdl);
+  profiling_state.wait.num_calls++;
+  const double t0 = MPI_Wtime();
+  const int rc = PARMCI_Wait(hdl);
+  const double t1 = MPI_Wtime();
+  profiling_state.wait.total_time += (t1-t0);
+  return rc;
 }
 
 int ARMCI_Test(armci_hdl_t* hdl) {
-  return PARMCI_Test(hdl);
+  profiling_state.wait.num_calls++;
+  const double t0 = MPI_Wtime();
+  const int rc = PARMCI_Test(hdl);
+  const double t1 = MPI_Wtime();
+  profiling_state.wait.total_time += (t1-t0);
+  return rc;
 }
 
 int ARMCI_WaitAll(void) {
-  return PARMCI_WaitAll();
+  profiling_state.wait.num_calls++;
+  const double t0 = MPI_Wtime();
+  const int rc = PARMCI_WaitAll();
+  const double t1 = MPI_Wtime();
+  profiling_state.wait.total_time += (t1-t0);
+  return rc;
 }
 
 int ARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl) {
@@ -632,37 +652,43 @@ int ARMCI_Destroy_mutexes(void) {
 }
 
 void ARMCI_Lock(int mutex, int proc) {
+  profiling_state.locks.num_calls++;
+  const double t0 = MPI_Wtime();
   PARMCI_Lock(mutex, proc);
-  return;
+  const double t1 = MPI_Wtime();
+  profiling_state.locks.total_time += (t1-t0);
 }
 
 void ARMCI_Unlock(int mutex, int proc) {
+  profiling_state.locks.num_calls++;
+  const double t0 = MPI_Wtime();
   PARMCI_Unlock(mutex, proc);
-  return;
+  const double t1 = MPI_Wtime();
+  profiling_state.locks.total_time += (t1-t0);
 }
 
 int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   profiling_state.rmw.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   const int rc = PARMCI_Rmw(op, ploc, prem, value, proc);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.rmw.total_time += (t1-t0);
   return rc;
 }
 
 void armci_msg_barrier(void) {
   profiling_state.barrier.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   parmci_msg_barrier();
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.barrier.total_time += (t1-t0);
 }
 
 void armci_msg_group_barrier(ARMCI_Group *group) {
   profiling_state.barrier.num_calls++;
-  double t0 = MPI_Wtime();
+  const double t0 = MPI_Wtime();
   parmci_msg_group_barrier(group);
-  double t1 = MPI_Wtime();
+  const double t1 = MPI_Wtime();
   profiling_state.barrier.total_time += (t1-t0);
 }
 
