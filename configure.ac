@@ -147,7 +147,7 @@ fi
 
 # profiling
 AC_ARG_WITH(profiling,
-            AS_HELP_STRING([--enable-profiling],[Enable profiling.]),
+            AS_HELP_STRING([--with-profiling],[Enable profiling.]),
             [use_profiling=$withval],
             [use_profiling=yes])
 AC_MSG_CHECKING(profiling support)
