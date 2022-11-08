@@ -5,6 +5,7 @@
 
 #include "armciconf.h"
 #include "armci.h"
+#include "armci_internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,30 +32,37 @@
 
 typedef struct
 {
-    size_t num_calls;
-    double total_time;
-    size_t histogram[ARMCI_SIZE_BINS][ARMCI_TIME_BINS];
+    int64_t num_calls;
+    int64_t histogram[ARMCI_SIZE_BINS][ARMCI_TIME_BINS];
+    double  total_time;
 } 
 ARMCII_Histogram_s;
 
 typedef struct
 {
-    size_t num_calls;
-    double total_time;
-    double min_time;
-    double max_time;
+    int64_t num_calls;
+    double  total_time;
+    double  min_time;
+    double  max_time;
 }
 ARMCII_Statistics_s;
 
 typedef struct
 {
-    ARMCII_Histogram_s get;
-    ARMCII_Histogram_s put;
-    ARMCII_Histogram_s acc;
+    ARMCII_Histogram_s put;         // includes C/S/V
+    ARMCII_Histogram_s get;         // includes C/S/V
+    ARMCII_Histogram_s acc;         // includes C/S/V
     ARMCII_Statistics_s rmw;
-    ARMCII_Statistics_s barrier;
+    ARMCII_Statistics_s barrier;    // includes msg barriers
+    ARMCII_Statistics_s wait;       // includes waitall
+    ARMCII_Statistics_s fence;      // includes allfence
+    ARMCII_Statistics_s locks;      // includes unlock
+    ARMCII_Statistics_s globmem;    // includes free
+    ARMCII_Statistics_s localmem;   // includes free
 }
 ARMCII_Profiling_s;
+
+ARMCII_Profiling_s profiling_state = { 0 };
 
 static void ARMCII_Profile_init(void)
 {
@@ -63,8 +71,74 @@ static void ARMCII_Profile_init(void)
 
 static void ARMCII_Profile_dump(void)
 {
+    const int hist_size = ARMCI_SIZE_BINS*ARMCI_TIME_BINS;
+    MPI_Comm comm = ARMCI_GROUP_WORLD.comm;
 
+    ARMCII_Profiling_s aggregate_stats = { 0 };
 
+    // yeah, this is dumb, i could do a user-defined reduction but that is probably more code.
+
+    MPI_Reduce(&profiling_state.put.num_calls,  &aggregate_stats.put.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.put.histogram,  &aggregate_stats.put.histogram, hist_size, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.put.total_time, &aggregate_stats.put.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+
+    MPI_Reduce(&profiling_state.get.num_calls,  &aggregate_stats.get.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.get.histogram,  &aggregate_stats.get.histogram, hist_size, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.get.total_time, &aggregate_stats.get.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+
+    MPI_Reduce(&profiling_state.acc.num_calls,  &aggregate_stats.acc.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.acc.histogram,  &aggregate_stats.acc.histogram, hist_size, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.acc.total_time, &aggregate_stats.acc.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+
+    MPI_Reduce(&profiling_state.rmw.num_calls,  &aggregate_stats.rmw.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.total_time, &aggregate_stats.rmw.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.max_time, &aggregate_stats.rmw.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.min_time, &aggregate_stats.rmw.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.barrier.num_calls,  &aggregate_stats.barrier.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.barrier.total_time, &aggregate_stats.barrier.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.barrier.max_time, &aggregate_stats.barrier.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.barrier.min_time, &aggregate_stats.barrier.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.wait.num_calls,  &aggregate_stats.wait.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.wait.total_time, &aggregate_stats.wait.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.wait.max_time, &aggregate_stats.wait.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.wait.min_time, &aggregate_stats.wait.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.fence.num_calls,  &aggregate_stats.fence.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.fence.total_time, &aggregate_stats.fence.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.fence.max_time, &aggregate_stats.fence.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.fence.min_time, &aggregate_stats.fence.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.locks.num_calls,  &aggregate_stats.locks.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.locks.total_time, &aggregate_stats.locks.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.locks.max_time, &aggregate_stats.locks.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.locks.min_time, &aggregate_stats.locks.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.globmem.num_calls,  &aggregate_stats.globmem.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.globmem.total_time, &aggregate_stats.globmem.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.globmem.max_time, &aggregate_stats.globmem.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.globmem.min_time, &aggregate_stats.globmem.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.localmem.num_calls,  &aggregate_stats.localmem.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.localmem.total_time, &aggregate_stats.localmem.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.localmem.max_time, &aggregate_stats.localmem.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.localmem.min_time, &aggregate_stats.localmem.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.rmw.num_calls,  &aggregate_stats.rmw.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.total_time, &aggregate_stats.rmw.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.max_time, &aggregate_stats.rmw.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.min_time, &aggregate_stats.rmw.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.rmw.num_calls,  &aggregate_stats.rmw.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.total_time, &aggregate_stats.rmw.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.max_time, &aggregate_stats.rmw.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.min_time, &aggregate_stats.rmw.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
+
+    MPI_Reduce(&profiling_state.rmw.num_calls,  &aggregate_stats.rmw.num_calls, 1, MPI_INT64_T, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.total_time, &aggregate_stats.rmw.total_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.max_time, &aggregate_stats.rmw.max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);
+    MPI_Reduce(&profiling_state.rmw.min_time, &aggregate_stats.rmw.min_time, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
 }
 
 int ARMCI_Init(void) {
@@ -84,6 +158,7 @@ int ARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 }
 
 int ARMCI_Finalize(void) {
+  ARMCII_Profile_dump();
   return PARMCI_Finalize();
 }
 
