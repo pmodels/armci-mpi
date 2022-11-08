@@ -7,8 +7,6 @@
 
 #ifdef ENABLE_PROFILING
 
-#warning GOOD
-
 #include "armci.h"
 #include "armci_internals.h"
 
