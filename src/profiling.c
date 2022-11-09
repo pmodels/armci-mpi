@@ -683,6 +683,7 @@ int ARMCI_Create_mutexes(int count) {
   const int rc = PARMCI_Create_mutexes(count);
   const double t1 = MPI_Wtime();
   ARMCII_Update_stats(&profiling_state.locks, t1-t0, 0);
+  return rc;
 }
 
 int ARMCI_Destroy_mutexes(void) {
@@ -690,6 +691,7 @@ int ARMCI_Destroy_mutexes(void) {
   const int rc = PARMCI_Destroy_mutexes();
   const double t1 = MPI_Wtime();
   ARMCII_Update_stats(&profiling_state.locks, t1-t0, 0);
+  return rc;
 }
 
 void ARMCI_Lock(int mutex, int proc) {
