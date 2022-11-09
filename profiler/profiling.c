@@ -71,6 +71,7 @@ typedef struct
     ARMCII_Statistics_s nbacc;      // includes C/S/V
     FILE * file;
     int file_needs_closing;         // true if file is not stderr
+    int dump_has_happened;          // because ARMCI is finalized multiple times :-(
 }
 ARMCII_Profiling_s;
 
@@ -258,6 +259,8 @@ static void ARMCII_Profile_init(void)
 
 static void ARMCII_Profile_dump(FILE * f)
 {
+    if (profiling_state.dump_has_happened) return;
+
     const MPI_Comm comm = ARMCI_GROUP_WORLD.comm;
     int me;
     MPI_Comm_rank(comm, &me);
@@ -326,6 +329,8 @@ static void ARMCII_Profile_dump(FILE * f)
             }
         }
     }
+
+    profiling_state.dump_has_happened = 1;
 }
 
 /*********************************************************/
