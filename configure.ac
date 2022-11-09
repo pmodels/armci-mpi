@@ -145,17 +145,6 @@ if test "x$use_progress" != "xno"; then
     AC_CHECK_FUNC([nanosleep], [AC_DEFINE([HAVE_NANOSLEEP], [1], [Define if nanosleep exists.])])
 fi
 
-# profiling
-AC_ARG_WITH(profiling,
-            AS_HELP_STRING([--with-profiling],[Enable profiling.]),
-            [use_profiling=$withval],
-            [use_profiling=yes])
-AC_MSG_CHECKING(profiling support)
-AC_MSG_RESULT($use_profiling)
-if test "x$use_profiling" != "xno"; then
-    AC_DEFINE(ENABLE_PROFILING,1,[Defined when profiling is enabled])
-fi
-
 ## MEMKIND support
 AC_ARG_WITH(memkind,
             AS_HELP_STRING([--with-memkind],[Enable MEMKIND library]),
