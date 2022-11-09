@@ -1,7 +1,7 @@
 CPPFLAGS = -I../src
 LIBS = -L../build/.libs -larmci
 
-CC = /opt/nvidia/hpc_sdk/Linux_x86_64/22.9/comm_libs/hpcx/latest/ompi/bin/mpicc
+CC = mpicc
 CFLAGS = -g $(CPPFLAGS)
 SOFLAGS =  -shared -fPIC
 

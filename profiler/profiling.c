@@ -278,6 +278,15 @@ static void ARMCII_Profile_dump(FILE * f)
     ARMCII_Reduce_histogram(&profiling_state.acc, &aggregate_stats.acc, comm);
     if (me==0) ARMCII_Print_histogram(f, "Acc", &aggregate_stats.acc);
 
+    ARMCII_Reduce_stats(&profiling_state.nbput, &aggregate_stats.nbput, comm);
+    if (me==0) ARMCII_Print_statistics(f, "NbPut", &aggregate_stats.nbput);
+
+    ARMCII_Reduce_stats(&profiling_state.nbget, &aggregate_stats.nbget, comm);
+    if (me==0) ARMCII_Print_statistics(f, "NbGet", &aggregate_stats.nbget);
+
+    ARMCII_Reduce_stats(&profiling_state.nbacc, &aggregate_stats.nbacc, comm);
+    if (me==0) ARMCII_Print_statistics(f, "NbAcc", &aggregate_stats.nbacc);
+
     ARMCII_Reduce_stats(&profiling_state.rmw, &aggregate_stats.rmw, comm);
     if (me==0) ARMCII_Print_statistics(f, "Rmw", &aggregate_stats.rmw);
 
