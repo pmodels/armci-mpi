@@ -3,9 +3,7 @@
  * Copyright (C) 2022, NVIDIA.
  */
 
-#include "armciconf.h"
-
-#ifdef ENABLE_PROFILING
+//#include "armciconf.h"
 
 #include "armci.h"
 #include "armci_internals.h"
@@ -732,5 +730,3 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
   const double t1 = MPI_Wtime();
   ARMCII_Update_stats(&profiling_state.barrier, t1-t0, 0);
 }
-
-#endif
