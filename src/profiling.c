@@ -261,9 +261,11 @@ static void ARMCII_Profile_dump(FILE * f)
 
     ARMCII_Profiling_s aggregate_stats = { 0 };
 
-    fflush(0);
-
-    MPI_Barrier(comm);
+    for (int i=0; i<10; i++) {
+        fflush(stdout);
+        fflush(stderr);
+        MPI_Barrier(comm);
+    }
 
     if (me==0) fprintf(f, "ARMCI-MPI profiling results:\n");
 
