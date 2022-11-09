@@ -150,23 +150,28 @@ static void ARMCII_Print_histogram(FILE * f, char * name, ARMCII_Histogram_s * h
     int64_t n = h->num_calls;
     int64_t b = h->total_bytes;
     double  t = h->total_time;
-    fprintf(f,"%s called %"PRIi64" times. time per call = %lf. total bytes = %"PRIi64", bandwidth = %lf (GB/s)\n",
-               name,     n,                               t/n,               b,                     1.e-9*b/t);
-
-    double time_bin = 1.e-7;
-    fprintf(f," size (B)| time (s)->");
-    for (int i=0; i<ARMCI_TIME_BINS; i++) {
-        fprintf(f,"%.1e, ", time_bin);
-        time_bin *= 10;
-    }
-    fprintf(f,"\n");
-    int size_bin = 0;
-    for (int i=0; i<ARMCI_SIZE_BINS; i++) {
-        fprintf(f," 10^%1d: ", size_bin++);
-        for (int j=0; j<ARMCI_TIME_BINS; j++) {
-            fprintf(f,"%"PRIi64", ", h->histogram[i][j]);
+    if (n > 0) {
+        fprintf(f,"%s called %"PRIi64" times. time per call = %lf. total bytes = %"PRIi64", bandwidth = %lf (GB/s)\n",
+                   name,     n,                               t/n,               b,                     1.e-9*b/t);
+ 
+        double time_bin = 1.e-7;
+        fprintf(f," size (B)| time (s)->");
+        for (int i=0; i<ARMCI_TIME_BINS; i++) {
+            fprintf(f,"%.1e, ", time_bin);
+            time_bin *= 10;
         }
         fprintf(f,"\n");
+        int size_bin = 0;
+        for (int i=0; i<ARMCI_SIZE_BINS; i++) {
+            fprintf(f," 10^%1d: ", size_bin++);
+            for (int j=0; j<ARMCI_TIME_BINS; j++) {
+                fprintf(f,"%"PRIi64", ", h->histogram[i][j]);
+            }
+            fprintf(f,"\n");
+        }
+    } else {
+        fprintf(f,"%s called %"PRIi64" times.\n",
+                   name,     n);
     }
 }
 
