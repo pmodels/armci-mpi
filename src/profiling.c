@@ -35,6 +35,43 @@
 #define ARMCI_SIZE_BINS  9
 #define ARMCI_TIME_BINS 10
 
+typedef struct
+{
+    int64_t num_calls;
+    double  total_time;
+    double  min_time;
+    double  max_time;
+}
+ARMCII_Statistics_s;
+
+typedef struct
+{
+    int64_t num_calls;
+    int64_t histogram[ARMCI_SIZE_BINS][ARMCI_TIME_BINS];
+    int64_t total_bytes;
+    double  total_time;
+} 
+ARMCII_Histogram_s;
+
+typedef struct
+{
+    ARMCII_Histogram_s put;         // includes C/S/V
+    ARMCII_Histogram_s get;         // includes C/S/V
+    ARMCII_Histogram_s acc;         // includes C/S/V
+    ARMCII_Statistics_s rmw;
+    ARMCII_Statistics_s barrier;    // includes msg barriers
+    ARMCII_Statistics_s wait;       // includes waitall
+    ARMCII_Statistics_s fence;      // includes allfence
+    ARMCII_Statistics_s locks;      // includes unlock
+    ARMCII_Statistics_s globmem;    // includes free
+    ARMCII_Statistics_s localmem;   // includes free
+}
+ARMCII_Profiling_s;
+
+ARMCII_Profiling_s profiling_state = { 0 };
+
+/*********************************************************/
+
 static inline int ARMCII_Get_size_bin(int size)
 {
     int bin = 0;
@@ -61,6 +98,30 @@ static inline int ARMCII_Get_time_bin(double time)
     return bin;
 }
 
+static inline void ARMCII_Update_stats(ARMCII_Statistics_s * s, double time)
+{
+    const double old_min = s->min_time;
+    const double old_max = s->max_time;
+    if (time < old_min) {
+        s->min_time = time;
+    }
+    if (time > old_max) {
+        s->max_time = time;
+    }
+    s->total_time += time;
+    s->num_calls++;
+}
+
+static inline void ARMCII_Update_hist(ARMCII_Histogram_s * s, double time, int size)
+{
+    const int size_bin = ARMCII_Get_size_bin(size);
+    const int time_bin = ARMCII_Get_time_bin(time);
+    s->histogram[size_bin][time_bin]++;
+    s->total_bytes += size;
+    s->total_time += time;
+    s->num_calls++;
+}
+
 static inline int64_t ARMCII_Strided_count(int count[], int stride_levels)
 {
     int64_t size = 1;
@@ -75,14 +136,7 @@ static inline int64_t ARMCII_Vector_count(armci_giov_t * v)
     return (v->bytes * v->ptr_array_len);
 }
 
-typedef struct
-{
-    int64_t num_calls;
-    int64_t histogram[ARMCI_SIZE_BINS][ARMCI_TIME_BINS];
-    int64_t total_bytes;
-    double  total_time;
-} 
-ARMCII_Histogram_s;
+/*********************************************************/
 
 static void ARMCII_Print_histogram(FILE * f, char * name, ARMCII_Histogram_s * h)
 {
@@ -99,20 +153,11 @@ static void ARMCII_Print_histogram(FILE * f, char * name, ARMCII_Histogram_s * h
     }
 }
 
-typedef struct
-{
-    int64_t num_calls;
-    double  total_time;
-    double  min_time;
-    double  max_time;
-}
-ARMCII_Statistics_s;
-
 static void ARMCII_Print_statistics(FILE * f, char * name, ARMCII_Statistics_s * s)
 {
     const int64_t n   = s->num_calls;
     const double  t   = s->total_time;
-#if 0
+#if 1
     const double  min = s->min_time;
     const double  max = s->max_time;
     fprintf(f,"%s called %"PRIi64" times. time per call = %lf. min,max = %lf, %lf.\n", name, n, t/n, min, max);
@@ -121,22 +166,7 @@ static void ARMCII_Print_statistics(FILE * f, char * name, ARMCII_Statistics_s *
 #endif
 }
 
-typedef struct
-{
-    ARMCII_Histogram_s put;         // includes C/S/V
-    ARMCII_Histogram_s get;         // includes C/S/V
-    ARMCII_Histogram_s acc;         // includes C/S/V
-    ARMCII_Statistics_s rmw;
-    ARMCII_Statistics_s barrier;    // includes msg barriers
-    ARMCII_Statistics_s wait;       // includes waitall
-    ARMCII_Statistics_s fence;      // includes allfence
-    ARMCII_Statistics_s locks;      // includes unlock
-    ARMCII_Statistics_s globmem;    // includes free
-    ARMCII_Statistics_s localmem;   // includes free
-}
-ARMCII_Profiling_s;
-
-ARMCII_Profiling_s profiling_state = { 0 };
+/*********************************************************/
 
 static void ARMCII_Profile_init(void)
 {
@@ -240,6 +270,8 @@ static void ARMCII_Profile_dump(void)
     MPI_Barrier(comm);
 }
 
+/*********************************************************/
+
 int ARMCI_Init(void) {
   const int rc = PARMCI_Init();
   ARMCII_Profile_init();
@@ -270,93 +302,83 @@ int ARMCI_Finalize(void) {
 }
 
 int ARMCI_Malloc(void **base_ptrs, armci_size_t size) {
-  profiling_state.globmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc(base_ptrs, size);
   const double t1 = MPI_Wtime();
-  profiling_state.globmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.globmem, t1-t0);
   return rc;
 }
 
 int ARMCI_Free(void *ptr) {
-  profiling_state.globmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free(ptr);
   const double t1 = MPI_Wtime();
-  profiling_state.globmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.globmem, t1-t0);
   return rc;
 }
 
 int ARMCI_Malloc_memdev(void **base_ptrs, armci_size_t size, const char *device) {
-  profiling_state.globmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc_memdev(base_ptrs, size, device);
   const double t1 = MPI_Wtime();
-  profiling_state.globmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.globmem, t1-t0);
   return rc;
 }
 
 int ARMCI_Malloc_group_memdev(void **base_ptrs, armci_size_t size, ARMCI_Group *group, const char *device) {
-  profiling_state.globmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Malloc_group_memdev(base_ptrs, size, group, device);
   const double t1 = MPI_Wtime();
-  profiling_state.globmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.globmem, t1-t0);
   return rc;
 }
 
 int ARMCI_Free_memdev(void *ptr) {
-  profiling_state.globmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free_memdev(ptr);
   const double t1 = MPI_Wtime();
-  profiling_state.globmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.globmem, t1-t0);
   return rc;
 }
 
 void *ARMCI_Malloc_local(armci_size_t size) {
-  profiling_state.localmem.num_calls++;
   const double t0 = MPI_Wtime();
   void * rc = PARMCI_Malloc_local(size);
   const double t1 = MPI_Wtime();
-  profiling_state.localmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.localmem, t1-t0);
   return rc;
 }
 
 int ARMCI_Free_local(void *ptr) {
-  profiling_state.localmem.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Free_local(ptr);
   const double t1 = MPI_Wtime();
-  profiling_state.localmem.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.localmem, t1-t0);
   return rc;
 }
 
 void ARMCI_Barrier(void)
 {
-  profiling_state.barrier.num_calls++;
   const double t0 = MPI_Wtime();
   PARMCI_Barrier();
   const double t1 = MPI_Wtime();
-  profiling_state.barrier.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.barrier, t1-t0);
 }
 
 void ARMCI_Fence(int proc)
 {
-  profiling_state.fence.num_calls++;
   const double t0 = MPI_Wtime();
   PARMCI_Fence(proc);
   const double t1 = MPI_Wtime();
-  profiling_state.fence.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.fence, t1-t0);
 }
 
 void ARMCI_AllFence(void)
 {
-  profiling_state.fence.num_calls++;
   const double t0 = MPI_Wtime();
   PARMCI_AllFence();
   const double t1 = MPI_Wtime();
-  profiling_state.fence.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.fence, t1-t0);
 }
 
 void ARMCI_Access_begin(void *ptr) {
@@ -368,192 +390,121 @@ void ARMCI_Access_end(void *ptr) {
 }
 
 int ARMCI_Get(void *src, void *dst, int size, int target) {
-  profiling_state.get.num_calls++;
-  profiling_state.get.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Get(src, dst, size, target);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.get.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.get.histogram[size_bin][time_bin]++;
+  ARMCII_Update_hist(&profiling_state.get, t1-t0, size);
   return rc;
 }
 
 int ARMCI_Put(void *src, void *dst, int size, int target) {
-  profiling_state.put.num_calls++;
-  profiling_state.put.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Put(src, dst, size, target);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.put.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.put.histogram[size_bin][time_bin]++;
+  ARMCII_Update_hist(&profiling_state.put, t1-t0, size);
   return rc;
 }
 
 int ARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int proc) {
-  profiling_state.acc.num_calls++;
-  profiling_state.acc.total_bytes += bytes;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Acc(datatype, scale, src, dst, bytes, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.acc.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(bytes);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.acc.histogram[size_bin][time_bin]++;
+  ARMCII_Update_hist(&profiling_state.acc, t1-t0, bytes);
   return rc;
 }
 
 int ARMCI_PutS(void *src_ptr, int src_stride_ar[], void *dst_ptr, int dst_stride_ar[], int count[], int stride_levels, int proc) {
-  profiling_state.put.num_calls++;
-  const int64_t size = ARMCII_Strided_count(count, stride_levels);
-  profiling_state.put.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_PutS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.put.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.put.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Strided_count(count, stride_levels);
+  ARMCII_Update_hist(&profiling_state.put, t1-t0, size);
   return rc;
 }
 
 int ARMCI_GetS(void *src_ptr, int src_stride_ar[], void *dst_ptr, int dst_stride_ar[], int count[], int stride_levels, int proc) {
-  profiling_state.get.num_calls++;
-  const int64_t size = ARMCII_Strided_count(count, stride_levels);
-  profiling_state.get.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_GetS(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.get.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.get.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Strided_count(count, stride_levels);
+  ARMCII_Update_hist(&profiling_state.get, t1-t0, size);
   return rc;
 }
 
 int ARMCI_AccS(int datatype, void *scale, void *src_ptr, int src_stride_ar[], void *dst_ptr, int dst_stride_ar[], int count[], int stride_levels, int proc) {
-  profiling_state.acc.num_calls++;
-  const int64_t size = ARMCII_Strided_count(count, stride_levels);
-  profiling_state.acc.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_AccS(datatype, scale, src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.acc.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.acc.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Strided_count(count, stride_levels);
+  ARMCII_Update_hist(&profiling_state.acc, t1-t0, size);
   return rc;
 }
 
-int ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc)
-{
-  profiling_state.put.num_calls++;
-  profiling_state.put.total_bytes += size;
+int ARMCI_Put_flag(void *src, void* dst, int size, int *flag, int value, int proc) {
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Put_flag(src, dst, size, flag, value, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.put.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.put.histogram[size_bin][time_bin]++;
+  ARMCII_Update_hist(&profiling_state.put, t1-t0, size);
   return rc;
 }
 
-int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[], void *dst_ptr, int dst_stride_ar[], int count[], int stride_levels, int *flag, int value, int proc)
-{
-  profiling_state.put.num_calls++;
-  const int64_t size = ARMCII_Strided_count(count, stride_levels);
-  profiling_state.put.total_bytes += size;
+int ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[], void *dst_ptr, int dst_stride_ar[], int count[], int stride_levels, int *flag, int value, int proc) {
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_PutS_flag(src_ptr, src_stride_ar, dst_ptr, dst_stride_ar, count, stride_levels, flag, value, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.put.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.put.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Strided_count(count, stride_levels);
+  ARMCII_Update_hist(&profiling_state.put, t1-t0, size);
   return rc;
 }
 
 int ARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
-  profiling_state.put.num_calls++;
-  const int64_t size = ARMCII_Vector_count(iov);
-  profiling_state.put.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_PutV(iov, iov_len, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.put.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.put.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Vector_count(iov);
+  ARMCII_Update_hist(&profiling_state.put, t1-t0, size);
   return rc;
 }
 
 int ARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
-  profiling_state.get.num_calls++;
-  const int64_t size = ARMCII_Vector_count(iov);
-  profiling_state.get.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_GetV(iov, iov_len, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.get.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.get.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Vector_count(iov);
+  ARMCII_Update_hist(&profiling_state.get, t1-t0, size);
   return rc;
 }
 
 int ARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc) {
-  profiling_state.acc.num_calls++;
-  const int64_t size = ARMCII_Vector_count(iov);
-  profiling_state.acc.total_bytes += size;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_AccV(datatype, scale, iov, iov_len, proc);
   const double t1 = MPI_Wtime();
-  const double time = t1-t0;
-  profiling_state.acc.total_time += time;
-  const int size_bin = ARMCII_Get_size_bin(size);
-  const int time_bin = ARMCII_Get_time_bin(time);
-  profiling_state.acc.histogram[size_bin][time_bin]++;
+  const int64_t size = ARMCII_Vector_count(iov);
+  ARMCII_Update_hist(&profiling_state.acc, t1-t0, size);
   return rc;
 }
 
 int ARMCI_Wait(armci_hdl_t* hdl) {
-  profiling_state.wait.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Wait(hdl);
   const double t1 = MPI_Wtime();
-  profiling_state.wait.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.wait, t1-t0);
   return rc;
 }
 
 int ARMCI_Test(armci_hdl_t* hdl) {
-  profiling_state.wait.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Test(hdl);
   const double t1 = MPI_Wtime();
-  profiling_state.wait.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.wait, t1-t0);
   return rc;
 }
 
 int ARMCI_WaitAll(void) {
-  profiling_state.wait.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_WaitAll();
   const double t1 = MPI_Wtime();
-  profiling_state.wait.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.wait, t1-t0);
   return rc;
 }
 
@@ -650,44 +601,39 @@ int ARMCI_Destroy_mutexes(void) {
 }
 
 void ARMCI_Lock(int mutex, int proc) {
-  profiling_state.locks.num_calls++;
   const double t0 = MPI_Wtime();
   PARMCI_Lock(mutex, proc);
   const double t1 = MPI_Wtime();
-  profiling_state.locks.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.locks, t1-t0);
 }
 
 void ARMCI_Unlock(int mutex, int proc) {
-  profiling_state.locks.num_calls++;
   const double t0 = MPI_Wtime();
   PARMCI_Unlock(mutex, proc);
   const double t1 = MPI_Wtime();
-  profiling_state.locks.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.locks, t1-t0);
 }
 
 int ARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
-  profiling_state.rmw.num_calls++;
   const double t0 = MPI_Wtime();
   const int rc = PARMCI_Rmw(op, ploc, prem, value, proc);
   const double t1 = MPI_Wtime();
-  profiling_state.rmw.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.rmw, t1-t0);
   return rc;
 }
 
 void armci_msg_barrier(void) {
-  profiling_state.barrier.num_calls++;
   const double t0 = MPI_Wtime();
   parmci_msg_barrier();
   const double t1 = MPI_Wtime();
-  profiling_state.barrier.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.barrier, t1-t0);
 }
 
 void armci_msg_group_barrier(ARMCI_Group *group) {
-  profiling_state.barrier.num_calls++;
   const double t0 = MPI_Wtime();
   parmci_msg_group_barrier(group);
   const double t1 = MPI_Wtime();
-  profiling_state.barrier.total_time += (t1-t0);
+  ARMCII_Update_stats(&profiling_state.barrier, t1-t0);
 }
 
 #endif
