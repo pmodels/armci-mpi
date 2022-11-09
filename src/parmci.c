@@ -2,10 +2,6 @@
  * Copyright (C) 2010. See COPYRIGHT in top-level directory.
  */
 
-#include "armciconf.h"
-
-#ifndef ENABLE_PROFILING
-
 /* If no weak symbols support */
 #if !defined(HAVE_PRAGMA_WEAK) && !defined(HAVE_PRAGMA_HP_SEC_DEF) && !defined(HAVE_PRAGMA_CRI_DUP)
 
@@ -319,7 +315,5 @@ void armci_msg_group_barrier(ARMCI_Group *group) {
   parmci_msg_group_barrier(group);
   return;
 }
-
-#endif
 
 #endif
