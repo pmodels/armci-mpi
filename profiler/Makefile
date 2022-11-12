@@ -1,5 +1,5 @@
 CPPFLAGS = -I../src
-LIBS = -L../build/.libs -larmci
+LIBS = -L../.libs -L.. -larmci
 
 CC = mpicc
 CFLAGS = -g $(CPPFLAGS)
@@ -11,7 +11,7 @@ LDFLAGS = -shared
 all: libarmciprof.so profiling.o
 
 libarmciprof.so: profiling.c
-	$(CC) $(CFLAGS) $(SOFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $(SOFLAGS) $< $(LIBS) -o $@
 
 #libarmciprof.so: profiling.o
 #	$(LD) $(LDFLAGS) $< -o $@
