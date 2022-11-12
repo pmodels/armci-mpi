@@ -357,3 +357,12 @@ int ARMCIX_Group_dup(ARMCI_Group *parent, ARMCI_Group *new_group) {
 
   return 0;
 }
+
+/** Get the default group.
+  *
+  * @param[out] the world communicator used by ARMCI
+  */
+void ARMCIX_Get_world_comm(MPI_Comm * comm)
+{
+    *comm = ARMCI_GROUP_WORLD.comm;
+}

@@ -6,7 +6,6 @@
 //#include "armciconf.h"
 
 #include "armci.h"
-#include "armci_internals.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +13,8 @@
 #include <inttypes.h>
 #include <float.h>
 #include <math.h>
+
+void ARMCIX_Get_world_comm(MPI_Comm * comm);
 
 /*******************************************************************************
  Design
@@ -220,7 +221,10 @@ static void ARMCII_Reduce_histogram(ARMCII_Histogram_s * i, ARMCII_Histogram_s *
 static void ARMCII_Profile_init(void)
 {
     int me;
-    MPI_Comm_rank(ARMCI_GROUP_WORLD.comm, &me);
+    MPI_Comm comm;
+
+    ARMCIX_Get_world_comm(&comm);
+    MPI_Comm_rank(comm, &me);
 
     if (me == 0) {
         fprintf(stderr,"ARMCI-MPI profiling initiated\n");
@@ -261,8 +265,10 @@ static void ARMCII_Profile_dump(FILE * f)
 {
     if (profiling_state.dump_has_happened) return;
 
-    const MPI_Comm comm = ARMCI_GROUP_WORLD.comm;
     int me;
+    MPI_Comm comm;
+
+    ARMCIX_Get_world_comm(&comm);
     MPI_Comm_rank(comm, &me);
 
     ARMCII_Profiling_s aggregate_stats = { 0 };
