@@ -1,5 +1,8 @@
+# just a hack - change this appropriately
+ARMCI_INSTALL_PREFIX=../.lib
+
 CPPFLAGS = -I../src
-LIBS = -L../.libs -L.. -larmci
+LIBS = -L$(ARMCI_INSTALL_PREFIX) -larmci
 
 CC = mpicc
 CFLAGS = -g $(CPPFLAGS)
