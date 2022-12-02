@@ -12,6 +12,19 @@ a proper shared library.
 You can `LD_PRELOAD=libarmciprof.so` or you can left-link with
 it explicitly when building your application, e.g. NWChem.
 
+## Overhead
+
+The memory overhead of the profiling interface is less than 4 KiB.
+The time overhead is negligible.
+The small numbers of branches and pointer chases are negligible
+compared to what happens in Global Arrays,
+the ARMCI-MPI `gmr` interface to MPI-3 RMA, and
+the MPI-3 RMA implementation themselves.
+If your processor implements `log10` and `log10f` so poorly
+that their cost is noticeable, buy a new computer.
+Alternatively, you can contribute an optimized implementation
+of bin selection that doesn't use these operations.
+
 ## Output
 
 Below is a real profile from NWChem.
