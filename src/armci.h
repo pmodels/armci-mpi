@@ -20,6 +20,7 @@ int   ARMCI_Init(void);
 int   ARMCI_Init_args(int *argc, char ***argv);
 int   ARMCI_Init_thread(int armci_requested);
 int   ARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm);
+int   ARMCI_Init_mpi_comm(MPI_Comm comm);
 int   ARMCI_Initialized(void);
 
 int   ARMCI_Finalize(void);
@@ -216,6 +217,7 @@ int     PARMCI_Init(void);
 int     PARMCI_Init_args(int *argc, char ***argv);
 int     PARMCI_Init_thread(int armci_requested);
 int     PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm);
+int     PARMCI_Init_mpi_comm(MPI_Comm comm);
 int     PARMCI_Initialized(void);
 int     PARMCI_Finalize(void);
 
