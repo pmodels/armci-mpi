@@ -22,11 +22,7 @@ jobs:
           - openmpi
           - mpich
         armci_network:
-          - mpi3
-          - mpi-ts
-          - ofi
           - armci
-          - mpi-pr
         f77:
           - gfortran
         cc:
