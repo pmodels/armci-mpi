@@ -1,3 +1,1 @@
- * r506: Added support for the ARMCI profiling interface.
-
- * r498: Fixed a few memory leaks.
+See https://github.com/pmodels/armci-mpi/commits/ instead.  This file is not maintained.
