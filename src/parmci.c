@@ -27,6 +27,11 @@ int ARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   return PARMCI_Init_thread_comm(armci_requested, comm);
 }
 
+#pragma weak ARMCI_Init_mpi_comm
+int ARMCI_Init_mpi_comm(MPI_Comm comm) {
+  return PARMCI_Init_mpi_comm(comm);
+}
+
 #pragma weak ARMCI_Initialized
 int ARMCI_Initialized(void) {
   return PARMCI_Initialized();
