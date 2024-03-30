@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
       for (j = 0; j < SUB_YDIM; j++) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = (1.0 + ((rank+nranks-1)%nranks));
-        if (actual - expected > 1e-10) {
+        if (fabs(actual - expected) > 1e-10) {
           printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
               rank, j, i, expected, actual);
           errors++;
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
       for (j = 0; j < SUB_YDIM; j++) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = 1.0 + rank;
-        if (actual - expected > 1e-10) {
+        if (fabs(actual - expected) > 1e-10) {
           printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
               rank, j, i, expected, actual);
           errors++;
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
       for (j = SUB_YDIM; j < YDIM; j++) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = 1.0 + rank;
-        if (actual - expected > 1e-10) {
+        if (fabs(actual - expected) > 1e-10) {
           printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
               rank, j, i, expected, actual);
           errors++;
