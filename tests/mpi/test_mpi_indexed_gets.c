@@ -44,8 +44,10 @@ int main(int argc, char **argv) {
     if (rank == 0)
         printf("MPI RMA Strided Get Test:\n");
 
-    for (i = 0; i < XDIM*YDIM; i++)
+    for (i = 0; i < XDIM*YDIM; i++) {
         *(win_buf + i) = 1.0 + rank;
+        *(loc_buf + i) = 1.0 + rank;
+    }
 
     MPI_Win_create(win_buf, bufsize, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &buf_win);
 
