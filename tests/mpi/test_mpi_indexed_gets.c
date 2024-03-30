@@ -19,7 +19,7 @@
 
 #define XDIM 8
 #define YDIM 1024
-#define SUB_XDIM 8
+#define SUB_XDIM 4
 #define SUB_YDIM 256
 
 int main(int argc, char **argv) {
