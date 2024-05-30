@@ -72,6 +72,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   mreg->nslices        = world_nproc;
   mreg->prev           = NULL;
   mreg->next           = NULL;
+  mreg->unified        = false;
 
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
@@ -213,7 +214,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
-    int unified = 0;
+    int unified = false;
     void    *attr_ptr;
     int     *attr_val;
     int      attr_flag;
@@ -224,21 +225,22 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       if (world_me==0) {
         if ( (*attr_val)==MPI_WIN_SEPARATE ) {
           printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
-          unified = 0;
+          unified = false;
         } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
 #ifdef DEBUG
           printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
 #endif
-          unified = 1;
+          unified = true;
         } else {
           printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
-          unified = 0;
+          unified = false;
         }
       }
     } else {
       if (world_me==0) {
         printf("MPI_WIN_MODEL attribute missing \n");
       }
+      unified = false;
     }
     if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
       if (world_me==0) {
@@ -246,6 +248,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       }
       /* ARMCI_Error("MPI_WIN_SEPARATE with NOGUARD", 1); */
     }
+    mreg->unified = unified;
   }
 
 #ifdef HAVE_PTHREADS
