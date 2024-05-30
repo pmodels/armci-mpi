@@ -26,6 +26,7 @@ typedef struct gmr_s {
   struct gmr_s           *next;
   gmr_slice_t            *slices;         /* Array of GMR slices for this allocation                        */
   int                     nslices;
+  int                     unified;        /* separate/unified attribute of the window                       */
 } gmr_t;
 
 extern gmr_t *gmr_list;
