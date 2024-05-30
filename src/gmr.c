@@ -214,6 +214,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
+#if 0
     int unified = false;
     void    *attr_ptr;
     int     *attr_val;
@@ -242,13 +243,25 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       }
       unified = false;
     }
-    if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
+#else
+    int unified = ARMCII_Is_win_unified(mreg->window);
+    if (unified == 1) {
+        mreg->unified = true;
+        printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED\n");
+    } else if (unified == 0) {
+        mreg->unified = false;
+        printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE\n");
+    } else {
+        mreg->unified = false;
+        printf("MPI_WIN_MODEL not available\n");
+    }
+#endif
+    if (!(mreg->unified) && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
       if (world_me==0) {
         printf("Please re-run with ARMCI_SHR_BUF_METHOD=COPY\n");
       }
       /* ARMCI_Error("MPI_WIN_SEPARATE with NOGUARD", 1); */
     }
-    mreg->unified = unified;
   }
 
 #ifdef HAVE_PTHREADS

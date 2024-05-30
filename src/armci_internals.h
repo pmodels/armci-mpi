@@ -230,4 +230,6 @@ void ARMCII_Buf_finish_write_vec(void **orig_bufs, void **new_bufs, int count, i
 int  ARMCII_Buf_acc_is_scaled(int datatype, void *scale);
 void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale);
 
+int ARMCII_Is_win_unified(MPI_Win win);
+
 #endif /* HAVE_ARMCI_INTERNALS_H */
