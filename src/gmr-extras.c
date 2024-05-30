@@ -190,13 +190,18 @@ int gmr_flushall(gmr_t *mreg, int local_only) {
   * @param[in] mreg         Memory region
   * @return                 0 on success, non-zero on failure
   */
-int gmr_sync(gmr_t *mreg) {
-  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
-
+int gmr_sync(gmr_t *mreg)
+{
+#if 0
+  // what is the point of this?
+  int grp_me = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
   ARMCII_Assert(grp_me >= 0);
+#endif
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
-  MPI_Win_sync(mreg->window);
+  if (!(mreg->unified)) {
+      MPI_Win_sync(mreg->window);
+  }
 
   return 0;
 }
