@@ -245,15 +245,16 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
     }
 #else
     int unified = ARMCII_Is_win_unified(mreg->window);
+    int print = ARMCII_GLOBAL_STATE.verbose;
     if (unified == 1) {
         mreg->unified = true;
-        printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED\n");
+        if (print) printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED\n");
     } else if (unified == 0) {
         mreg->unified = false;
-        printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE\n");
+        if (print) printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE\n");
     } else {
         mreg->unified = false;
-        printf("MPI_WIN_MODEL not available\n");
+        if (print) printf("MPI_WIN_MODEL not available\n");
     }
 #endif
     if (!(mreg->unified) && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
