@@ -59,8 +59,6 @@ void PARMCI_Barrier(void) {
 /* -- end weak symbols block -- */
 
 /** Wait for remote completion on one-sided operations targeting process proc.
-  * In MPI-2, this is a no-op since get/put/acc already guarantee remote
-  * completion.
   *
   * @param[in] proc Process to target
   */
@@ -85,8 +83,7 @@ void PARMCI_Fence(int proc) {
 #endif
 /* -- end weak symbols block -- */
 
-/** Wait for remote completion on all one-sided operations.  In MPI-2, this is
-  * a no-op since get/put/acc already guarantee remote completion.
+/** Wait for remote completion on all one-sided operations.
   */
 void PARMCI_AllFence(void) {
   gmr_t *cur_mreg = gmr_list;
@@ -121,7 +118,6 @@ void ARMCI_Set_shm_limit(unsigned long shmemlimit) {
 int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
   return 0;
 }
-
 
 /** Copy local data.
   *
