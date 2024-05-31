@@ -357,7 +357,10 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   }
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs. */
-  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_int("ARMCI_USE_WIN_ALLOCATE", 1);
+  ARMCII_GLOBAL_STATE.use_win_allocate = ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", 1);
+
+  /* Do MPI_Win_sync in armci_msg_barrier */
+  ARMCII_GLOBAL_STATE.msg_barrier_syncs = ARMCII_Getenv_bool("ARMCI_MSG_BARRIER_SYNCS", 0);
 
   /* Equivalent to ARMCI_Set_shm_limit - determines the size of:
    * - MPI_Win_allocate slab in the case of slab allocation
