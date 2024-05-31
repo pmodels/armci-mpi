@@ -37,15 +37,9 @@ void ARMCI_Error(const char *msg, int code) {
   * group!).
   */
 void PARMCI_Barrier(void) {
-  gmr_t *cur_mreg = gmr_list;
-
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
-
-  while (cur_mreg) {
-    gmr_sync(cur_mreg);
-    cur_mreg = cur_mreg->next;
-  }
+  ARMCII_Sync();
 }
 
 /* -- begin weak symbols block -- */
@@ -222,5 +216,16 @@ int ARMCII_Is_win_unified(MPI_Win win)
     }
   } else {
     return -1;
+  }
+}
+
+/** Sync all windows
+  */
+void ARMCII_Sync(void) {
+  gmr_t *cur_mreg = gmr_list;
+
+  while (cur_mreg) {
+    gmr_sync(cur_mreg);
+    cur_mreg = cur_mreg->next;
   }
 }
