@@ -290,7 +290,8 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
   }
 
-#if defined(OPEN_MPI)
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
+  /* Open-MPI 5 RMA works a lot better than older releases... */
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
 #else
   /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
