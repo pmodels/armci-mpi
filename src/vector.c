@@ -130,14 +130,12 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
   if (op == ARMCII_OP_ACC) {
     ARMCII_Acc_type_translate(datatype, &type, &type_size);
-    type_count = size/type_size;
-    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   } else {
     type = MPI_BYTE;
     MPI_Type_size(type, &type_size);
-    type_count = size/type_size;
-    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   }
+  type_count = size/type_size;
+  ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
 
   // CONSERVATIVE CASE: If remote pointers overlap or remote pointers correspond to
   // multiple allocations, use the safe implementation to avoid invalid MPI
