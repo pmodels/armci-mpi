@@ -67,14 +67,27 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
 typedef struct armci_hdl_s
 {
+#ifdef USE_RMA_REQUESTS
+    int batch_size;
+    union request {
+        MPI_Request single; // used when batch_size=0 (common case)
+        MPI_Request *array; // used when batch_size>0
+    };
+#else
     int target;    /* we do not actually support individual completion */
     int aggregate;
+#endif
 }
 armci_hdl_t;
 
 void  ARMCI_INIT_HANDLE(armci_hdl_t *hdl);
+#ifndef USE_RMA_REQUESTS
+// GA does not use these.
+// Removing them from the header ensures users will
+// not be able to use them if they are not implemented.
 void  ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t* handle);
 void  ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t* handle);
+#endif
 
 int   ARMCI_NbPut(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
 int   ARMCI_NbGet(void *src, void *dst, int bytes, int proc, armci_hdl_t *hdl);
