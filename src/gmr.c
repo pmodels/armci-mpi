@@ -486,10 +486,11 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (dst == MPI_BOTTOM)
+  if (dst == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
@@ -502,6 +503,11 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   } else {
       MPI_Put(src, src_count, src_type, grp_proc,
               (MPI_Aint) disp, dst_count, dst_type, mreg->window);
+  }
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
   }
 
   return 0;
@@ -517,7 +523,8 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle) {
+int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(dst != NULL, "Invalid local address");
   return gmr_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, handle);
 }
@@ -549,10 +556,11 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (src == MPI_BOTTOM)
+  if (src == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(src_type, &lb, &extent);
@@ -565,6 +573,11 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   } else {
       MPI_Get(dst, dst_count, dst_type, grp_proc,
               (MPI_Aint) disp, src_count, src_type, mreg->window);
+  }
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
   }
 
   return 0;
@@ -615,10 +628,11 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (dst == MPI_BOTTOM)
+  if (dst == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
@@ -626,6 +640,11 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
   MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window);
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
 
   return 0;
 }
@@ -680,17 +699,24 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (dst == MPI_BOTTOM)
+  if (dst == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-  MPI_Get_accumulate(src, src_count, src_type, out, out_count, out_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, op, mreg->window);
+  MPI_Get_accumulate(src, src_count, src_type, out, out_count, out_type,
+                     grp_proc, (MPI_Aint) disp, dst_count, dst_type, op, mreg->window);
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
 
   return 0;
 }
@@ -707,8 +733,8 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   * @return              0 on success, non-zero on failure
   */
 int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
-		MPI_Datatype type, MPI_Op op, int proc) {
-
+		MPI_Datatype type, MPI_Op op, int proc)
+{
   int        grp_proc;
   gmr_size_t disp;
 
