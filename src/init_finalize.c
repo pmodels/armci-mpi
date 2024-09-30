@@ -395,6 +395,9 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Use MPI_MODE_NOCHECK assertion */
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
 
+  /* Use MPI_MODE_NOCHECK assertion */
+  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 0);
+
   /* Setup groups and communicators */
 
   MPI_Comm_dup(comm, &ARMCI_GROUP_WORLD.comm);
@@ -542,6 +545,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("  NO_FLUSH_LOCAL         = %s\n", ARMCII_GLOBAL_STATE.end_to_end_flush       ? "TRUE" : "FALSE");
       printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
       printf("  MSG_BARRIER_SYNCS      = %s\n", ARMCII_GLOBAL_STATE.msg_barrier_syncs      ? "TRUE" : "FALSE");
+      printf("  USE_REQUEST_ATOMICS    = %s\n", ARMCII_GLOBAL_STATE.use_request_atomics    ? "TRUE" : "FALSE");
 
       /* MPI info set on window */
       printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
