@@ -262,15 +262,15 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
 
     switch(op) {
       case ARMCII_OP_PUT:
-        gmr_put(mreg, src[i], dst[i], elem_count, proc);
+        gmr_put(mreg, src[i], dst[i], elem_count, proc, NULL /* handle */);
         flush_local = 1;
         break;
       case ARMCII_OP_GET:
-        gmr_get(mreg, src[i], dst[i], elem_count, proc);
+        gmr_get(mreg, src[i], dst[i], elem_count, proc, NULL /* handle */);
         flush_local = 0;
         break;
       case ARMCII_OP_ACC:
-        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc, NULL /* handle */);
         flush_local = 1;
         break;
       default:
@@ -352,15 +352,15 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     switch(op) {
       case ARMCII_OP_PUT:
-        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc, NULL /* handle */);
         flush_local = 1;
         break;
       case ARMCII_OP_GET:
-        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc, NULL /* handle */);
         flush_local = 0;
         break;
       case ARMCII_OP_ACC:
-        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc, NULL /* handle */);
         flush_local = 1;
         break;
       default:

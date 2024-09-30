@@ -76,7 +76,7 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       ARMCI_Copy(src, dst, size);
   }
   else {
-      gmr_put(dst_mreg, src, dst, size, target);
+      gmr_put(dst_mreg, src, dst, size, target, NULL /* handle */);
   }
 
   if (handle!=NULL) {
@@ -120,7 +120,7 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
     ARMCI_Copy(src, dst, size);
   }
   else {
-    gmr_get(src_mreg, src, dst, size, target);
+    gmr_get(src_mreg, src, dst, size, target, NULL /* handle */);
   }
 
   if (handle!=NULL) {
@@ -192,7 +192,7 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target);
+  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target, NULL /* handle */);
 
   if (src_buf != src) {
     /* must wait for local completion to free source buffer */
@@ -223,7 +223,12 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
 /** Wait for a non-blocking operation to finish.
   */
-int PARMCI_Wait(armci_hdl_t* handle) {
+int PARMCI_Wait(armci_hdl_t* handle)
+{
+#ifdef USE_RMA_REQUESTS
+#error TODO
+#else
+
   gmr_t *cur_mreg = gmr_list;
 
   if(handle->aggregate > 0) {
@@ -239,6 +244,9 @@ int PARMCI_Wait(armci_hdl_t* handle) {
       cur_mreg = cur_mreg->next;
     }
   }
+
+#endif
+
   return 0;
 }
 

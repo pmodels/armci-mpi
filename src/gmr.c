@@ -453,9 +453,10 @@ gmr_t *gmr_lookup(void *ptr, int proc) {
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc) {
+int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+  return gmr_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, handle);
 }
 
 
@@ -473,8 +474,9 @@ int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   * @return              0 on success, non-zero on failure
   */
 int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                  void *dst, int dst_count, MPI_Datatype dst_type,
+                  int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -515,9 +517,9 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc) {
+int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle) {
   ARMCII_Assert_msg(dst != NULL, "Invalid local address");
-  return gmr_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+  return gmr_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, handle);
 }
 
 
@@ -535,8 +537,9 @@ int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   * @return              0 on success, non-zero on failure
   */
 int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                  void *dst, int dst_count, MPI_Datatype dst_type,
+                  int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -578,9 +581,11 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
+int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type,
+                   int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
+  return gmr_accumulate_typed(mreg, src, count, type, dst, count, type, proc, handle);
 }
 
 
@@ -598,8 +603,9 @@ int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype ty
   * @return              0 on success, non-zero on failure
   */
 int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                         void *dst, int dst_count, MPI_Datatype dst_type,
+                         int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -636,9 +642,11 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, MPI_Datatype type, MPI_Op op, int proc) {
+int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count,
+                       MPI_Datatype type, MPI_Op op, int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(src != NULL && out != NULL, "Invalid local address(es)");
-  return gmr_get_accumulate_typed(mreg, src, count, type, out, count, type, dst, count, type, op, proc);
+  return gmr_get_accumulate_typed(mreg, src, count, type, out, count, type, dst, count, type, op, proc, handle);
 }
 
 /** One-sided get-accumulate operation with typed arguments.  Source and output buffer must be private.
@@ -659,9 +667,10 @@ int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count, 
   * @return              0 on success, non-zero on failure
   */
 int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *out, int out_count, MPI_Datatype out_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, MPI_Op op, int proc) {
-
+                             void *out, int out_count, MPI_Datatype out_type,
+                             void *dst, int dst_count, MPI_Datatype dst_type,
+                             MPI_Op op, int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;

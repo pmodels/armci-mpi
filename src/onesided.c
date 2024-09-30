@@ -104,7 +104,7 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
 
   /* Origin buffer is private */
   else if (dst_mreg == NULL) {
-    gmr_get(src_mreg, src, dst, size, target);
+    gmr_get(src_mreg, src, dst, size, target, NULL /* handle */);
     gmr_flush(src_mreg, target, 0); /* it's a round trip so w.r.t. flush, local=remote */
   }
 
@@ -117,7 +117,7 @@ int PARMCI_Get(void *src, void *dst, int size, int target) {
     MPI_Alloc_mem(size, MPI_INFO_NULL, &dst_buf);
     ARMCII_Assert(dst_buf != NULL);
 
-    gmr_get(src_mreg, src, dst_buf, size, target);
+    gmr_get(src_mreg, src, dst_buf, size, target, NULL /* handle */);
     gmr_flush(src_mreg, target, 0); /* it's a round trip so w.r.t. flush, local=remote */
 
     ARMCI_Copy(dst_buf, dst, size);
@@ -167,7 +167,7 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
 
   /* Origin buffer is private */
   else if (src_mreg == NULL) {
-    gmr_put(dst_mreg, src, dst, size, target);
+    gmr_put(dst_mreg, src, dst, size, target, NULL /* handle */);
     gmr_flush(dst_mreg, target, 1); /* flush_local */
   }
 
@@ -182,7 +182,7 @@ int PARMCI_Put(void *src, void *dst, int size, int target) {
 
     ARMCI_Copy(src, src_buf, size);
 
-    gmr_put(dst_mreg, src_buf, dst, size, target);
+    gmr_put(dst_mreg, src_buf, dst, size, target, NULL /* handle */);
     gmr_flush(dst_mreg, target, 1); /* flush_local */
 
     MPI_Free_mem(src_buf);
@@ -259,7 +259,7 @@ int PARMCI_Acc(int datatype, void *scale, void *src, void *dst, int bytes, int p
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  gmr_accumulate(dst_mreg, src_buf, dst, count, type, proc);
+  gmr_accumulate(dst_mreg, src_buf, dst, count, type, proc, NULL /* handle */);
   gmr_flush(dst_mreg, proc, 1); /* flush_local */
 
   if (src_buf != src)
