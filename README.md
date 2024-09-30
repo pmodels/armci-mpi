@@ -159,6 +159,11 @@ Boolean environment variables are enabled when set to a value beginning with
 
   Argument to `usleep()` to pause the progress polling loop.
 
+`ARMCI_USE_REQUEST_ATOMICS` (boolean)
+
+  Switch to request-based RMA (with Rget_accumulate) instead of
+  Fetch_and_op/Compare_and_swap plus a local flush.
+
 ## Noncollective Groups
 
 `ARMCI_NONCOLLECTIVE_GROUPS` (boolean)
