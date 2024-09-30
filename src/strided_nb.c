@@ -87,7 +87,7 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, NULL /* handle */);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -194,7 +194,7 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
+    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc, NULL /* handle */);
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
@@ -344,7 +344,7 @@ int PARMCI_NbAccS(int datatype, void *scale,
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, NULL /* handle */);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
