@@ -18,7 +18,6 @@ libarmci_la_SOURCES = src/buffer.c        \
                       src/internals.c     \
                       src/malloc.c        \
                       src/gmr.c           \
-                      src/gmr-extras.c    \
                       src/message.c       \
                       src/message_gop.c   \
                       src/mutex.c         \
