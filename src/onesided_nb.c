@@ -11,22 +11,33 @@
 
 /** Initialize Non-blocking handle.
   */
-void ARMCI_INIT_HANDLE(armci_hdl_t *handle) {
+void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
+{
   if (handle!=NULL) {
+#ifdef USE_RMA_REQUESTS
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+#else
     handle->aggregate =  0;
     handle->target    = -1;
+#endif
   } else {
     ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
   }
   return;
 }
 
-
 /** Mark a handle as aggregate.
   */
-void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
+void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
+{
   if (handle!=NULL) {
+#ifdef USE_RMA_REQUESTS
+    ARMCII_Assert_msg(0, "not supported");
+#else
     handle->aggregate =  1;
+#endif
   } else {
     ARMCII_Warning("ARMCI_SET_AGGREGATE_HANDLE given NULL handle");
   }
@@ -38,7 +49,11 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   */
 void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
+#ifdef USE_RMA_REQUESTS
+    ARMCII_Assert_msg(0, "not supported");
+#else
     handle->aggregate =  0;
+#endif
   } else {
     ARMCII_Warning("ARMCI_UNSET_AGGREGATE_HANDLE given NULL handle");
   }
@@ -79,10 +94,12 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       gmr_put(dst_mreg, src, dst, size, target, NULL /* handle */);
   }
 
+#if 0
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = target;
   }
+#endif
 
   gmr_progress();
 
@@ -123,10 +140,12 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
     gmr_get(src_mreg, src, dst, size, target, NULL /* handle */);
   }
 
+#if 0
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = target;
   }
+#endif
 
   gmr_progress();
 
@@ -200,10 +219,12 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
     MPI_Free_mem(src_buf);
   }
 
+#if 0
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = target;
   }
+#endif
 
   gmr_progress();
 
@@ -263,8 +284,13 @@ int PARMCI_Wait(armci_hdl_t* handle)
 
 /** Check if a non-blocking operation has finished.
   */
-int PARMCI_Test(armci_hdl_t* handle) {
+int PARMCI_Test(armci_hdl_t* handle)
+{
+#ifdef USE_RMA_REQUESTS
+#error TODO
+#else
   return PARMCI_Wait(handle);
+#endif
 }
 
 
@@ -280,7 +306,8 @@ int PARMCI_Test(armci_hdl_t* handle) {
 
 /** Wait for all outstanding non-blocking operations with implicit handles to a particular process to finish.
   */
-int PARMCI_WaitProc(int proc) {
+int PARMCI_WaitProc(int proc)
+{
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
@@ -303,7 +330,8 @@ int PARMCI_WaitProc(int proc) {
 
 /** Wait for all non-blocking operations with implicit (NULL) handles to finish.
   */
-int PARMCI_WaitAll(void) {
+int PARMCI_WaitAll(void)
+{
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
