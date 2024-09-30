@@ -13,7 +13,7 @@
   */
 void ARMCI_INIT_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
-    handle->aggregate =  1;
+    handle->aggregate =  0;
     handle->target    = -1;
   } else {
     ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
@@ -28,7 +28,7 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
     handle->aggregate =  1;
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_SET_AGGREGATE_HANDLE given NULL handle");
   }
   return;
 }
@@ -40,7 +40,7 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
     handle->aggregate =  0;
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_UNSET_AGGREGATE_HANDLE given NULL handle");
   }
   return;
 }
