@@ -103,7 +103,22 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp <= mreg->slices[proc].size, "Transfer is out of range");
 
-  MPI_Fetch_and_op(src, out, type, grp_proc, (MPI_Aint) disp, op, mreg->window);
+  if (ARMCII_GLOBAL_STATE.use_request_atomics) {
+
+    MPI_Request req;
+    MPI_Rget_accumulate(src, 1, type, out, 1, type, grp_proc, (MPI_Aint) disp, 1, type, op, mreg->window, &req);
+    MPI_Wait(&req, MPI_STATUS_IGNORE);
+
+  } else {
+
+    MPI_Fetch_and_op(src, out, type, grp_proc, (MPI_Aint) disp, op, mreg->window);
+    if (ARMCII_GLOBAL_STATE.end_to_end_flush) {
+      MPI_Win_flush(grp_proc, mreg->window);
+    } else {
+      MPI_Win_flush_local(grp_proc, mreg->window);
+    }
+
+  }
 
   return 0;
 }
