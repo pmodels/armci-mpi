@@ -76,11 +76,11 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     long out_val_l, src_val_l = *((long*)ploc);
     int  out_val_i, src_val_i = *((int*)ploc);
 
+    // this is a blocking operation
     gmr_fetch_and_op(dst_mreg, 
                      is_long ? (void*) &src_val_l : (void*) &src_val_i /* src */,
                      is_long ? (void*) &out_val_l : (void*) &out_val_i /* out */,
     		     prem /* dst */, type, rop, proc);
-    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
     if (is_long)
       *(long*) ploc = out_val_l;
     else
@@ -90,11 +90,11 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
     long fetch_val_l, add_val_l = value;
     int  fetch_val_i, add_val_i = value;
 
+    // this is a blocking operation
     gmr_fetch_and_op(dst_mreg,
                      is_long ? (void*) &add_val_l   : (void*) &add_val_i   /* src */,
                      is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i /* out */,
                      prem /* dst */, type, rop, proc);
-    gmr_flush(dst_mreg, proc, 0); /* it's a round trip so w.r.t. flush, local=remote */
 
     if (is_long)
       *(long*) ploc = fetch_val_l;
