@@ -37,8 +37,8 @@
   * @return                    Zero on success, error code otherwise.
   */
 int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
-               void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
+                  void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                  int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t * handle) {
 
   int err;
 
@@ -87,7 +87,7 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, NULL /* handle */);
+    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, handle);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -96,11 +96,6 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     if (src_buf != src_ptr) {
       gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
-    }
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
     }
 
     err = 0;
@@ -205,11 +200,6 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
-    }
 
     err = 0;
 
@@ -353,11 +343,6 @@ int PARMCI_NbAccS(int datatype, void *scale,
     if (src_buf != src_ptr) {
       gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
-    }
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
     }
 
     err = 0;

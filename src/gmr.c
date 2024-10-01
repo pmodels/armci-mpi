@@ -497,18 +497,47 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+        MPI_Raccumulate(src, src_count, src_type, grp_proc,
+                        (MPI_Aint) disp, dst_count, dst_type,
+                        MPI_REPLACE, mreg->window, &req);
+    } else {
+        MPI_Rput(src, src_count, src_type, grp_proc,
+                 (MPI_Aint) disp, dst_count, dst_type,
+                 mreg->window, &req);
+    }
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
   if (ARMCII_GLOBAL_STATE.rma_atomicity) {
       MPI_Accumulate(src, src_count, src_type, grp_proc,
-                     (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window);
+                     (MPI_Aint) disp, dst_count, dst_type,
+                     MPI_REPLACE, mreg->window);
   } else {
       MPI_Put(src, src_count, src_type, grp_proc,
               (MPI_Aint) disp, dst_count, dst_type, mreg->window);
   }
 
+#ifndef USE_RMA_REQUESTS
+
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = grp_proc;
   }
+
+#endif
 
   return 0;
 }
@@ -567,6 +596,30 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+        MPI_Rget_accumulate(NULL, 0, MPI_BYTE,
+                            dst, dst_count, dst_type, grp_proc,
+                            (MPI_Aint) disp, src_count, src_type,
+                            MPI_NO_OP, mreg->window, &req);
+    } else {
+        MPI_Rget(dst, dst_count, dst_type, grp_proc,
+                 (MPI_Aint) disp, src_count, src_type,
+                 mreg->window, &req);
+    }
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+  }
+
+#endif
+
   if (ARMCII_GLOBAL_STATE.rma_atomicity) {
       MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc,
                          (MPI_Aint) disp, src_count, src_type, MPI_NO_OP, mreg->window);
@@ -575,10 +628,14 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
               (MPI_Aint) disp, src_count, src_type, mreg->window);
   }
 
+#ifndef USE_RMA_REQUESTS
+
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = grp_proc;
   }
+
+#endif
 
   return 0;
 }
@@ -639,12 +696,34 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    MPI_Raccumulate(src, src_count, src_type, grp_proc,
+                    (MPI_Aint) disp, dst_count, dst_type,
+                    MPI_SUM, mreg->window, &req);
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
   MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window);
+
+#ifndef USE_RMA_REQUESTS
 
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = grp_proc;
   }
+
+#endif
 
   return 0;
 }
@@ -710,13 +789,38 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
-  MPI_Get_accumulate(src, src_count, src_type, out, out_count, out_type,
-                     grp_proc, (MPI_Aint) disp, dst_count, dst_type, op, mreg->window);
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    MPI_Rget_accumulate(src, src_count, src_type, 
+                        out, out_count, out_type,
+                        grp_proc, (MPI_Aint) disp, dst_count, dst_type,
+                        op, mreg->window, &req);
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
+  MPI_Get_accumulate(src, src_count, src_type,
+                     out, out_count, out_type,
+                     grp_proc, (MPI_Aint) disp, dst_count, dst_type,
+                     op, mreg->window);
+
+#ifndef USE_RMA_REQUESTS
 
   if (handle!=NULL) {
       /* Regular (not aggregate) handles merely store the target for future flushing. */
       handle->target = grp_proc;
   }
+
+#endif
 
   return 0;
 }
@@ -876,3 +980,47 @@ void gmr_progress(void)
     return;
 }
 
+void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
+{
+  ARMCII_Assert_msg(handle->batch_size >= 0,
+                    "handle is corrupt (batch_size < 0)");
+
+  if (handle->batch_size == 0) {
+
+    ARMCII_Assert_msg(handle->single_request == MPI_REQUEST_NULL,
+                      "handle is corrupt (single_request_array is not MPI_REQUEST_NULL)");
+    ARMCII_Assert_msg(handle->request_array == NULL,
+                      "handle is corrupt (request_array is not NULL)");
+
+    handle->batch_size     = 1;
+    handle->single_request = req;
+
+  } else if (handle->batch_size == 1) {
+
+    ARMCII_Assert_msg(handle->single_request != MPI_REQUEST_NULL,
+                      "handle is corrupt (single_request_array is MPI_REQUEST_NULL)");
+    ARMCII_Assert_msg(handle->request_array == NULL,
+                      "handle is corrupt (request_array is not NULL)");
+
+    // there is a single request in the handle, so we allocate space for two,
+    // then copy from the single request to the array and append the new one.
+    // we nullify the single request to make sure it is not usable.
+    handle->request_array    = malloc( handle->batch_size++ * sizeof(MPI_Request) );
+    handle->request_array[0] = handle->single_request;
+    handle->request_array[1] = req;
+    handle->single_request   = MPI_REQUEST_NULL;
+
+  } else if (handle->batch_size > 1) {
+
+    ARMCII_Assert_msg(handle->single_request == MPI_REQUEST_NULL,
+                      "handle is corrupt (single_request_array is not MPI_REQUEST_NULL)");
+    ARMCII_Assert_msg(handle->request_array != NULL,
+                      "handle is corrupt (request_array is NULL)");
+
+    // grow the allocation and append the new one.
+    handle->request_array  = realloc( handle->request_array , handle->batch_size++ * sizeof(MPI_Request) );
+    handle->request_array[handle->batch_size-1] = req;
+
+  }
+
+}

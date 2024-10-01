@@ -79,5 +79,6 @@ int gmr_sync(gmr_t *mreg);
 int gmr_wait(armci_hdl_t * handle);
 
 void gmr_progress(void);
+void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req);
 
 #endif /* HAVE_GMR_H */
