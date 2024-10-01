@@ -5,6 +5,9 @@
 #ifndef _ARMCI_H_
 #define _ARMCI_H_
 
+// TODO add to build system
+#define USE_RMA_REQUESTS 1
+
 #include <mpi.h>
 
 #define ARMCI_MPI 3
@@ -63,7 +66,6 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  void *dst_ptr, int dst_stride_ar[/*stride_levels*/],
                  int count[/*stride_levels+1*/], int stride_levels,
                  int *flag, int value, int proc);
-
 
 typedef struct armci_hdl_s
 {
