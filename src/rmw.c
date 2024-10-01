@@ -37,8 +37,8 @@
   * @param[in]  value Value to add to remote location (ignored for swap).
   * @param[in]  proc  Process rank for the target buffer.
   */
-int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
-
+int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc)
+{
   int is_swap = 0, is_long = 0;
   MPI_Datatype type;
   MPI_Op       rop;
@@ -73,33 +73,48 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc) {
   /* We hold the DLA lock if (src_mreg != NULL). */
 
   if (is_swap) {
-    long out_val_l, src_val_l = *((long*)ploc);
-    int  out_val_i, src_val_i = *((int*)ploc);
 
-    // this is a blocking operation
-    gmr_fetch_and_op(dst_mreg, 
-                     is_long ? (void*) &src_val_l : (void*) &src_val_i /* src */,
-                     is_long ? (void*) &out_val_l : (void*) &out_val_i /* out */,
-    		     prem /* dst */, type, rop, proc);
-    if (is_long)
+    if (is_long) {
+
+      long out_val_l, src_val_l = *((long*)ploc);
+
+      // this is a blocking operation
+      gmr_fetch_and_op(dst_mreg, (void*) &src_val_l, (void*) &out_val_l, prem /* dst */, type, rop, proc);
+
       *(long*) ploc = out_val_l;
-    else
+
+    } else {
+
+      int out_val_i, src_val_i = *((int*)ploc);
+
+      // this is a blocking operation
+      gmr_fetch_and_op(dst_mreg, (void*) &src_val_i, (void*) &out_val_i, prem /* dst */, type, rop, proc);
+
       *(int*) ploc = out_val_i;
+
+    }
   }
   else /* fetch-and-add */ {
-    long fetch_val_l, add_val_l = value;
-    int  fetch_val_i, add_val_i = value;
 
-    // this is a blocking operation
-    gmr_fetch_and_op(dst_mreg,
-                     is_long ? (void*) &add_val_l   : (void*) &add_val_i   /* src */,
-                     is_long ? (void*) &fetch_val_l : (void*) &fetch_val_i /* out */,
-                     prem /* dst */, type, rop, proc);
+    if (is_long) {
 
-    if (is_long)
+      long fetch_val_l, add_val_l = value;
+
+      // this is a blocking operation
+      gmr_fetch_and_op(dst_mreg, (void*) &add_val_l, (void*) &fetch_val_l, prem /* dst */, type, rop, proc);
+
       *(long*) ploc = fetch_val_l;
-    else
+
+    } else {
+
+      int  fetch_val_i, add_val_i = value;
+
+      // this is a blocking operation
+      gmr_fetch_and_op(dst_mreg, (void*) &add_val_i, (void*) &fetch_val_i, prem /* dst */, type, rop, proc);
+
       *(int*) ploc = fetch_val_i;
+
+    }
   }
 
   return 0;
