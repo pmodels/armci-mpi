@@ -27,15 +27,15 @@
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  int v;
+int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
+{
   int blocking = 0;
 
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       blocking = 1;
   }
 
-  for (v = 0; v < iov_len; v++) {
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
@@ -74,15 +74,15 @@ int PARMCI_NbPutV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  int v;
+int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
+{
   int blocking = 0;
 
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       blocking = 1;
   }
 
-  for (v = 0; v < iov_len; v++) {
+  for (int v = 0; v < iov_len; v++) {
     void **dst_buf;
     int    overlapping, same_alloc;
 
@@ -122,15 +122,15 @@ int PARMCI_NbGetV(armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle) {
-  int v;
+int PARMCI_NbAccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc, armci_hdl_t* handle)
+{
   int blocking = 0;
 
   if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD) {
       blocking = 1;
   }
 
-  for (v = 0; v < iov_len; v++) {
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
