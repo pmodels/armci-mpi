@@ -15,6 +15,7 @@ void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
 {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
+    handle->just_flushall  = 1;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -34,7 +35,10 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
-    ARMCII_Assert_msg(0, "not supported");
+    handle->just_flushall  = 1;
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
 #else
     handle->aggregate =  1;
 #endif
@@ -50,7 +54,10 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
-    ARMCII_Assert_msg(0, "not supported");
+    handle->just_flushall  = 1;
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
 #else
     handle->aggregate =  0;
 #endif
@@ -73,7 +80,8 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
 
 /** Non-blocking put operation.
   */
-int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle) {
+int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle)
+{
   gmr_t *src_mreg, *dst_mreg;
 
   dst_mreg = gmr_lookup(dst, target);
@@ -248,6 +256,18 @@ int PARMCI_Wait(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
 
+  if (handle == NULL || handle->just_flushall || handle->batch_size == 0) {
+
+    gmr_t *cur_mreg = gmr_list;
+ 
+    while (cur_mreg) {
+      gmr_flushall(cur_mreg, 1); /* local only */
+      cur_mreg = cur_mreg->next;
+    }
+
+    return 0;
+  }
+
   ARMCII_Assert_msg(handle->batch_size >= 0,
                     "handle is corrupt (batch_size < 0)");
   //ARMCII_Assert_msg(handle->batch_size == 0,
@@ -272,7 +292,7 @@ int PARMCI_Wait(armci_hdl_t* handle)
     for (int i = 0 ; i < handle->batch_size ; i++ ) {
         ARMCII_Assert_msg(handle->request_array[i] != MPI_REQUEST_NULL,
                           "handle contains MPI_REQUEST_NULL");
-        printf("%s %s %s i=%d\n",__FILE__, __LINE__, __func__);
+        printf("%s %d %s i=%d\n",__FILE__, __LINE__, __func__, i);
         MPI_Wait( &(handle->request_array[i]), MPI_STATUS_IGNORE );
     }
     //MPI_Waitall( handle->batch_size, handle->request_array, MPI_STATUSES_IGNORE );
@@ -321,6 +341,18 @@ int PARMCI_Wait(armci_hdl_t* handle)
 int PARMCI_Test(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
+
+  if (handle == NULL || handle->just_flushall || handle->batch_size == 0) {
+
+    gmr_t *cur_mreg = gmr_list;
+ 
+    while (cur_mreg) {
+      gmr_flushall(cur_mreg, 1); /* local only */
+      cur_mreg = cur_mreg->next;
+    }
+
+    return 0;
+  }
 
   int flag = 0;
 
