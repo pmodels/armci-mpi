@@ -13,9 +13,9 @@
   */
 void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
 {
-  if (handle!=NULL) {
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -24,7 +24,7 @@ void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
     handle->target    = -1;
 #endif
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle.\n");
   }
   return;
 }
@@ -33,9 +33,9 @@ void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
   */
 void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 {
-  if (handle!=NULL) {
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -43,7 +43,7 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
     handle->aggregate =  1;
 #endif
   } else {
-    ARMCII_Warning("ARMCI_SET_AGGREGATE_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_SET_AGGREGATE_HANDLE given NULL handle.\n");
   }
   return;
 }
@@ -51,10 +51,11 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 
 /** Clear an aggregate handle.
   */
-void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
-  if (handle!=NULL) {
+void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle)
+{
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -62,7 +63,7 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
     handle->aggregate =  0;
 #endif
   } else {
-    ARMCII_Warning("ARMCI_UNSET_AGGREGATE_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_UNSET_AGGREGATE_HANDLE given NULL handle.\n");
   }
   return;
 }
@@ -256,7 +257,8 @@ int PARMCI_Wait(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
 
-  if (handle == NULL || handle->batch_size == 0 || handle->just_flushall) {
+#if 0
+  if (handle == NULL || handle->batch_size == 0) {
 
     gmr_t *cur_mreg = gmr_list;
  
@@ -267,13 +269,17 @@ int PARMCI_Wait(armci_hdl_t* handle)
 
     return 0;
   }
+#endif
 
-  ARMCII_Assert_msg(handle->batch_size >= 0,
-                    "handle is corrupt (batch_size < 0)");
-  //ARMCII_Assert_msg(handle->batch_size == 0,
-  //                  "handle waited on without prior use");
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  ARMCII_Assert_msg(handle->batch_size >= 0, "handle is corrupt (batch_size < 0)");
+  //ARMCII_Assert_msg(handle->batch_size == 0, "handle waited on without prior use");
 
-  if (handle->batch_size == 1) {
+  if (handle->batch_size == 0) {
+
+    ARMCII_Warning("ARMCI_Wait passed an inactive handle.\n");
+
+  } else if (handle->batch_size == 1) {
 
     ARMCII_Assert_msg(handle->single_request != MPI_REQUEST_NULL,
                       "handle is corrupt (single_request_array is MPI_REQUEST_NULL)");
@@ -344,7 +350,8 @@ int PARMCI_Test(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
 
-  if (handle == NULL || handle->batch_size == 0 || handle->just_flushall) {
+#if 0
+  if (handle == NULL || handle->batch_size == 0) {
 
     gmr_t *cur_mreg = gmr_list;
  
@@ -355,15 +362,19 @@ int PARMCI_Test(armci_hdl_t* handle)
 
     return 0;
   }
+#endif
 
   int flag = 0;
 
-  ARMCII_Assert_msg(handle->batch_size >= 0,
-                    "handle is corrupt (batch_size < 0)");
-  ARMCII_Assert_msg(handle->batch_size == 0,
-                    "handle waited on without prior use");
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  ARMCII_Assert_msg(handle->batch_size >= 0, "handle is corrupt (batch_size < 0)");
+  //ARMCII_Assert_msg(handle->batch_size == 0, "handle waited on without prior use");
 
-  if (handle->batch_size == 1) {
+  if (handle->batch_size == 0) {
+
+    ARMCII_Warning("ARMCI_Wait passed an inactive handle.\n");
+
+  } else if (handle->batch_size == 1) {
 
     ARMCII_Assert_msg(handle->single_request != MPI_REQUEST_NULL,
                       "handle is corrupt (single_request_array is MPI_REQUEST_NULL)");
