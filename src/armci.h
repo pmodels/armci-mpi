@@ -70,6 +70,7 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 typedef struct armci_hdl_s
 {
 #ifdef USE_RMA_REQUESTS
+    int just_flushall;
     int batch_size;
     MPI_Request single_request; // used when batch_size=0 (common case)
     MPI_Request *request_array; // used when batch_size>0
