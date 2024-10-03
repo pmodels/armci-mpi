@@ -603,7 +603,9 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
     MPI_Request req = MPI_REQUEST_NULL;
  
     if (ARMCII_GLOBAL_STATE.rma_atomicity) {
-        MPI_Rget_accumulate(NULL, 0, MPI_BYTE,
+        // Using the source type instead of MPI_BYTE works around an MPICH bug that appears with
+        // Intel MPI 2021.10 and Cray MPI 8.1.29
+        MPI_Rget_accumulate(NULL, 0, src_type /* MPI_BYTE */,
                             dst, dst_count, dst_type, grp_proc,
                             (MPI_Aint) disp, src_count, src_type,
                             MPI_NO_OP, mreg->window, &req);
