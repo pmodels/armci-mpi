@@ -100,15 +100,8 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       ARMCI_Copy(src, dst, size);
   }
   else {
-      gmr_put(dst_mreg, src, dst, size, target, NULL /* handle */);
+      gmr_put(dst_mreg, src, dst, size, target, handle);
   }
-
-#if 0
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
-  }
-#endif
 
   gmr_progress();
 
@@ -146,15 +139,8 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
     ARMCI_Copy(src, dst, size);
   }
   else {
-    gmr_get(src_mreg, src, dst, size, target, NULL /* handle */);
+    gmr_get(src_mreg, src, dst, size, target, handle);
   }
-
-#if 0
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
-  }
-#endif
 
   gmr_progress();
 
@@ -220,20 +206,13 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target, NULL /* handle */);
+  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target, handle);
 
   if (src_buf != src) {
     /* must wait for local completion to free source buffer */
     gmr_flush(dst_mreg, target, 1); /* flush local only, unlike Fence */
     MPI_Free_mem(src_buf);
   }
-
-#if 0
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
-  }
-#endif
 
   gmr_progress();
 
