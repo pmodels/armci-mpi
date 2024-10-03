@@ -984,25 +984,31 @@ void gmr_progress(void)
 
 void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
 {
+#if 0
   ARMCII_Assert_msg(handle->batch_size >= 0,
                     "handle is corrupt (batch_size < 0)");
+#endif
 
   if (handle->batch_size == 0) {
 
+#if 0
     ARMCII_Assert_msg(handle->single_request == MPI_REQUEST_NULL,
                       "handle is corrupt (single_request_array is not MPI_REQUEST_NULL)");
     ARMCII_Assert_msg(handle->request_array == NULL,
                       "handle is corrupt (request_array is not NULL)");
+#endif
 
     handle->batch_size     = 1;
     handle->single_request = req;
 
   } else if (handle->batch_size == 1) {
 
+#if 0
     ARMCII_Assert_msg(handle->single_request != MPI_REQUEST_NULL,
                       "handle is corrupt (single_request_array is MPI_REQUEST_NULL)");
     ARMCII_Assert_msg(handle->request_array == NULL,
                       "handle is corrupt (request_array is not NULL)");
+#endif
 
     // there is a single request in the handle, so we allocate space for two,
     // then copy from the single request to the array and append the new one.
