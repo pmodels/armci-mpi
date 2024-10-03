@@ -123,7 +123,9 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   * @return                Zero on success, error code otherwise
   */
 int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
-    int datatype, int overlapping, int same_alloc, int proc, int blocking, armci_hdl_t * handle) {
+                           int datatype, int overlapping, int same_alloc, int proc,
+                           int blocking, armci_hdl_t * handle)
+{
 
   MPI_Datatype type;
   int type_count, type_size;
@@ -291,7 +293,8 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
   * datatype to achieve a one-sided gather/scatter.
   */
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc, int blocking, armci_hdl_t * handle) {
+                           MPI_Datatype type, int proc, int blocking, armci_hdl_t * handle)
+{
 
     gmr_t *mreg;
     MPI_Datatype  type_loc, type_rem;
@@ -396,10 +399,9 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
@@ -436,10 +438,9 @@ int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **dst_buf;
     int    overlapping, same_alloc;
 
@@ -477,10 +478,9 @@ int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
