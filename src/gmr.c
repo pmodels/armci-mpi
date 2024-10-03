@@ -1005,7 +1005,8 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
     // there is a single request in the handle, so we allocate space for two,
     // then copy from the single request to the array and append the new one.
     // we nullify the single request to make sure it is not usable.
-    handle->request_array    = malloc( handle->batch_size++ * sizeof(MPI_Request) );
+    handle->batch_size++;
+    handle->request_array    = malloc( handle->batch_size * sizeof(MPI_Request) );
     handle->request_array[0] = handle->single_request;
     handle->request_array[1] = req;
     handle->single_request   = MPI_REQUEST_NULL;
@@ -1018,7 +1019,8 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
                       "handle is corrupt (request_array is NULL)");
 
     // grow the allocation and append the new one.
-    handle->request_array  = realloc( handle->request_array , handle->batch_size++ * sizeof(MPI_Request) );
+    handle->batch_size++;
+    handle->request_array  = realloc( handle->request_array , handle->batch_size * sizeof(MPI_Request) );
     handle->request_array[handle->batch_size-1] = req;
 
   }
