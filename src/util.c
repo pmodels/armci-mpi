@@ -37,15 +37,9 @@ void ARMCI_Error(const char *msg, int code) {
   * group!).
   */
 void PARMCI_Barrier(void) {
-  gmr_t *cur_mreg = gmr_list;
-
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
-
-  while (cur_mreg) {
-    gmr_sync(cur_mreg);
-    cur_mreg = cur_mreg->next;
-  }
+  ARMCII_Sync();
 }
 
 /* -- begin weak symbols block -- */
@@ -59,8 +53,6 @@ void PARMCI_Barrier(void) {
 /* -- end weak symbols block -- */
 
 /** Wait for remote completion on one-sided operations targeting process proc.
-  * In MPI-2, this is a no-op since get/put/acc already guarantee remote
-  * completion.
   *
   * @param[in] proc Process to target
   */
@@ -85,8 +77,7 @@ void PARMCI_Fence(int proc) {
 #endif
 /* -- end weak symbols block -- */
 
-/** Wait for remote completion on all one-sided operations.  In MPI-2, this is
-  * a no-op since get/put/acc already guarantee remote completion.
+/** Wait for remote completion on all one-sided operations.
   */
 void PARMCI_AllFence(void) {
   gmr_t *cur_mreg = gmr_list;
@@ -121,7 +112,6 @@ void ARMCI_Set_shm_limit(unsigned long shmemlimit) {
 int ARMCI_Uses_shm_grp(ARMCI_Group *group) {
   return 0;
 }
-
 
 /** Copy local data.
   *
@@ -226,5 +216,16 @@ int ARMCII_Is_win_unified(MPI_Win win)
     }
   } else {
     return -1;
+  }
+}
+
+/** Sync all windows
+  */
+void ARMCII_Sync(void) {
+  gmr_t *cur_mreg = gmr_list;
+
+  while (cur_mreg) {
+    gmr_sync(cur_mreg);
+    cur_mreg = cur_mreg->next;
   }
 }

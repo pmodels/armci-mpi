@@ -72,6 +72,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   mreg->nslices        = world_nproc;
   mreg->prev           = NULL;
   mreg->next           = NULL;
+  mreg->unified        = false;
 
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
@@ -213,7 +214,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
-    int unified = 0;
+#if 0
+    int unified = false;
     void    *attr_ptr;
     int     *attr_val;
     int      attr_flag;
@@ -224,23 +226,38 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       if (world_me==0) {
         if ( (*attr_val)==MPI_WIN_SEPARATE ) {
           printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
-          unified = 0;
+          unified = false;
         } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
 #ifdef DEBUG
           printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
 #endif
-          unified = 1;
+          unified = true;
         } else {
           printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
-          unified = 0;
+          unified = false;
         }
       }
     } else {
       if (world_me==0) {
         printf("MPI_WIN_MODEL attribute missing \n");
       }
+      unified = false;
     }
-    if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
+#else
+    int unified = ARMCII_Is_win_unified(mreg->window);
+    int print = ARMCII_GLOBAL_STATE.verbose;
+    if (unified == 1) {
+        mreg->unified = true;
+        if (print) printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED\n");
+    } else if (unified == 0) {
+        mreg->unified = false;
+        if (print) printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE\n");
+    } else {
+        mreg->unified = false;
+        if (print) printf("MPI_WIN_MODEL not available\n");
+    }
+#endif
+    if (!(mreg->unified) && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
       if (world_me==0) {
         printf("Please re-run with ARMCI_SHR_BUF_METHOD=COPY\n");
       }

@@ -10,6 +10,14 @@
 #include <armci.h>
 #include <armcix.h>
 
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#else
+typedef int bool;
+#define false 0
+#define true  1
+#endif
+
 typedef armci_size_t gmr_size_t;
 #define GMR_MPI_SIZE_T ARMCII_MPI_SIZE_T
 
@@ -26,6 +34,7 @@ typedef struct gmr_s {
   struct gmr_s           *next;
   gmr_slice_t            *slices;         /* Array of GMR slices for this allocation                        */
   int                     nslices;
+  bool                    unified;        /* separate/unified attribute of the window                       */
 } gmr_t;
 
 extern gmr_t *gmr_list;

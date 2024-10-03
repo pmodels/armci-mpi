@@ -56,19 +56,23 @@ int ARMCII_Translate_absolute_to_group(ARMCI_Group *group, int world_rank) {
   MPI_Group world_group, sub_group;
 
   ARMCII_Assert(world_rank >= 0 && world_rank < ARMCI_GROUP_WORLD.size);
-
+#if 0
+  // this is redundant - the assert checks this
   if (!(0 <= world_rank && world_rank < ARMCI_GROUP_WORLD.size)) {
       ARMCII_Warning("world_rank (%d) is not in the range [0,ARMCI_GROUP_WORLD.size=%d)!\n",
                       world_rank, ARMCI_GROUP_WORLD.size);
   }
+#endif
 
   /* Check if group is the world group */
   if (group->comm == ARMCI_GROUP_WORLD.comm) {
     group_rank = world_rank;
+    return group_rank;
   }
   /* Check for translation cache */
   else if (group->grp_to_abs != NULL) {
     group_rank = group->abs_to_grp[world_rank];
+    return group_rank;
   }
   else {
     /* Translate the rank */

@@ -105,6 +105,7 @@ typedef struct {
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 #endif
   int           use_win_allocate;       /* Use win_allocate or win_create (or special memory...)                */
+  int           msg_barrier_syncs;      /* Call MPI_Win_sync in armci_msg_barrier                               */
   int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
@@ -229,5 +230,8 @@ void ARMCII_Buf_finish_write_vec(void **orig_bufs, void **new_bufs, int count, i
 
 int  ARMCII_Buf_acc_is_scaled(int datatype, void *scale);
 void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale);
+
+int ARMCII_Is_win_unified(MPI_Win win);
+void ARMCII_Sync(void);
 
 #endif /* HAVE_ARMCI_INTERNALS_H */
