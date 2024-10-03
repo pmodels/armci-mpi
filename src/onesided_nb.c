@@ -15,7 +15,7 @@ void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
 {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 1;
+    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -35,7 +35,7 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 1;
+    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -54,7 +54,7 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
 void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
   if (handle!=NULL) {
 #ifdef USE_RMA_REQUESTS
-    handle->just_flushall  = 1;
+    handle->just_flushall  = 0;
     handle->batch_size     = 0;
     handle->single_request = MPI_REQUEST_NULL;
     handle->request_array  = NULL;
@@ -256,7 +256,7 @@ int PARMCI_Wait(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
 
-  if (handle == NULL || handle->just_flushall || handle->batch_size == 0) {
+  if (handle == NULL || handle->batch_size == 0 || handle->just_flushall) {
 
     gmr_t *cur_mreg = gmr_list;
  
@@ -289,13 +289,15 @@ int PARMCI_Wait(armci_hdl_t* handle)
     ARMCII_Assert_msg(handle->request_array != NULL,
                       "handle is corrupt (request_array is NULL)");
 
+#if 0
     for (int i = 0 ; i < handle->batch_size ; i++ ) {
         ARMCII_Assert_msg(handle->request_array[i] != MPI_REQUEST_NULL,
                           "handle contains MPI_REQUEST_NULL");
-        printf("%s %d %s i=%d\n",__FILE__, __LINE__, __func__, i);
         MPI_Wait( &(handle->request_array[i]), MPI_STATUS_IGNORE );
     }
-    //MPI_Waitall( handle->batch_size, handle->request_array, MPI_STATUSES_IGNORE );
+#else
+    MPI_Waitall( handle->batch_size, handle->request_array, MPI_STATUSES_IGNORE );
+#endif
     free(handle->request_array);
 
     handle->batch_size    = 0;
@@ -342,7 +344,7 @@ int PARMCI_Test(armci_hdl_t* handle)
 {
 #ifdef USE_RMA_REQUESTS
 
-  if (handle == NULL || handle->just_flushall || handle->batch_size == 0) {
+  if (handle == NULL || handle->batch_size == 0 || handle->just_flushall) {
 
     gmr_t *cur_mreg = gmr_list;
  
