@@ -396,7 +396,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
 
   /* Use MPI_MODE_NOCHECK assertion */
-  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 0);
+  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 1);
 
   /* Setup groups and communicators */
 
@@ -546,6 +546,13 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
       printf("  MSG_BARRIER_SYNCS      = %s\n", ARMCII_GLOBAL_STATE.msg_barrier_syncs      ? "TRUE" : "FALSE");
       printf("  USE_REQUEST_ATOMICS    = %s\n", ARMCII_GLOBAL_STATE.use_request_atomics    ? "TRUE" : "FALSE");
+
+#ifdef USE_RMA_REQUESTS
+      const int use_rma_requests = 1;
+#else
+      const int use_rma_requests = 0;
+#endif
+      printf("  USE_RMA_REQUESTS       = %s\n", use_rma_requests ? "TRUE" : "FALSE");
 
       /* MPI info set on window */
       printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
