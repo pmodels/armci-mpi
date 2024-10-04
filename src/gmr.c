@@ -984,31 +984,30 @@ void gmr_progress(void)
 
 void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
 {
-#if 0
-  ARMCII_Assert_msg(handle->batch_size >= 0,
-                    "handle is corrupt (batch_size < 0)");
-#endif
+  if (handle->batch_size < 0) {
 
-  if (handle->batch_size == 0) {
+    ARMCII_Warning("gmr_handle_add_request passed a bogus (uninitialized) handle.\n");
 
-#if 0
-    ARMCII_Assert_msg(handle->single_request == MPI_REQUEST_NULL,
-                      "handle is corrupt (single_request_array is not MPI_REQUEST_NULL)");
-    ARMCII_Assert_msg(handle->request_array == NULL,
-                      "handle is corrupt (request_array is not NULL)");
-#endif
+  } else if (handle->batch_size == 0) {
+
+    if (handle->single_request != MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is not MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array != NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+    }
 
     handle->batch_size     = 1;
     handle->single_request = req;
 
   } else if (handle->batch_size == 1) {
 
-#if 0
-    ARMCII_Assert_msg(handle->single_request != MPI_REQUEST_NULL,
-                      "handle is corrupt (single_request_array is MPI_REQUEST_NULL)");
-    ARMCII_Assert_msg(handle->request_array == NULL,
-                      "handle is corrupt (request_array is not NULL)");
-#endif
+    if (handle->single_request == MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array != NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+    }
 
     // there is a single request in the handle, so we allocate space for two,
     // then copy from the single request to the array and append the new one.
@@ -1021,10 +1020,12 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
 
   } else if (handle->batch_size > 1) {
 
-    ARMCII_Assert_msg(handle->single_request == MPI_REQUEST_NULL,
-                      "handle is corrupt (single_request_array is not MPI_REQUEST_NULL)");
-    ARMCII_Assert_msg(handle->request_array != NULL,
-                      "handle is corrupt (request_array is NULL)");
+    if (handle->single_request != MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is not MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array == NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is NULL).\n");
+    }
 
     // grow the allocation and append the new one.
     handle->batch_size++;
@@ -1032,5 +1033,4 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
     handle->request_array[handle->batch_size-1] = req;
 
   }
-
 }
