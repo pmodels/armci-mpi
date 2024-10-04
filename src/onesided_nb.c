@@ -11,24 +11,39 @@
 
 /** Initialize Non-blocking handle.
   */
-void ARMCI_INIT_HANDLE(armci_hdl_t *handle) {
-  if (handle!=NULL) {
-    handle->aggregate =  1;
+void ARMCI_INIT_HANDLE(armci_hdl_t *handle)
+{
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
+#ifdef USE_RMA_REQUESTS
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+#else
+    handle->aggregate =  0;
     handle->target    = -1;
+#endif
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle.\n");
   }
   return;
 }
 
-
 /** Mark a handle as aggregate.
   */
-void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
-  if (handle!=NULL) {
+void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle)
+{
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
+#ifdef USE_RMA_REQUESTS
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+#else
     handle->aggregate =  1;
+#endif
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_SET_AGGREGATE_HANDLE given NULL handle.\n");
   }
   return;
 }
@@ -36,11 +51,19 @@ void ARMCI_SET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
 
 /** Clear an aggregate handle.
   */
-void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
-  if (handle!=NULL) {
+void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle)
+{
+  ARMCII_Assert_msg(handle, "handle is NULL");
+  if (1 || handle != NULL) {
+#ifdef USE_RMA_REQUESTS
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+#else
     handle->aggregate =  0;
+#endif
   } else {
-    ARMCII_Warning("ARMCI_INIT_HANDLE given NULL handle");
+    ARMCII_Warning("ARMCI_UNSET_AGGREGATE_HANDLE given NULL handle.\n");
   }
   return;
 }
@@ -58,7 +81,8 @@ void ARMCI_UNSET_AGGREGATE_HANDLE(armci_hdl_t *handle) {
 
 /** Non-blocking put operation.
   */
-int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle) {
+int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle)
+{
   gmr_t *src_mreg, *dst_mreg;
 
   dst_mreg = gmr_lookup(dst, target);
@@ -76,12 +100,7 @@ int PARMCI_NbPut(void *src, void *dst, int size, int target, armci_hdl_t *handle
       ARMCI_Copy(src, dst, size);
   }
   else {
-      gmr_put(dst_mreg, src, dst, size, target);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
+      gmr_put(dst_mreg, src, dst, size, target, handle);
   }
 
   gmr_progress();
@@ -120,12 +139,7 @@ int PARMCI_NbGet(void *src, void *dst, int size, int target, armci_hdl_t *handle
     ARMCI_Copy(src, dst, size);
   }
   else {
-    gmr_get(src_mreg, src, dst, size, target);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
+    gmr_get(src_mreg, src, dst, size, target, handle);
   }
 
   gmr_progress();
@@ -192,17 +206,12 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
   /* TODO: Support a local accumulate operation more efficiently */
 
-  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target);
+  gmr_accumulate(dst_mreg, src_buf, dst, count, type, target, handle);
 
   if (src_buf != src) {
     /* must wait for local completion to free source buffer */
     gmr_flush(dst_mreg, target, 1); /* flush local only, unlike Fence */
     MPI_Free_mem(src_buf);
-  }
-
-  if (handle!=NULL) {
-      /* Regular (not aggregate) handles merely store the target for future flushing. */
-      handle->target = target;
   }
 
   gmr_progress();
@@ -223,7 +232,54 @@ int PARMCI_NbAcc(int datatype, void *scale, void *src, void *dst, int bytes, int
 
 /** Wait for a non-blocking operation to finish.
   */
-int PARMCI_Wait(armci_hdl_t* handle) {
+int PARMCI_Wait(armci_hdl_t* handle)
+{
+#ifdef USE_RMA_REQUESTS
+
+  ARMCII_Assert_msg(handle, "handle is NULL");
+
+  if (handle->batch_size < 0) {
+
+    ARMCII_Warning("ARMCI_Wait passed a bogus (uninitialized) handle.\n");
+
+  } else if (handle->batch_size == 0) {
+
+    ARMCII_Warning("ARMCI_Wait passed an inactive handle.\n");
+
+  } else if (handle->batch_size == 1) {
+
+    if (handle->single_request == MPI_REQUEST_NULL) {
+        ARMCII_Warning("ARMCI_Wait: handle is corrupt (single_request_array is MPI_REQUEST_NULL)\n");
+    }
+    if (handle->request_array != NULL) {
+        //ARMCII_Warning("ARMCI_Wait: handle is corrupt (request_array is not NULL)\n");
+    }
+
+    MPI_Wait( &(handle->single_request), MPI_STATUS_IGNORE );
+
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+
+  } else if (handle->batch_size > 1) {
+
+    if (handle->single_request != MPI_REQUEST_NULL) {
+        ARMCII_Warning("ARMCI_Wait: handle is corrupt (single_request_array is not MPI_REQUEST_NULL)\n");
+    }
+    if (handle->request_array == NULL) {
+        ARMCII_Warning("ARMCI_Wait: handle is corrupt (request_array is NULL)\n");
+    }
+
+    MPI_Waitall( handle->batch_size, handle->request_array, MPI_STATUSES_IGNORE );
+    free(handle->request_array);
+
+    handle->batch_size     = 0;
+    handle->single_request = MPI_REQUEST_NULL;
+    handle->request_array  = NULL;
+  }
+
+#else
+
   gmr_t *cur_mreg = gmr_list;
 
   if(handle->aggregate > 0) {
@@ -239,6 +295,9 @@ int PARMCI_Wait(armci_hdl_t* handle) {
       cur_mreg = cur_mreg->next;
     }
   }
+
+#endif
+
   return 0;
 }
 
@@ -255,8 +314,64 @@ int PARMCI_Wait(armci_hdl_t* handle) {
 
 /** Check if a non-blocking operation has finished.
   */
-int PARMCI_Test(armci_hdl_t* handle) {
+int PARMCI_Test(armci_hdl_t* handle)
+{
+#ifdef USE_RMA_REQUESTS
+
+  int flag = 0;
+
+  ARMCII_Assert_msg(handle, "handle is NULL");
+
+  if (handle->batch_size < 0) {
+
+    ARMCII_Warning("ARMCI_Test passed a bogus (uninitialized) handle.\n");
+
+  } else if (handle->batch_size == 0) {
+
+    ARMCII_Warning("ARMCI_Test passed an inactive handle.\n");
+
+  } else if (handle->batch_size == 1) {
+
+    if (handle->single_request == MPI_REQUEST_NULL) {
+        ARMCII_Warning("ARMCI_Test: handle is corrupt (single_request_array is MPI_REQUEST_NULL)\n");
+    }
+    if (handle->request_array != NULL) {
+        ARMCII_Warning("ARMCI_Test: handle is corrupt (request_array is not NULL)\n");
+    }
+
+    MPI_Test( &(handle->single_request), &flag, MPI_STATUS_IGNORE );
+
+    if (flag) {
+        handle->batch_size     = 0;
+        handle->single_request = MPI_REQUEST_NULL;
+        handle->request_array  = NULL;
+    }
+
+  } else if (handle->batch_size > 1) {
+
+    if (handle->single_request != MPI_REQUEST_NULL) {
+        ARMCII_Warning("ARMCI_Test: handle is corrupt (single_request_array is not MPI_REQUEST_NULL)\n");
+    }
+    if (handle->request_array == NULL) {
+        ARMCII_Warning("ARMCI_Test: handle is corrupt (request_array is NULL)\n");
+    }
+
+    MPI_Testall( handle->batch_size, handle->request_array, &flag, MPI_STATUSES_IGNORE );
+
+    if (flag) {
+        free(handle->request_array);
+        handle->batch_size     = 0;
+        handle->single_request = MPI_REQUEST_NULL;
+        handle->request_array  = NULL;
+    }
+  }
+
+  // no error codes are supported so we can do this
+  return (!flag);
+
+#else
   return PARMCI_Wait(handle);
+#endif
 }
 
 
@@ -272,7 +387,8 @@ int PARMCI_Test(armci_hdl_t* handle) {
 
 /** Wait for all outstanding non-blocking operations with implicit handles to a particular process to finish.
   */
-int PARMCI_WaitProc(int proc) {
+int PARMCI_WaitProc(int proc)
+{
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {
@@ -295,7 +411,8 @@ int PARMCI_WaitProc(int proc) {
 
 /** Wait for all non-blocking operations with implicit (NULL) handles to finish.
   */
-int PARMCI_WaitAll(void) {
+int PARMCI_WaitAll(void)
+{
   gmr_t *cur_mreg = gmr_list;
 
   while (cur_mreg) {

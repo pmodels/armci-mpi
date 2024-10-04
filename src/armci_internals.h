@@ -105,6 +105,7 @@ typedef struct {
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
 #endif
   int           use_win_allocate;       /* Use win_allocate or win_create (or special memory...)                */
+  int           msg_barrier_syncs;      /* Call MPI_Win_sync in armci_msg_barrier                               */
   int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
   int           use_alloc_shm;          /* Pass alloc_shm info to win_allocate / alloc_mem                      */
   int           rma_atomicity;          /* Use Accumulate and Get_accumulate for Put and Get                    */
@@ -112,6 +113,7 @@ typedef struct {
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
   int           disable_shm_accumulate; /* Set the disable_shm_accumulate window info key to true               */
   int           use_same_op;            /* Set accumulate_ops=same_op window info key                           */
+  int           use_request_atomics;    /* Use request-based RMA for atomic operations                          */
   char          rma_ordering[20];       /* Set accumulate_ordering=<this> window info key                       */
 
   size_t        memory_limit;           /* upper bound on how much memory ARMCI can allocate                    */
@@ -201,12 +203,12 @@ void ARMCII_Strided_to_dtype(int stride_array[/*stride_levels*/], int count[/*st
                              int stride_levels, MPI_Datatype old_type, MPI_Datatype *new_type);
 
 int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
-    int datatype, int overlapping, int same_alloc, int proc, int blocking);
+    int datatype, int overlapping, int same_alloc, int proc, int blocking, armci_hdl_t * handle);
 
 int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc, int consrv /* if 1, batched = safe */, int blocking);
+    MPI_Datatype type, int proc, int consrv /* if 1, batched = safe */, int blocking, armci_hdl_t * handle);
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc, int blocking);
+    MPI_Datatype type, int proc, int blocking, armci_hdl_t * handle);
 
 armcii_iov_iter_t *ARMCII_Strided_to_iov_iter(
                void *src_ptr, int src_stride_ar[/*stride_levels*/],
@@ -229,5 +231,8 @@ void ARMCII_Buf_finish_write_vec(void **orig_bufs, void **new_bufs, int count, i
 
 int  ARMCII_Buf_acc_is_scaled(int datatype, void *scale);
 void ARMCII_Buf_acc_scale(void *buf_in, void *buf_out, int size, int datatype, void *scale);
+
+int ARMCII_Is_win_unified(MPI_Win win);
+void ARMCII_Sync(void);
 
 #endif /* HAVE_ARMCI_INTERNALS_H */

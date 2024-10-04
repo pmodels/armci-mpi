@@ -72,6 +72,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   mreg->nslices        = world_nproc;
   mreg->prev           = NULL;
   mreg->next           = NULL;
+  mreg->unified        = false;
 
   /* Allocate my slice of the GMR */
   alloc_slices[alloc_me].size = local_size;
@@ -213,7 +214,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
-    int unified = 0;
+#if 0
+    int unified = false;
     void    *attr_ptr;
     int     *attr_val;
     int      attr_flag;
@@ -224,23 +226,38 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
       if (world_me==0) {
         if ( (*attr_val)==MPI_WIN_SEPARATE ) {
           printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
-          unified = 0;
+          unified = false;
         } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
 #ifdef DEBUG
           printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
 #endif
-          unified = 1;
+          unified = true;
         } else {
           printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
-          unified = 0;
+          unified = false;
         }
       }
     } else {
       if (world_me==0) {
         printf("MPI_WIN_MODEL attribute missing \n");
       }
+      unified = false;
     }
-    if (!unified && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
+#else
+    const int unified = ARMCII_Is_win_unified(mreg->window);
+    const int print = ARMCII_GLOBAL_STATE.verbose;
+    if (unified == 1) {
+        mreg->unified = true;
+        if (print > 1) printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED\n");
+    } else if (unified == 0) {
+        mreg->unified = false;
+        if (print > 1) printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE\n");
+    } else {
+        mreg->unified = false;
+        if (print > 1) printf("MPI_WIN_MODEL not available\n");
+    }
+#endif
+    if (!(mreg->unified) && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
       if (world_me==0) {
         printf("Please re-run with ARMCI_SHR_BUF_METHOD=COPY\n");
       }
@@ -436,9 +453,10 @@ gmr_t *gmr_lookup(void *ptr, int proc) {
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc) {
+int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+  return gmr_put_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, handle);
 }
 
 
@@ -456,8 +474,9 @@ int gmr_put(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   * @return              0 on success, non-zero on failure
   */
 int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                  void *dst, int dst_count, MPI_Datatype dst_type,
+                  int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -467,23 +486,58 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (dst == MPI_BOTTOM) 
+  if (dst == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+        MPI_Raccumulate(src, src_count, src_type, grp_proc,
+                        (MPI_Aint) disp, dst_count, dst_type,
+                        MPI_REPLACE, mreg->window, &req);
+    } else {
+        MPI_Rput(src, src_count, src_type, grp_proc,
+                 (MPI_Aint) disp, dst_count, dst_type,
+                 mreg->window, &req);
+    }
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
   if (ARMCII_GLOBAL_STATE.rma_atomicity) {
       MPI_Accumulate(src, src_count, src_type, grp_proc,
-                     (MPI_Aint) disp, dst_count, dst_type, MPI_REPLACE, mreg->window);
+                     (MPI_Aint) disp, dst_count, dst_type,
+                     MPI_REPLACE, mreg->window);
   } else {
       MPI_Put(src, src_count, src_type, grp_proc,
               (MPI_Aint) disp, dst_count, dst_type, mreg->window);
   }
+
+#ifndef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
+
+#endif
 
   return 0;
 }
@@ -498,9 +552,10 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc   Absolute process id of target process
   * @return           0 on success, non-zero on failure
   */
-int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc) {
+int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(dst != NULL, "Invalid local address");
-  return gmr_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc);
+  return gmr_get_typed(mreg, src, size, MPI_BYTE, dst, size, MPI_BYTE, proc, handle);
 }
 
 
@@ -518,8 +573,9 @@ int gmr_get(gmr_t *mreg, void *src, void *dst, int size, int proc) {
   * @return              0 on success, non-zero on failure
   */
 int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                  void *dst, int dst_count, MPI_Datatype dst_type,
+                  int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -529,15 +585,42 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (src == MPI_BOTTOM) 
+  if (src == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)src - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(src_type, &lb, &extent);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + src_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
+
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    if (ARMCII_GLOBAL_STATE.rma_atomicity) {
+        // Using the source type instead of MPI_BYTE works around an MPICH bug that appears with
+        // Intel MPI 2021.10 and Cray MPI 8.1.29
+        MPI_Rget_accumulate(NULL, 0, src_type /* MPI_BYTE */,
+                            dst, dst_count, dst_type, grp_proc,
+                            (MPI_Aint) disp, src_count, src_type,
+                            MPI_NO_OP, mreg->window, &req);
+    } else {
+        MPI_Rget(dst, dst_count, dst_type, grp_proc,
+                 (MPI_Aint) disp, src_count, src_type,
+                 mreg->window, &req);
+    }
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+  }
+
+#endif
 
   if (ARMCII_GLOBAL_STATE.rma_atomicity) {
       MPI_Get_accumulate(NULL, 0, MPI_BYTE, dst, dst_count, dst_type, grp_proc,
@@ -546,6 +629,15 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
       MPI_Get(dst, dst_count, dst_type, grp_proc,
               (MPI_Aint) disp, src_count, src_type, mreg->window);
   }
+
+#ifndef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
+
+#endif
 
   return 0;
 }
@@ -561,9 +653,11 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   * @param[in] proc     Absolute process id of the target
   * @return             0 on success, non-zero on failure
   */
-int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type, int proc) {
+int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype type,
+                   int proc, armci_hdl_t * handle)
+{
   ARMCII_Assert_msg(src != NULL, "Invalid local address");
-  return gmr_accumulate_typed(mreg, src, count, type, dst, count, type, proc);
+  return gmr_accumulate_typed(mreg, src, count, type, dst, count, type, proc, handle);
 }
 
 
@@ -581,8 +675,9 @@ int gmr_accumulate(gmr_t *mreg, void *src, void *dst, int count, MPI_Datatype ty
   * @return              0 on success, non-zero on failure
   */
 int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
-    void *dst, int dst_count, MPI_Datatype dst_type, int proc) {
-
+                         void *dst, int dst_count, MPI_Datatype dst_type,
+                         int proc, armci_hdl_t * handle)
+{
   int        grp_proc;
   gmr_size_t disp;
   MPI_Aint lb, extent;
@@ -592,18 +687,350 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   // Calculate displacement from beginning of the window
-  if (dst == MPI_BOTTOM) 
+  if (dst == MPI_BOTTOM) {
     disp = 0;
-  else
+  } else {
     disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
 
   // Perform checks
   MPI_Type_get_true_extent(dst_type, &lb, &extent);
   ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
   ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
 
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    MPI_Raccumulate(src, src_count, src_type, grp_proc,
+                    (MPI_Aint) disp, dst_count, dst_type,
+                    MPI_SUM, mreg->window, &req);
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
   MPI_Accumulate(src, src_count, src_type, grp_proc, (MPI_Aint) disp, dst_count, dst_type, MPI_SUM, mreg->window);
+
+#ifndef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
+
+#endif
 
   return 0;
 }
 
+/** One-sided get-accumulate operation.  Source and output buffer must be private.
+  *
+  * @param[in] mreg     Memory region
+  * @param[in] src      Source address (local)
+  * @param[in] out      Result address (local)
+  * @param[in] dst      Destination address (remote)
+  * @param[in] type     MPI type of the given buffers
+  * @param[in] count    Number of elements of the given type to transfer
+  * @param[in] op       MPI_Op to apply at the destination
+  * @param[in] proc     Absolute process id of the target
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_get_accumulate(gmr_t *mreg, void *src, void *out, void *dst, int count,
+                       MPI_Datatype type, MPI_Op op, int proc, armci_hdl_t * handle)
+{
+  ARMCII_Assert_msg(src != NULL && out != NULL, "Invalid local address(es)");
+  return gmr_get_accumulate_typed(mreg, src, count, type, out, count, type, dst, count, type, op, proc, handle);
+}
+
+/** One-sided get-accumulate operation with typed arguments.  Source and output buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] src_count Number of elements of the given type at the source
+  * @param[in] src_type  MPI datatype of the source elements
+  * @param[in] out       Address of output buffer (same process as the source)
+  * @param[in] out_count Number of elements of the given type at the ouput
+  * @param[in] out_type  MPI datatype of the output elements
+  * @param[in] dst       Address of destination buffer
+  * @param[in] dst_count Number of elements of the given type at the destination
+  * @param[in] dst_type  MPI datatype of the destination elements
+  * @param[in] size      Number of bytes to transfer
+  * @param[in] op        MPI_Op to apply at the destination
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
+                             void *out, int out_count, MPI_Datatype out_type,
+                             void *dst, int dst_count, MPI_Datatype dst_type,
+                             MPI_Op op, int proc, armci_hdl_t * handle)
+{
+  int        grp_proc;
+  gmr_size_t disp;
+  MPI_Aint lb, extent;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  // Calculate displacement from beginning of the window
+  if (dst == MPI_BOTTOM) {
+    disp = 0;
+  } else {
+    disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+  }
+
+  // Perform checks
+  MPI_Type_get_true_extent(dst_type, &lb, &extent);
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp + dst_count*extent <= mreg->slices[proc].size, "Transfer is out of range");
+
+#ifdef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+
+    MPI_Request req = MPI_REQUEST_NULL;
+ 
+    MPI_Rget_accumulate(src, src_count, src_type, 
+                        out, out_count, out_type,
+                        grp_proc, (MPI_Aint) disp, dst_count, dst_type,
+                        op, mreg->window, &req);
+ 
+    gmr_handle_add_request(handle, req);
+
+    return 0;
+
+  }
+
+#endif
+
+  MPI_Get_accumulate(src, src_count, src_type,
+                     out, out_count, out_type,
+                     grp_proc, (MPI_Aint) disp, dst_count, dst_type,
+                     op, mreg->window);
+
+#ifndef USE_RMA_REQUESTS
+
+  if (handle!=NULL) {
+      /* Regular (not aggregate) handles merely store the target for future flushing. */
+      handle->target = grp_proc;
+  }
+
+#endif
+
+  return 0;
+}
+
+/** One-sided fetch-and-op.  Source and output buffer must be private.
+  *
+  * @param[in] mreg      Memory region
+  * @param[in] src       Address of source data
+  * @param[in] out       Address of output buffer (same process as the source)
+  * @param[in] dst       Address of destination buffer
+  * @param[in] type      MPI datatype of the source, output and destination elements
+  * @param[in] op        MPI_Op to apply at the destination
+  * @param[in] proc      Absolute process id of target process
+  * @return              0 on success, non-zero on failure
+  */
+int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
+		MPI_Datatype type, MPI_Op op, int proc)
+{
+  int        grp_proc;
+  gmr_size_t disp;
+
+  grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  ARMCII_Assert(grp_proc >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  /* built-in types only so no chance of seeing MPI_BOTTOM */
+  disp = (gmr_size_t) ((uint8_t*)dst - (uint8_t*)mreg->slices[proc].base);
+
+  // Perform checks
+  ARMCII_Assert_msg(disp >= 0 && disp < mreg->slices[proc].size, "Invalid remote address");
+  ARMCII_Assert_msg(disp <= mreg->slices[proc].size, "Transfer is out of range");
+
+  if (ARMCII_GLOBAL_STATE.use_request_atomics) {
+
+    MPI_Request req;
+    MPI_Rget_accumulate(src, 1, type, out, 1, type, grp_proc, (MPI_Aint) disp, 1, type, op, mreg->window, &req);
+    MPI_Wait(&req, MPI_STATUS_IGNORE);
+
+  } else {
+
+    MPI_Fetch_and_op(src, out, type, grp_proc, (MPI_Aint) disp, op, mreg->window);
+    if (ARMCII_GLOBAL_STATE.end_to_end_flush) {
+      MPI_Win_flush(grp_proc, mreg->window);
+    } else {
+      MPI_Win_flush_local(grp_proc, mreg->window);
+    }
+
+  }
+
+  return 0;
+}
+
+/** Lock a memory region at all targets so that one-sided operations can be performed.
+  *
+  * @param[in] mreg     Memory region
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_lockall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  MPI_Win_lock_all((ARMCII_GLOBAL_STATE.rma_nocheck) ? MPI_MODE_NOCHECK : 0,
+                   mreg->window);
+
+  return 0;
+}
+
+/** Unlock a memory region at all targets.
+  *
+  * @param[in] mreg     Memory region
+  * @return             0 on success, non-zero on failure
+  */
+int gmr_unlockall(gmr_t *mreg) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  MPI_Win_unlock_all(mreg->window);
+
+  return 0;
+}
+
+/** Flush a memory region for local or remote completion.
+  *
+  * @param[in] mreg         Memory region
+  * @param[in] proc         Absolute process id of the target
+  * @param[in] local_only   Only flush the operation locally.
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_flush(gmr_t *mreg, int proc, int local_only) {
+  int grp_proc = ARMCII_Translate_absolute_to_group(&mreg->group, proc);
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_proc >= 0 && grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+  ARMCII_Assert_msg(grp_proc < mreg->group.size, "grp_proc exceeds group size!");
+
+  if (!local_only || ARMCII_GLOBAL_STATE.end_to_end_flush) {
+    MPI_Win_flush(grp_proc, mreg->window);
+  } else {
+    MPI_Win_flush_local(grp_proc, mreg->window);
+  }
+
+  return 0;
+}
+
+/** Flush a memory region for remote completion to all targets.
+  *
+  * @param[in] mreg         Memory region
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_flushall(gmr_t *mreg, int local_only) {
+  int grp_me   = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+
+  ARMCII_Assert(grp_me >= 0);
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  if (!local_only || ARMCII_GLOBAL_STATE.end_to_end_flush) {
+    MPI_Win_flush_all(mreg->window);
+  } else {
+    MPI_Win_flush_local_all(mreg->window);
+  }
+
+  return 0;
+}
+
+/** Sync memory region so that public and private windows are the same.
+  *
+  * @param[in] mreg         Memory region
+  * @return                 0 on success, non-zero on failure
+  */
+int gmr_sync(gmr_t *mreg)
+{
+#if 0
+  // what is the point of this?
+  int grp_me = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
+  ARMCII_Assert(grp_me >= 0);
+#endif
+  ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
+
+  if (!(mreg->unified)) {
+      MPI_Win_sync(mreg->window);
+  }
+
+  return 0;
+}
+
+void gmr_progress(void)
+{
+    if (ARMCII_GLOBAL_STATE.explicit_nb_progress) {
+        int flag;
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, ARMCI_GROUP_WORLD.comm, &flag, MPI_STATUS_IGNORE);
+    }
+    return;
+}
+
+void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
+{
+  if (handle->batch_size < 0) {
+
+    ARMCII_Warning("gmr_handle_add_request passed a bogus (uninitialized) handle.\n");
+
+  } else if (handle->batch_size == 0) {
+
+    if (handle->single_request != MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is not MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array != NULL) {
+      //ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+    }
+
+    handle->batch_size     = 1;
+    handle->single_request = req;
+
+  } else if (handle->batch_size == 1) {
+
+    if (handle->single_request == MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array != NULL) {
+      //ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+    }
+
+    // there is a single request in the handle, so we allocate space for two,
+    // then copy from the single request to the array and append the new one.
+    // we nullify the single request to make sure it is not usable.
+    handle->batch_size++;
+    handle->request_array    = malloc( handle->batch_size * sizeof(MPI_Request) );
+    handle->request_array[0] = handle->single_request;
+    handle->request_array[1] = req;
+    handle->single_request   = MPI_REQUEST_NULL;
+
+  } else if (handle->batch_size > 1) {
+
+    if (handle->single_request != MPI_REQUEST_NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is not MPI_REQUEST_NULL).\n");
+    }
+    if (handle->request_array == NULL) {
+      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is NULL).\n");
+    }
+
+    // grow the allocation and append the new one.
+    handle->batch_size++;
+    handle->request_array  = realloc( handle->request_array , handle->batch_size * sizeof(MPI_Request) );
+    handle->request_array[handle->batch_size-1] = req;
+
+  }
+}

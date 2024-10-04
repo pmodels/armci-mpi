@@ -123,21 +123,21 @@ int ARMCII_Iov_check_same_allocation(void **ptrs, int count, int proc) {
   * @return                Zero on success, error code otherwise
   */
 int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int count, int size,
-    int datatype, int overlapping, int same_alloc, int proc, int blocking) {
+                           int datatype, int overlapping, int same_alloc, int proc,
+                           int blocking, armci_hdl_t * handle)
+{
 
   MPI_Datatype type;
   int type_count, type_size;
 
   if (op == ARMCII_OP_ACC) {
     ARMCII_Acc_type_translate(datatype, &type, &type_size);
-    type_count = size/type_size;
-    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   } else {
     type = MPI_BYTE;
     MPI_Type_size(type, &type_size);
-    type_count = size/type_size;
-    ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
   }
+  type_count = size/type_size;
+  ARMCII_Assert_msg(size % type_size == 0, "Transfer size is not a multiple of type size");
 
   // CONSERVATIVE CASE: If remote pointers overlap or remote pointers correspond to
   // multiple allocations, use the safe implementation to avoid invalid MPI
@@ -150,7 +150,7 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
     return ARMCII_Iov_op_safe(op, src, dst, count, type_count, type, proc);
 #else
     /* Jeff: We are going to always block when there is buffer overlap. */
-    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 1 /* consrv */, 1 /* blocking */);
+    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 1 /* consrv */, 1 /* blocking */, handle);
 #endif
   }
 
@@ -159,10 +159,10 @@ int ARMCII_Iov_op_dispatch(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
   else if (   ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT
            || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO  ) {
-    return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc, blocking);
+    return ARMCII_Iov_op_datatype(op, src, dst, count, type_count, type, proc, blocking, handle);
 
   } else if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_BATCHED) {
-    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 0 /* not consrv */, blocking);
+    return ARMCII_Iov_op_batched(op, src, dst, count, type_count, type, proc, 0 /* not consrv */, blocking, handle);
 
   } else {
     ARMCII_Error("unknown iov method (%d)\n", ARMCII_GLOBAL_STATE.iov_method);
@@ -228,7 +228,7 @@ int ARMCII_Iov_op_safe(enum ARMCII_Op_e op, void **src, void **dst, int count, i
   * lock/unlock pair.
   */
 int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc, int consrv, int blocking) {
+    MPI_Datatype type, int proc, int consrv, int blocking, armci_hdl_t * handle) {
 
   int i;
   int flush_local = 1; /* used only for MPI-3 */
@@ -264,15 +264,15 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
 
     switch(op) {
       case ARMCII_OP_PUT:
-        gmr_put(mreg, src[i], dst[i], elem_count, proc);
+        gmr_put(mreg, src[i], dst[i], elem_count, proc, handle);
         flush_local = 1;
         break;
       case ARMCII_OP_GET:
-        gmr_get(mreg, src[i], dst[i], elem_count, proc);
+        gmr_get(mreg, src[i], dst[i], elem_count, proc, handle);
         flush_local = 0;
         break;
       case ARMCII_OP_ACC:
-        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc);
+        gmr_accumulate(mreg, src[i], dst[i], elem_count, type, proc, handle);
         flush_local = 1;
         break;
       default:
@@ -293,7 +293,8 @@ int ARMCII_Iov_op_batched(enum ARMCII_Op_e op, void **src, void **dst, int count
   * datatype to achieve a one-sided gather/scatter.
   */
 int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int count, int elem_count,
-    MPI_Datatype type, int proc, int blocking) {
+                           MPI_Datatype type, int proc, int blocking, armci_hdl_t * handle)
+{
 
     gmr_t *mreg;
     MPI_Datatype  type_loc, type_rem;
@@ -354,15 +355,15 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     switch(op) {
       case ARMCII_OP_PUT:
-        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc, handle);
         flush_local = 1;
         break;
       case ARMCII_OP_GET:
-        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc, handle);
         flush_local = 0;
         break;
       case ARMCII_OP_ACC:
-        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc, handle);
         flush_local = 1;
         break;
       default:
@@ -398,10 +399,9 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
@@ -413,7 +413,7 @@ int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
 
     ARMCII_Buf_prepare_read_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_PUT, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, 0,
-                           overlapping, same_alloc, proc, 1 /* blocking */);
+                           overlapping, same_alloc, proc, 1 /* blocking */, NULL);
     ARMCII_Buf_finish_read_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -438,10 +438,9 @@ int PARMCI_PutV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **dst_buf;
     int    overlapping, same_alloc;
 
@@ -454,7 +453,7 @@ int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
 
     ARMCII_Buf_prepare_write_vec(iov[v].dst_ptr_array, &dst_buf, iov[v].ptr_array_len, iov[v].bytes);
     ARMCII_Iov_op_dispatch(ARMCII_OP_GET, iov[v].src_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes, 0,
-                           overlapping, same_alloc, proc, 1 /* blocking */);
+                           overlapping, same_alloc, proc, 1 /* blocking */, NULL);
     ARMCII_Buf_finish_write_vec(iov[v].dst_ptr_array, dst_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 
@@ -479,10 +478,9 @@ int PARMCI_GetV(armci_giov_t *iov, int iov_len, int proc) {
   * @param[in] proc     Target process.
   * @return             Success 0, otherwise non-zero.
   */
-int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc) {
-  int v;
-
-  for (v = 0; v < iov_len; v++) {
+int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int proc)
+{
+  for (int v = 0; v < iov_len; v++) {
     void **src_buf;
     int    overlapping, same_alloc;
 
@@ -494,7 +492,7 @@ int PARMCI_AccV(int datatype, void *scale, armci_giov_t *iov, int iov_len, int p
 
     ARMCII_Buf_prepare_acc_vec(iov[v].src_ptr_array, &src_buf, iov[v].ptr_array_len, iov[v].bytes, datatype, scale);
     ARMCII_Iov_op_dispatch(ARMCII_OP_ACC, src_buf, iov[v].dst_ptr_array, iov[v].ptr_array_len, iov[v].bytes, datatype,
-                           overlapping, same_alloc, proc, 1 /* blocking */);
+                           overlapping, same_alloc, proc, 1 /* blocking */, NULL);
     ARMCII_Buf_finish_acc_vec(iov[v].src_ptr_array, src_buf, iov[v].ptr_array_len, iov[v].bytes);
   }
 

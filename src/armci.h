@@ -5,6 +5,9 @@
 #ifndef _ARMCI_H_
 #define _ARMCI_H_
 
+// TODO add to build system
+#define USE_RMA_REQUESTS 1
+
 #include <mpi.h>
 
 #define ARMCI_MPI 3
@@ -64,11 +67,16 @@ int   ARMCI_PutS_flag(void *src_ptr, int src_stride_ar[/*stride_levels*/],
                  int count[/*stride_levels+1*/], int stride_levels,
                  int *flag, int value, int proc);
 
-
 typedef struct armci_hdl_s
 {
+#ifdef USE_RMA_REQUESTS
+    int batch_size;
+    MPI_Request single_request; // used when batch_size=0 (common case)
+    MPI_Request *request_array; // used when batch_size>0
+#else
     int target;    /* we do not actually support individual completion */
     int aggregate;
+#endif
 }
 armci_hdl_t;
 

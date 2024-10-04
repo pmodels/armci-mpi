@@ -137,11 +137,10 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
@@ -159,7 +158,7 @@ int PARMCI_PutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, NULL /* handle */);
     gmr_flush(mreg, proc, 1); /* flush_local */
 
     MPI_Type_free(&src_type);
@@ -238,11 +237,10 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If dst_buf hasn't been assigned to a copy, the strided source
@@ -260,7 +258,7 @@ int PARMCI_GetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
+    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc, NULL /* handle */);
     gmr_flush(mreg, proc, 0);
 
     /* COPY: Finish the transfer */
@@ -376,11 +374,10 @@ int PARMCI_AccS(int datatype, void *scale,
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
@@ -403,7 +400,7 @@ int PARMCI_AccS(int datatype, void *scale,
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, NULL /* handle */);
     gmr_flush(mreg, proc, 1); /* flush_local */
 
     MPI_Type_free(&src_type);

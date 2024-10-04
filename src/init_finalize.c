@@ -238,8 +238,8 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 #ifdef HAVE_PTHREADS
     /* Check progress thread settings */
 
-    ARMCII_GLOBAL_STATE.progress_thread    = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
-    ARMCII_GLOBAL_STATE.progress_usleep    = ARMCII_Getenv_int("ARMCI_PROGRESS_USLEEP", 0);
+    ARMCII_GLOBAL_STATE.progress_thread = ARMCII_Getenv_bool("ARMCI_PROGRESS_THREAD", 0);
+    ARMCII_GLOBAL_STATE.progress_usleep = ARMCII_Getenv_int("ARMCI_PROGRESS_USLEEP", 0);
 
     if (ARMCII_GLOBAL_STATE.progress_thread && (mpi_thread_level!=MPI_THREAD_MULTIPLE)) {
         ARMCII_Warning("ARMCI progress thread requires MPI_THREAD_MULTIPLE (%d); progress thread disabled.\n",
@@ -258,7 +258,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* Check for debugging flags */
 
-  ARMCII_GLOBAL_STATE.debug_alloc          = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
+  ARMCII_GLOBAL_STATE.debug_alloc = ARMCII_Getenv_bool("ARMCI_DEBUG_ALLOC", 0);
   {
     int junk;
     junk = ARMCII_Getenv_bool("ARMCI_FLUSH_BARRIERS", -1);
@@ -275,15 +275,15 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   if (ARMCII_Getenv("ARMCI_NONCOLLECTIVE_GROUPS")) {
     ARMCII_GLOBAL_STATE.noncollective_groups = ARMCII_Getenv_bool("ARMCI_NONCOLLECTIVE_GROUPS", 0);
   }
-  ARMCII_GLOBAL_STATE.cache_rank_translation=ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
+  ARMCII_GLOBAL_STATE.cache_rank_translation = ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
 
   /* Check for IOV flags */
 
 #ifdef NO_SEATBELTS
-  ARMCII_GLOBAL_STATE.iov_checks           = 0;
+  ARMCII_GLOBAL_STATE.iov_checks        = 0;
 #endif
-  ARMCII_GLOBAL_STATE.iov_checks           = ARMCII_Getenv_bool("ARMCI_IOV_CHECKS", 0);
-  ARMCII_GLOBAL_STATE.iov_batched_limit    = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
+  ARMCII_GLOBAL_STATE.iov_checks        = ARMCII_Getenv_bool("ARMCI_IOV_CHECKS", 0);
+  ARMCII_GLOBAL_STATE.iov_batched_limit = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
   if (ARMCII_GLOBAL_STATE.iov_batched_limit < 0) {
     ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_BATCHED_LIMIT (%d)\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
@@ -358,7 +358,10 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   }
 
   /* Use win_allocate or not, to work around MPI-3 RMA implementation bugs. */
-  ARMCII_GLOBAL_STATE.use_win_allocate=ARMCII_Getenv_int("ARMCI_USE_WIN_ALLOCATE", 1);
+  ARMCII_GLOBAL_STATE.use_win_allocate = ARMCII_Getenv_bool("ARMCI_USE_WIN_ALLOCATE", 1);
+
+  /* Do MPI_Win_sync in armci_msg_barrier */
+  ARMCII_GLOBAL_STATE.msg_barrier_syncs = ARMCII_Getenv_bool("ARMCI_MSG_BARRIER_SYNCS", 0);
 
   /* Equivalent to ARMCI_Set_shm_limit - determines the size of:
    * - MPI_Win_allocate slab in the case of slab allocation
@@ -392,6 +395,16 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* Use MPI_MODE_NOCHECK assertion */
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
+
+  /* Use request-based RMA for atomic operations */
+  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 1);
+
+  /* Use request-based RMA for ARMCI nonblocking with explicit handles */
+#ifdef USE_RMA_REQUESTS
+      const int use_rma_requests = 1;
+#else
+      const int use_rma_requests = 0;
+#endif
 
   /* Setup groups and communicators */
 
@@ -539,6 +552,9 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("  RMA_ATOMICITY          = %s\n", ARMCII_GLOBAL_STATE.rma_atomicity          ? "TRUE" : "FALSE");
       printf("  NO_FLUSH_LOCAL         = %s\n", ARMCII_GLOBAL_STATE.end_to_end_flush       ? "TRUE" : "FALSE");
       printf("  RMA_NOCHECK            = %s\n", ARMCII_GLOBAL_STATE.rma_nocheck            ? "TRUE" : "FALSE");
+      printf("  MSG_BARRIER_SYNCS      = %s\n", ARMCII_GLOBAL_STATE.msg_barrier_syncs      ? "TRUE" : "FALSE");
+      printf("  USE_REQUEST_ATOMICS    = %s\n", ARMCII_GLOBAL_STATE.use_request_atomics    ? "TRUE" : "FALSE");
+      printf("  USE_RMA_REQUESTS       = %s\n", use_rma_requests ? "TRUE" : "FALSE"); // compile-time option
 
       /* MPI info set on window */
       printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
@@ -564,7 +580,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
         /* Update (Aug. 2022): it has reappeared in MPICH 4.x, per
          *      https://github.com/pmodels/mpich/issues/6110 */
         printf("  Warning: MPI_Win_allocate can lead to correctness issues.\n");
-        if ((mpi_implementation == ARMCII_MPICH) && (mpi_impl_major     == 4)) {
+        if ((mpi_implementation == ARMCII_MPICH) && (mpi_impl_major == 4)) {
           printf("           There is a good chance your implementation is affected!\n");
           printf("           See https://github.com/pmodels/mpich/issues/6110 for details.\n");
         }

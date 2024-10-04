@@ -37,8 +37,8 @@
   * @return                    Zero on success, error code otherwise.
   */
 int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
-               void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
-               int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t *handle) {
+                  void *dst_ptr, int dst_stride_ar[/*stride_levels*/], 
+                  int count[/*stride_levels+1*/], int stride_levels, int proc, armci_hdl_t * handle) {
 
   int err;
 
@@ -66,11 +66,10 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
@@ -88,7 +87,7 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_put_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, handle);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -97,11 +96,6 @@ int PARMCI_NbPutS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     if (src_buf != src_ptr) {
       gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
-    }
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
     }
 
     err = 0;
@@ -174,11 +168,10 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(dst_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If dst_buf hasn't been assigned to a copy, the strided source
@@ -196,7 +189,7 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
     mreg = gmr_lookup(src_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc);
+    gmr_get_typed(mreg, src_ptr, 1, src_type, dst_buf, 1, dst_type, proc, handle);
 
     /* COPY: Finish the transfer */
     if (dst_buf != dst_ptr) {
@@ -207,11 +200,6 @@ int PARMCI_NbGetS(void *src_ptr, int src_stride_ar[/*stride_levels*/],
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
-    }
 
     err = 0;
 
@@ -318,11 +306,10 @@ int PARMCI_NbAccS(int datatype, void *scale,
       }
     }
     else {
-      /* Jeff: WIN_UNIFIED should allow overlap to work but we
-       *       do a memory barrier here to be safe. */
       gmr_loc = gmr_lookup(src_ptr, ARMCI_GROUP_WORLD.rank);
-      if (gmr_loc != NULL)
+      if (gmr_loc != NULL) {
           gmr_sync(gmr_loc);
+      }
     }
 
     /* NOGUARD: If src_buf hasn't been assigned to a copy, the strided source
@@ -347,7 +334,7 @@ int PARMCI_NbAccS(int datatype, void *scale,
     mreg = gmr_lookup(dst_ptr, proc);
     ARMCII_Assert_msg(mreg != NULL, "Invalid shared pointer");
 
-    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc);
+    gmr_accumulate_typed(mreg, src_buf, 1, src_type, dst_ptr, 1, dst_type, proc, handle);
 
     MPI_Type_free(&src_type);
     MPI_Type_free(&dst_type);
@@ -356,11 +343,6 @@ int PARMCI_NbAccS(int datatype, void *scale,
     if (src_buf != src_ptr) {
       gmr_flush(mreg, proc, 1); /* flush_local */
       MPI_Free_mem(src_buf);
-    }
-
-    if (handle!=NULL) {
-        /* Regular (not aggregate) handles merely store the target for future flushing. */
-        handle->target = proc;
     }
 
     err = 0;
