@@ -994,7 +994,7 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
       ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is not MPI_REQUEST_NULL).\n");
     }
     if (handle->request_array != NULL) {
-      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+      //ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
     }
 
     handle->batch_size     = 1;
@@ -1006,7 +1006,7 @@ void gmr_handle_add_request(armci_hdl_t * handle, MPI_Request req)
       ARMCII_Warning("gmr_handle_add_request: handle is corrupt (single_request_array is MPI_REQUEST_NULL).\n");
     }
     if (handle->request_array != NULL) {
-      ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
+      //ARMCII_Warning("gmr_handle_add_request: handle is corrupt (request_array is not NULL).\n");
     }
 
     // there is a single request in the handle, so we allocate space for two,
