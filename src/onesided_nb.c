@@ -252,7 +252,7 @@ int PARMCI_Wait(armci_hdl_t* handle)
         ARMCII_Warning("ARMCI_Wait: handle is corrupt (single_request_array is MPI_REQUEST_NULL)\n");
     }
     if (handle->request_array != NULL) {
-        ARMCII_Warning("ARMCI_Wait: handle is corrupt (request_array is not NULL)\n");
+        //ARMCII_Warning("ARMCI_Wait: handle is corrupt (request_array is not NULL)\n");
     }
 
     MPI_Wait( &(handle->single_request), MPI_STATUS_IGNORE );
