@@ -264,11 +264,9 @@ int PARMCI_Wait(armci_hdl_t* handle)
   } else if (handle->batch_size > 1) {
 
     if (handle->single_request != MPI_REQUEST_NULL) {
-        printf("handle->batch_size = %d\n",handle->batch_size);
         ARMCII_Warning("ARMCI_Wait: handle is corrupt (single_request_array is not MPI_REQUEST_NULL)\n");
     }
     if (handle->request_array == NULL) {
-        printf("handle->batch_size = %d\n",handle->batch_size);
         ARMCII_Warning("ARMCI_Wait: handle is corrupt (request_array is NULL)\n");
     }
 
@@ -352,11 +350,9 @@ int PARMCI_Test(armci_hdl_t* handle)
   } else if (handle->batch_size > 1) {
 
     if (handle->single_request != MPI_REQUEST_NULL) {
-        printf("handle->batch_size = %d\n",handle->batch_size);
         ARMCII_Warning("ARMCI_Test: handle is corrupt (single_request_array is not MPI_REQUEST_NULL)\n");
     }
     if (handle->request_array == NULL) {
-        printf("handle->batch_size = %d\n",handle->batch_size);
         ARMCII_Warning("ARMCI_Test: handle is corrupt (request_array is NULL)\n");
     }
 
