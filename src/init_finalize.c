@@ -199,6 +199,22 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     }
   }
 
+  /* Setup groups and communicators - do this before ARMCII_Warning is called! */
+
+  MPI_Comm_dup(comm, &ARMCI_GROUP_WORLD.comm);
+  ARMCII_Group_init_from_comm(&ARMCI_GROUP_WORLD);
+  ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
+
+  /* Create GOP operators */
+
+  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &ARMCI_MPI_ABSMIN_OP);
+  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &ARMCI_MPI_ABSMAX_OP);
+
+  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
+  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
+
+  /* Determine environmental settings */
+
   ARMCII_GLOBAL_STATE.verbose = ARMCII_Getenv_int("ARMCI_VERBOSE", 0);
 
   /* Figure out what MPI library we are using, in an attempt to work around bugs. */
@@ -277,7 +293,18 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   }
   ARMCII_GLOBAL_STATE.cache_rank_translation = ARMCII_Getenv_bool("ARMCI_CACHE_RANK_TRANSLATION", 1);
 
-  /* Check for IOV flags */
+  /* Check for IOV and Strided flags */
+
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
+  /* Open-MPI 5 RMA works a lot better than older releases... */
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
+#else
+  /* IOV_DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
+   * Jeff: Is this still true? */
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
+#endif
 
 #ifdef NO_SEATBELTS
   ARMCII_GLOBAL_STATE.iov_checks        = 0;
@@ -286,7 +313,8 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   ARMCII_GLOBAL_STATE.iov_batched_limit = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
   if (ARMCII_GLOBAL_STATE.iov_batched_limit < 0) {
-    ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_BATCHED_LIMIT (%d)\n", ARMCII_GLOBAL_STATE.iov_batched_limit);
+    ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_BATCHED_LIMIT (%d)\n",
+                   ARMCII_GLOBAL_STATE.iov_batched_limit);
     ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
   }
 
@@ -322,14 +350,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     ARMCII_GLOBAL_STATE.iov_dtype_chunk = 0;
   }
 
-#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
-  /* Open-MPI 5 RMA works a lot better than older releases... */
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
-#else
-  /* DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
-   * Jeff: Is this still true? */
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
-#endif
 
   char *var = ARMCII_Getenv("ARMCI_IOV_METHOD");
   if (var != NULL) {
@@ -345,14 +365,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
-  /* Check for Strided flags */
-
-#if defined(OPEN_MPI)
-  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
-#else
-  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
-#endif
-
   var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
   if (var != NULL) {
     if (strcmp(var, "IOV") == 0) {
@@ -366,10 +378,13 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
 #ifdef OPEN_MPI
   if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT || ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
+    if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("MPI Datatypes are broken in RMA in many versions of Open-MPI!\n");
 #if defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
-      ARMCII_Warning("Open-MPI 4.0.0 RMA with datatypes is definitely broken.  See https://github.com/open-mpi/ompi/issues/6275 for details.\n");
+      ARMCII_Warning("Open-MPI 4.0.0 RMA with datatypes is definitely broken."
+                     "See https://github.com/open-mpi/ompi/issues/6275 for details.\n");
 #endif
+    }
   }
 #endif
 
@@ -437,20 +452,6 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 #else
       const int use_rma_requests = 0;
 #endif
-
-  /* Setup groups and communicators */
-
-  MPI_Comm_dup(comm, &ARMCI_GROUP_WORLD.comm);
-  ARMCII_Group_init_from_comm(&ARMCI_GROUP_WORLD);
-  ARMCI_GROUP_DEFAULT = ARMCI_GROUP_WORLD;
-
-  /* Create GOP operators */
-
-  MPI_Op_create(ARMCII_Absmin_op, 1 /* commute */, &ARMCI_MPI_ABSMIN_OP);
-  MPI_Op_create(ARMCII_Absmax_op, 1 /* commute */, &ARMCI_MPI_ABSMAX_OP);
-
-  MPI_Op_create(ARMCII_Msg_sel_min_op, 1 /* commute */, &ARMCI_MPI_SELMIN_OP);
-  MPI_Op_create(ARMCII_Msg_sel_max_op, 1 /* commute */, &ARMCI_MPI_SELMAX_OP);
 
 #ifdef HAVE_MEMKIND_H
   char * pool_path;
