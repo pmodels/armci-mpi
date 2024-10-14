@@ -11,12 +11,9 @@
 #include <debug.h>
 
 
-/** The ARMCI world group.  This is accessed from outside via
-  * ARMCI_Group_get_world.
-  */
+/** The ARMCI world group.  This is accessed from outside via ARMCI_Group_get_world. */
 ARMCI_Group ARMCI_GROUP_WORLD   = {0};
 ARMCI_Group ARMCI_GROUP_DEFAULT = {0};
-
 
 /** Initialize an ARMCI group's remaining fields using the communicator field.
   */
