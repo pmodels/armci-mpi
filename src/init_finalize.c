@@ -445,6 +445,12 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* Use request-based RMA for atomic operations */
   ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 1);
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
+  if (ARMCII_GLOBAL_STATE.use_request_atomics) {
+      ARMCII_Warning("MPI request-based atomics are buggy with Open-MPI 4.x UCX on IB"
+		     " (https://github.com/open-mpi/ompi/issues/14173).\n");
+  }
+#endif
 
   /* Force remote completion (Win_flush) after request-based atomics.  MPI_Wait
    * on MPI_Rget_accumulate only guarantees the result buffer is available at the origin.
