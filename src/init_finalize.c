@@ -446,20 +446,18 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Use request-based RMA for atomic operations */
   ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 1);
 
-  /* Optionally force remote completion (Win_flush) after request-based atomics.  MPI_Wait
-   * on MPI_Rget_accumulate only guarantees the result buffer is available at the origin;
-   * per MPI-5 it "does not indicate that the operation has been completed at the target
-   * window."  Some algorithms (e.g. swap-based spinlocks) require target visibility.  This
+  /* Force remote completion (Win_flush) after request-based atomics.  MPI_Wait
+   * on MPI_Rget_accumulate only guarantees the result buffer is available at the origin.
+   * Some algorithms (e.g. swap-based spinlocks) require target visibility.  This
    * is off by default (the pure request-based path); set ARMCI_FLUSH_REQUEST_ATOMICS=1 to
-   * add a remote flush.  Note: on MPI implementations whose Get_accumulate/Rget_accumulate
-   * is itself broken over the fabric, this flush does not help. */
+   * add a remote flush. */
   ARMCII_GLOBAL_STATE.flush_request_atomics=ARMCII_Getenv_bool("ARMCI_FLUSH_REQUEST_ATOMICS", 0);
 
   /* Use request-based RMA for ARMCI nonblocking with explicit handles */
 #ifdef USE_RMA_REQUESTS
-      const int use_rma_requests = 1;
+  const int use_rma_requests = 1;
 #else
-      const int use_rma_requests = 0;
+  const int use_rma_requests = 0;
 #endif
 
 #ifdef HAVE_MEMKIND_H
