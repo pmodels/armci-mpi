@@ -297,9 +297,10 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     gmr_t *mreg;
     MPI_Datatype  type_loc, type_rem;
-    MPI_Aint      disp_loc[count];
+    int           disp_loc[count];
     int           disp_rem[count];
     int           block_len[count];
+    MPI_Aint      base_loc;
     void         *dst_win_base;
     int           dst_win_size, i, type_size;
     void        **buf_rem, **buf_loc;
@@ -331,38 +332,45 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     MPI_Get_address(dst_win_base, &base_rem);
 
+    /* Use the first local segment as the origin base so the local datatype can be an
+     * element-indexed (indexed_block) type instead of an absolute-address hindexed type
+     * used from MPI_BOTTOM.  Some MPI RMA implementations mishandle hindexed/MPI_BOTTOM
+     * datatypes in Accumulate; an element-indexed origin (relative to a real buffer, like
+     * the target side already uses) avoids that path. */
+    MPI_Get_address(buf_loc[0], &base_loc);
+
     for (i = 0; i < count; i++) {
-      MPI_Aint target_rem;
-      MPI_Get_address(buf_loc[i], &disp_loc[i]);
+      MPI_Aint target_rem, local_addr;
+      MPI_Get_address(buf_loc[i], &local_addr);
       MPI_Get_address(buf_rem[i], &target_rem);
+      disp_loc[i]  = (local_addr - base_loc)/type_size;   /* element offset from buf_loc[0] */
       disp_rem[i]  = (target_rem - base_rem)/type_size;
       block_len[i] = elem_count;
 
+      ARMCII_Assert_msg((local_addr - base_loc) % type_size == 0, "Local transfer offset is not a multiple of type size");
       ARMCII_Assert_msg((target_rem - base_rem) % type_size == 0, "Transfer size is not a multiple of type size");
       ARMCII_Assert_msg(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size, "Invalid remote pointer");
       ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
     }
 
-    MPI_Type_create_hindexed(count, block_len, disp_loc, type, &type_loc);
+    /* Both origin and target are now element-indexed relative to a real base buffer. */
+    MPI_Type_create_indexed_block(count, elem_count, disp_loc, type, &type_loc);
     MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
-
-    /* MPI_Type_create_indexed_block should be more efficient than this:
-       MPI_Type_indexed(count, block_len, disp_rem, type, &type_rem); */
 
     MPI_Type_commit(&type_loc);
     MPI_Type_commit(&type_rem);
 
     switch(op) {
       case ARMCII_OP_PUT:
-        gmr_put_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_put_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         flush_local = 1;
         break;
       case ARMCII_OP_GET:
-        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, MPI_BOTTOM, 1, type_loc, proc);
+        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, buf_loc[0], 1, type_loc, proc);
         flush_local = 0;
         break;
       case ARMCII_OP_ACC:
-        gmr_accumulate_typed(mreg, MPI_BOTTOM, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+        gmr_accumulate_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
         flush_local = 1;
         break;
       default:
