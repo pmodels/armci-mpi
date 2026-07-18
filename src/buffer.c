@@ -102,45 +102,57 @@ int ARMCII_Buf_prepare_acc_vec(void **orig_bufs, void ***new_bufs_ptr, int count
 
   void **new_bufs;
   int i, scaled, num_moved = 0;
-  
-  new_bufs = malloc(count*sizeof(void*));
+
+  /* Allocate count+1 pointer slots.  The extra slot [count] records the base of a
+   * single contiguous MPI_Alloc_mem region when the scaled origin segments are gathered
+   * into one allocation (NULL otherwise), so ARMCII_Buf_finish_acc_vec knows to free one
+   * region instead of count separate ones. */
+  new_bufs = malloc((count+1)*sizeof(void*));
   ARMCII_Assert(new_bufs != NULL);
+  new_bufs[count] = NULL;
 
   scaled = ARMCII_Buf_acc_is_scaled(datatype, scale);
 
-  for (i = 0; i < count; i++) {
-    gmr_t *mreg = NULL;
+  if (scaled) {
+    /* Gather all scaled origin segments into ONE contiguous allocation.  When the
+     * segments live in separate MPI_Alloc_mem regions they can be many GB apart, which
+     * overflows the 32-bit element displacements used by the DIRECT (indexed) IOV
+     * datatype path (ARMCII_Iov_op_datatype); a single allocation keeps every segment
+     * within one small, bounded span. */
+    char *contig;
+    MPI_Alloc_mem((MPI_Aint)count*size, MPI_INFO_NULL, &contig);
+    ARMCII_Assert(contig != NULL);
+    new_bufs[count] = contig;
 
-    // Check if the source buffer is within a shared region.
-    if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
-      mreg = gmr_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
-
-    if (scaled) {
-      MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
-      ARMCII_Assert(new_bufs[i] != NULL);
-
+    for (i = 0; i < count; i++) {
+      new_bufs[i] = contig + (MPI_Aint)i*size;
       ARMCII_Buf_acc_scale(orig_bufs[i], new_bufs[i], size, datatype, scale);
-
-    } else {
-      new_bufs[i] = orig_bufs[i];
     }
+  } else {
+    for (i = 0; i < count; i++) {
+      gmr_t *mreg = NULL;
 
-    if (mreg != NULL) {
-      // If the buffer wasn't copied, we should copy it into a private buffer
-      if (new_bufs[i] == orig_bufs[i]) {
+      // Check if the source buffer is within a shared region.
+      if (ARMCII_GLOBAL_STATE.shr_buf_method != ARMCII_SHR_BUF_NOGUARD)
+        mreg = gmr_lookup(orig_bufs[i], ARMCI_GROUP_WORLD.rank);
+
+      new_bufs[i] = orig_bufs[i];
+
+      if (mreg != NULL) {
+        // The buffer is shared; copy it into a private buffer
         MPI_Alloc_mem(size, MPI_INFO_NULL, &new_bufs[i]);
         ARMCII_Assert(new_bufs[i] != NULL);
 
         ARMCI_Copy(orig_bufs[i], new_bufs[i], size);
       }
-    }
 
-    if (new_bufs[i] == orig_bufs[i])
-      num_moved++;
+      if (new_bufs[i] == orig_bufs[i])
+        num_moved++;
+    }
   }
 
   *new_bufs_ptr = new_bufs;
-  
+
   return num_moved;
 }
 
@@ -157,9 +169,14 @@ int ARMCII_Buf_prepare_acc_vec(void **orig_bufs, void ***new_bufs_ptr, int count
 void ARMCII_Buf_finish_acc_vec(void **orig_bufs, void **new_bufs, int count, int size) {
   int i;
 
-  for (i = 0; i < count; i++) {
-    if (orig_bufs[i] != new_bufs[i]) {
-      MPI_Free_mem(new_bufs[i]);
+  if (new_bufs[count] != NULL) {
+    /* Scaled segments were gathered into a single contiguous allocation. */
+    MPI_Free_mem(new_bufs[count]);
+  } else {
+    for (i = 0; i < count; i++) {
+      if (orig_bufs[i] != new_bufs[i]) {
+        MPI_Free_mem(new_bufs[i]);
+      }
     }
   }
 
