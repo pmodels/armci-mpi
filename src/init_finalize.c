@@ -290,6 +290,16 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     ARMCII_GLOBAL_STATE.iov_batched_limit = 0;
   }
 
+  /* Max number of blocks packed into a single datatype op in the DIRECT IOV method.
+   * 0 = unlimited (one op for all blocks).  Chunking bounds the flattened datatype
+   * descriptor so it does not overflow transport limits (e.g. the UCX active-message
+   * header) or trip MPI RMA datatype-accumulate bugs on large operations. */
+  ARMCII_GLOBAL_STATE.iov_dtype_chunk      = ARMCII_Getenv_int("ARMCI_IOV_DTYPE_CHUNK", 0);
+  if (ARMCII_GLOBAL_STATE.iov_dtype_chunk < 0) {
+    ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_DTYPE_CHUNK (%d)\n", ARMCII_GLOBAL_STATE.iov_dtype_chunk);
+    ARMCII_GLOBAL_STATE.iov_dtype_chunk = 0;
+  }
+
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
   /* Open-MPI 5 RMA works a lot better than older releases... */
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
@@ -536,6 +546,13 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
         } else {
           printf("  IOV_BATCHED_LIMIT      = UNLIMITED\n");
         }
+      }
+
+      if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT || ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_AUTO) {
+        if (ARMCII_GLOBAL_STATE.iov_dtype_chunk > 0)
+          printf("  IOV_DTYPE_CHUNK        = %d\n", ARMCII_GLOBAL_STATE.iov_dtype_chunk);
+        else
+          printf("  IOV_DTYPE_CHUNK        = UNLIMITED\n");
       }
 
       /* MPI RMA semantics */

@@ -353,37 +353,45 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
       ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
     }
 
-    /* Both origin and target are now element-indexed relative to a real base buffer. */
-    MPI_Type_create_indexed_block(count, elem_count, disp_loc, type, &type_loc);
-    MPI_Type_create_indexed_block(count, elem_count, disp_rem, type, &type_rem);
+    /* Optionally chunk the blocks across several ops so the flattened datatype
+     * descriptor stays small.  chunk == 0 means one op over all blocks. */
+    int chunk = ARMCII_GLOBAL_STATE.iov_dtype_chunk;
+    if (chunk <= 0 || chunk > count) chunk = count;
 
-    MPI_Type_commit(&type_loc);
-    MPI_Type_commit(&type_rem);
+    for (int start = 0; start < count; start += chunk) {
+      int n = (count - start < chunk) ? (count - start) : chunk;
 
-    switch(op) {
-      case ARMCII_OP_PUT:
-        gmr_put_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
-        flush_local = 1;
-        break;
-      case ARMCII_OP_GET:
-        gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, buf_loc[0], 1, type_loc, proc);
-        flush_local = 0;
-        break;
-      case ARMCII_OP_ACC:
-        gmr_accumulate_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
-        flush_local = 1;
-        break;
-      default:
-        ARMCII_Error("unknown operation (%d)", op);
-        return 1;
+      /* Both origin and target are element-indexed relative to a real base buffer. */
+      MPI_Type_create_indexed_block(n, elem_count, &disp_loc[start], type, &type_loc);
+      MPI_Type_create_indexed_block(n, elem_count, &disp_rem[start], type, &type_rem);
+      MPI_Type_commit(&type_loc);
+      MPI_Type_commit(&type_rem);
+
+      switch(op) {
+        case ARMCII_OP_PUT:
+          gmr_put_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+          flush_local = 1;
+          break;
+        case ARMCII_OP_GET:
+          gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, buf_loc[0], 1, type_loc, proc);
+          flush_local = 0;
+          break;
+        case ARMCII_OP_ACC:
+          gmr_accumulate_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+          flush_local = 1;
+          break;
+        default:
+          ARMCII_Error("unknown operation (%d)", op);
+          return 1;
+      }
+
+      MPI_Type_free(&type_loc);
+      MPI_Type_free(&type_rem);
     }
 
     if (blocking) {
       gmr_flush(mreg, proc, flush_local);
     }
-
-    MPI_Type_free(&type_loc);
-    MPI_Type_free(&type_rem);
 
     return 0;
 }
