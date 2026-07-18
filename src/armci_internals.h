@@ -96,6 +96,7 @@ typedef struct {
   int           debug_alloc;            /* Do extra debuggin on memory allocation                               */
   int           iov_checks;             /* Disable IOV same allocation and overlapping checks                   */
   int           iov_batched_limit;      /* Max number of ops per epoch for BATCHED IOV method                   */
+  int           iov_dtype_chunk;         /* Max blocks per datatype op for DIRECT IOV method (0 = unlimited)     */
   int           noncollective_groups;   /* Use noncollective group creation algorithm                           */
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
