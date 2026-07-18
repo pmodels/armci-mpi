@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <armci.h>
 #include <armci_internals.h>
@@ -300,7 +301,9 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
     int           disp_loc[count];
     int           disp_rem[count];
     int           block_len[count];
+    MPI_Aint      loc_addr[count];
     MPI_Aint      base_loc;
+    void         *base_loc_ptr;
     void         *dst_win_base;
     int           dst_win_size, i, type_size;
     void        **buf_rem, **buf_loc;
@@ -332,25 +335,38 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
     MPI_Get_address(dst_win_base, &base_rem);
 
-    /* Use the first local segment as the origin base so the local datatype can be an
-     * element-indexed (indexed_block) type instead of an absolute-address hindexed type
-     * used from MPI_BOTTOM.  Some MPI RMA implementations mishandle hindexed/MPI_BOTTOM
-     * datatypes in Accumulate; an element-indexed origin (relative to a real buffer, like
-     * the target side already uses) avoids that path. */
+    /* Build both origin and target as element-indexed (indexed_block) types relative to a
+     * real base buffer, instead of absolute-address hindexed types used from MPI_BOTTOM:
+     * osc/ucx (OMPI4/OMPI5) segfaults when handed an hindexed/MPI_BOTTOM origin datatype in
+     * Accumulate, and an absolute-address target descriptor is large enough to overflow the
+     * ch4:ucx (MPICH) active-message header.  The origin is based at the LOWEST local
+     * segment address so element displacements are non-negative -- the segments are not
+     * necessarily in address order (e.g. the scaled-copy source buffers for ACC).
+     *
+     * indexed_block displacements are 32-bit element offsets.  For a scaled/guarded ACC each
+     * origin segment is a separate MPI_Alloc_mem allocation (ARMCII_Buf_prepare_acc_vec) and
+     * can be arbitrarily far from the base, so assert the element offset fits in a 32-bit int
+     * rather than silently truncating it into a wild address. */
+    base_loc_ptr = buf_loc[0];
     MPI_Get_address(buf_loc[0], &base_loc);
+    for (i = 0; i < count; i++) {
+      MPI_Get_address(buf_loc[i], &loc_addr[i]);
+      if (loc_addr[i] < base_loc) { base_loc = loc_addr[i]; base_loc_ptr = buf_loc[i]; }
+    }
 
     for (i = 0; i < count; i++) {
-      MPI_Aint target_rem, local_addr;
-      MPI_Get_address(buf_loc[i], &local_addr);
+      MPI_Aint target_rem, off_loc;
       MPI_Get_address(buf_rem[i], &target_rem);
-      disp_loc[i]  = (local_addr - base_loc)/type_size;   /* element offset from buf_loc[0] */
-      disp_rem[i]  = (target_rem - base_rem)/type_size;
+      off_loc      = (loc_addr[i] - base_loc)/type_size;  /* element offset from base (>= 0) */
+      disp_rem[i]  = (target_rem - base_rem)/type_size;    /* element offset within the window */
       block_len[i] = elem_count;
 
-      ARMCII_Assert_msg((local_addr - base_loc) % type_size == 0, "Local transfer offset is not a multiple of type size");
+      ARMCII_Assert_msg((loc_addr[i] - base_loc) % type_size == 0, "Local transfer offset is not a multiple of type size");
+      ARMCII_Assert_msg(off_loc <= INT_MAX, "Local segment span exceeds 32-bit element displacement; use ARMCI_IOV_METHOD=BATCHED");
       ARMCII_Assert_msg((target_rem - base_rem) % type_size == 0, "Transfer size is not a multiple of type size");
       ARMCII_Assert_msg(disp_rem[i] >= 0 && disp_rem[i] < dst_win_size, "Invalid remote pointer");
       ARMCII_Assert_msg(((uint8_t*)buf_rem[i]) + block_len[i] <= ((uint8_t*)dst_win_base) + dst_win_size, "Transfer exceeds buffer length");
+      disp_loc[i]  = (int)off_loc;
     }
 
     /* Optionally chunk the blocks across several ops so the flattened datatype
@@ -369,15 +385,15 @@ int ARMCII_Iov_op_datatype(enum ARMCII_Op_e op, void **src, void **dst, int coun
 
       switch(op) {
         case ARMCII_OP_PUT:
-          gmr_put_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+          gmr_put_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
           flush_local = 1;
           break;
         case ARMCII_OP_GET:
-          gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, buf_loc[0], 1, type_loc, proc);
+          gmr_get_typed(mreg, MPI_BOTTOM, 1, type_rem, base_loc_ptr, 1, type_loc, proc);
           flush_local = 0;
           break;
         case ARMCII_OP_ACC:
-          gmr_accumulate_typed(mreg, buf_loc[0], 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
+          gmr_accumulate_typed(mreg, base_loc_ptr, 1, type_loc, MPI_BOTTOM, 1, type_rem, proc);
           flush_local = 1;
           break;
         default:
