@@ -443,12 +443,20 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Use MPI_MODE_NOCHECK assertion */
   ARMCII_GLOBAL_STATE.rma_nocheck=ARMCII_Getenv_bool("ARMCI_RMA_NOCHECK", 1);
 
-  /* Use request-based RMA for atomic operations */
-  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", 1);
+  /* Use request-based RMA for atomic operations.  Disabled by default on Open MPI 4.x,
+   * whose UCX (<= 1.20) hangs on a contended request-based swap (Get/Rget_accumulate) on
+   * InfiniBand (https://github.com/open-mpi/ompi/issues/14173); fixed in Open MPI 5. */
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
+  const int use_request_atomics_default = 0;
+#else
+  const int use_request_atomics_default = 1;
+#endif
+  ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", use_request_atomics_default);
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
   if (ARMCII_GLOBAL_STATE.use_request_atomics) {
       ARMCII_Warning("MPI request-based atomics are buggy with Open-MPI 4.x UCX on IB"
-		     " (https://github.com/open-mpi/ompi/issues/14173).\n");
+		     " (https://github.com/open-mpi/ompi/issues/14173); "
+		     "set ARMCI_USE_REQUEST_ATOMICS=0 to disable.\n");
   }
 #endif
 
