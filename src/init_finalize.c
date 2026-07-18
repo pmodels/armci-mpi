@@ -293,8 +293,30 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Max number of blocks packed into a single datatype op in the DIRECT IOV method.
    * 0 = unlimited (one op for all blocks).  Chunking bounds the flattened datatype
    * descriptor so it does not overflow transport limits (e.g. the UCX active-message
-   * header) or trip MPI RMA datatype-accumulate bugs on large operations. */
-  ARMCII_GLOBAL_STATE.iov_dtype_chunk      = ARMCII_Getenv_int("ARMCI_IOV_DTYPE_CHUNK", 0);
+   * header) or trip MPI RMA datatype-accumulate bugs on large operations.
+   *
+   * Implementation-aware default (overridable by ARMCI_IOV_DTYPE_CHUNK):
+   *   Open MPI >= 5 : 1   -- osc/ucx segfaults in ompi_op_reduce when reducing a
+   *                          multi-block datatype Accumulate; a single block per op
+   *                          avoids it.  (OMPI <= 4 handles it, so 0.)
+   *   MPICH/MVAPICH : 256 -- ch4:ucx packs the datatype descriptor into the UCX
+   *                          active-message header, which overflows on IB past ~450
+   *                          blocks; 256 stays well under the limit with good perf,
+   *                          and is harmless on non-UCX/non-IB transports.
+   *   otherwise     : 0
+   */
+#if defined(OPEN_MPI)
+# if (OMPI_MAJOR_VERSION >= 5)
+  const int iov_dtype_chunk_default = 1;
+# else
+  const int iov_dtype_chunk_default = 0;
+# endif
+#elif defined(MPICH_VERSION)
+  const int iov_dtype_chunk_default = 256;
+#else
+  const int iov_dtype_chunk_default = 0;
+#endif
+  ARMCII_GLOBAL_STATE.iov_dtype_chunk      = ARMCII_Getenv_int("ARMCI_IOV_DTYPE_CHUNK", iov_dtype_chunk_default);
   if (ARMCII_GLOBAL_STATE.iov_dtype_chunk < 0) {
     ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_DTYPE_CHUNK (%d)\n", ARMCII_GLOBAL_STATE.iov_dtype_chunk);
     ARMCII_GLOBAL_STATE.iov_dtype_chunk = 0;
