@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 static void check(int rc, const char *operation)
 {
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
     const int block_count = argc > 2 ? atoi(argv[2]) : 10;
     const int block_length = argc > 3 ? atoi(argv[3]) : 20;
     const int free_before_wait = argc > 4 ? atoi(argv[4]) : 1;
+    const int split_origin = argc > 5 ? atoi(argv[5]) : 0;
     if (request_count <= 0 || block_count <= 0 || block_length <= 0) {
         MPI_Abort(MPI_COMM_WORLD, 2);
     }
@@ -56,34 +58,83 @@ int main(int argc, char **argv)
     check(MPI_Barrier(MPI_COMM_WORLD), "MPI_Barrier before Rput");
 
     if (rank == 1) {
-        double *source = malloc((size_t)element_count * sizeof(*source));
+        double *source = split_origin
+                             ? NULL
+                             : malloc((size_t)element_count * sizeof(*source));
+        double **segments = split_origin
+                                ? malloc((size_t)request_count *
+                                         (size_t)block_count * sizeof(*segments))
+                                : NULL;
         int *displacements = malloc((size_t)block_count * sizeof(*displacements));
+        int *target_displacements =
+            malloc((size_t)block_count * sizeof(*target_displacements));
         MPI_Request *requests = malloc((size_t)request_count * sizeof(*requests));
         MPI_Datatype *origin_types =
             malloc((size_t)request_count * sizeof(*origin_types));
         MPI_Datatype *target_types =
             malloc((size_t)request_count * sizeof(*target_types));
-        if (source == NULL || displacements == NULL || requests == NULL ||
+        if ((!split_origin && source == NULL) ||
+            (split_origin && segments == NULL) || displacements == NULL ||
+            target_displacements == NULL || requests == NULL ||
             origin_types == NULL || target_types == NULL) {
             MPI_Abort(MPI_COMM_WORLD, 2);
         }
-        for (int i = 0; i < element_count; ++i) source[i] = (double)(i + 1);
+        if (split_origin) {
+            for (int request = 0; request < request_count; ++request) {
+                for (int block = 0; block < block_count; ++block) {
+                    const int segment = request * block_count + block;
+                    segments[segment] = malloc((size_t)block_length *
+                                               sizeof(*segments[segment]));
+                    if (segments[segment] == NULL) MPI_Abort(MPI_COMM_WORLD, 2);
+                    const int first = request * request_span + block * stride;
+                    for (int element = 0; element < block_length; ++element) {
+                        segments[segment][element] = (double)(first + element + 1);
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < element_count; ++i) source[i] = (double)(i + 1);
+        }
 
         for (int request = 0; request < request_count; ++request) {
+            double *origin_base = source;
+            if (split_origin) {
+                origin_base = segments[request * block_count];
+                for (int block = 1; block < block_count; ++block) {
+                    double *candidate = segments[request * block_count + block];
+                    if ((uintptr_t)candidate < (uintptr_t)origin_base) {
+                        origin_base = candidate;
+                    }
+                }
+            }
             for (int block = 0; block < block_count; ++block) {
-                displacements[block] = request * request_span + block * stride;
+                target_displacements[block] =
+                    request * request_span + block * stride;
+                if (split_origin) {
+                    double *segment = segments[request * block_count + block];
+                    const uintptr_t bytes =
+                        (uintptr_t)segment - (uintptr_t)origin_base;
+                    if (bytes % sizeof(*segment) != 0 ||
+                        bytes / sizeof(*segment) > INT32_MAX) {
+                        MPI_Abort(MPI_COMM_WORLD, 2);
+                    }
+                    displacements[block] = (int)(bytes / sizeof(*segment));
+                } else {
+                    displacements[block] =
+                        request * request_span + block * stride;
+                }
             }
             check(MPI_Type_create_indexed_block(block_count, block_length,
                                                 displacements, MPI_DOUBLE,
                                                 &origin_types[request]),
                   "MPI_Type_create_indexed_block origin");
             check(MPI_Type_create_indexed_block(block_count, block_length,
-                                                displacements, MPI_DOUBLE,
+                                                target_displacements, MPI_DOUBLE,
                                                 &target_types[request]),
                   "MPI_Type_create_indexed_block target");
             check(MPI_Type_commit(&origin_types[request]), "MPI_Type_commit origin");
             check(MPI_Type_commit(&target_types[request]), "MPI_Type_commit target");
-            check(MPI_Rput(source, 1, origin_types[request], 0, 0, 1,
+            check(MPI_Rput(origin_base, 1, origin_types[request], 0, 0, 1,
                            target_types[request], window, &requests[request]),
                   "MPI_Rput");
             if (free_before_wait) {
@@ -104,7 +155,14 @@ int main(int argc, char **argv)
         free(target_types);
         free(origin_types);
         free(requests);
+        free(target_displacements);
         free(displacements);
+        if (split_origin) {
+            for (int segment = 0; segment < request_count * block_count; ++segment) {
+                free(segments[segment]);
+            }
+        }
+        free(segments);
         free(source);
     }
 
@@ -121,9 +179,10 @@ int main(int argc, char **argv)
                 }
             }
         }
-        printf("requests=%d blocks=%d length=%d free_before_wait=%d wrong=%d %s\n",
-               request_count, block_count, block_length, free_before_wait, wrong,
-               wrong == 0 ? "OK" : "WRONG");
+        printf("requests=%d blocks=%d length=%d free_before_wait=%d "
+               "split_origin=%d wrong=%d %s\n",
+               request_count, block_count, block_length, free_before_wait,
+               split_origin, wrong, wrong == 0 ? "OK" : "WRONG");
     }
     check(MPI_Win_free(&window), "MPI_Win_free");
     check(MPI_Finalize(), "MPI_Finalize");

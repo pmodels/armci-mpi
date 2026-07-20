@@ -52,18 +52,34 @@ int main(int argc, char **argv)
     check(MPI_Comm_size(MPI_COMM_WORLD, &size), "MPI_Comm_size");
     const char *mode = argc > 1 ? argv[1] : "rget";
     const int loops = argc > 2 ? atoi(argv[2]) : 200;
+    const char *window_mode = argc > 3 ? argv[3] : "allocate";
     if (strcmp(mode, "fetch") != 0 && strcmp(mode, "getacc") != 0 &&
         strcmp(mode, "rget") != 0 && strcmp(mode, "rget-flush") != 0) {
         if (rank == 0) fprintf(stderr, "invalid mode: %s\n", mode);
+        MPI_Abort(MPI_COMM_WORLD, 2);
+    }
+    if (strcmp(window_mode, "allocate") != 0 &&
+        strcmp(window_mode, "create") != 0) {
+        if (rank == 0) fprintf(stderr, "invalid window mode: %s\n", window_mode);
         MPI_Abort(MPI_COMM_WORLD, 2);
     }
 
     int *base = NULL;
     MPI_Win window = MPI_WIN_NULL;
     const MPI_Aint bytes = rank == 0 ? (MPI_Aint)sizeof(*base) : 0;
-    check(MPI_Win_allocate(bytes, sizeof(*base), MPI_INFO_NULL, MPI_COMM_WORLD,
-                           &base, &window),
-          "MPI_Win_allocate");
+    if (strcmp(window_mode, "allocate") == 0) {
+        check(MPI_Win_allocate(bytes, sizeof(*base), MPI_INFO_NULL, MPI_COMM_WORLD,
+                               &base, &window),
+              "MPI_Win_allocate");
+    } else {
+        if (rank == 0) {
+            base = malloc(sizeof(*base));
+            if (base == NULL) MPI_Abort(MPI_COMM_WORLD, 2);
+        }
+        check(MPI_Win_create(base, bytes, sizeof(*base), MPI_INFO_NULL,
+                             MPI_COMM_WORLD, &window),
+              "MPI_Win_create");
+    }
     check(MPI_Win_set_errhandler(window, MPI_ERRORS_RETURN),
           "MPI_Win_set_errhandler");
     if (rank == 0) *base = 0;
@@ -86,10 +102,12 @@ int main(int argc, char **argv)
     check(MPI_Win_unlock_all(window), "MPI_Win_unlock_all");
     if (rank == 0) {
         const int expected = loops * size;
-        printf("mode=%s loops=%d final=%d expected=%d %s\n", mode, loops, *base,
-               expected, *base == expected ? "OK" : "WRONG");
+        printf("mode=%s loops=%d window=%s final=%d expected=%d %s\n", mode,
+               loops, window_mode, *base, expected,
+               *base == expected ? "OK" : "WRONG");
     }
     check(MPI_Win_free(&window), "MPI_Win_free");
+    if (strcmp(window_mode, "create") == 0) free(base);
     check(MPI_Finalize(), "MPI_Finalize");
     return 0;
 }
