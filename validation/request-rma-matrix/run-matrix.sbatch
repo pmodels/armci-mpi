@@ -80,6 +80,12 @@ case "$stack" in
         ;;
 esac
 
+if [[ $stack == mpich* ]]; then
+    check_launcher=(mpiexec -n 2 -ppn 1)
+else
+    check_launcher=(mpirun --timeout 110 -n 2 --map-by ppr:1:node)
+fi
+
 choose_ib_device()
 {
     local sysdev state layer
@@ -198,43 +204,51 @@ clear_armci_environment()
     done
 }
 
-run_test()
+run_check()
 {
-    local profile=$1 test_name=$2 settings=$3
-    local test_path=tests/$test_name
-    local safe_test=${test_name//\//-}
-    local log_file=$log_root/$profile-$safe_test.log
-    local started finished elapsed rc result detail
+    local profile=$1 settings=$2
+    local profile_log_root=$log_root/$profile
+    local check_log=$profile_log_root/check.log
+    local suite_log=$profile_log_root/test-suite.log
+    local started finished elapsed rc result detail total passed failed skipped
 
     clear_armci_environment
     if [[ -n $settings ]]; then
         eval "export $settings"
     fi
     export ARMCI_VERBOSE=2
+    mkdir -p "$profile_log_root"
+    find . -type f -name '*.log' -delete
 
     started=$(date +%s)
-    timeout --kill-after=10s 120s "${launcher[@]}" "$test_path" >"$log_file" 2>&1
+    make check MPIEXEC="timeout --kill-after=10s 120s ${check_launcher[*]}" \
+        >"$check_log" 2>&1
     rc=$?
     finished=$(date +%s)
     elapsed=$((finished - started))
 
-    if [[ $rc -eq 124 || $rc -eq 137 ]]; then
-        result=HANG
-    elif LC_ALL=C grep -aEqi 'Bailing out|CORRUPT|WRONG|Segmentation fault|Assertion.*failed|ERROR:' "$log_file"; then
-        result=FAIL
-    elif [[ $rc -ne 0 ]]; then
-        result=FAIL
-    else
+    find . -type f -name '*.log' -exec cp --parents '{}' "$profile_log_root" ';'
+    total=$(awk '/^# TOTAL:/ {print $3}' "$suite_log")
+    passed=$(awk '/^# PASS:/ {print $3}' "$suite_log")
+    failed=$(awk '/^# FAIL:/ {print $3}' "$suite_log")
+    skipped=$(awk '/^# SKIP:/ {print $3}' "$suite_log")
+    total=${total:-0}
+    passed=${passed:-0}
+    failed=${failed:-0}
+    skipped=${skipped:-0}
+
+    if [[ $rc -eq 0 && $total -eq 43 && $passed -eq 43 && $failed -eq 0 ]]; then
         result=PASS
+    else
+        result=FAIL
     fi
 
-    detail=$(LC_ALL=C grep -aEi 'Bailing out|CORRUPT|WRONG|Segmentation fault|Assertion.*failed|ERROR:|IOV_METHOD' "$log_file" \
-        | tail -1 | tr '\t\n' '  ')
+    detail="$passed/$total passed; FAIL=$failed SKIP=$skipped"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\n' \
-        "$platform" "$tree" "$stack" "$network" "$profile" "$test_name" \
+        "$platform" "$tree" "$stack" "$network" "$profile" make-check \
         "$result" "$rc" "$elapsed" "$detail" >>"$result_file"
-    printf '%-24s %-38s %-4s rc=%-3d %3ds %s\n' \
-        "$profile" "$test_name" "$result" "$rc" "$elapsed" "$detail"
+    printf '%-24s %-4s rc=%-3d %4ds %s\n' \
+        "$profile" "$result" "$rc" "$elapsed" "$detail"
 }
 
 profiles=(
@@ -271,27 +285,11 @@ profiles=(
 if [[ $tree == pr ]]; then
     for profile_entry in "${profiles[@]}"; do
         IFS='|' read -r profile settings <<<"$profile_entry"
-        run_test "$profile" contrib/armci-test "$settings"
+        run_check "$profile" "$settings"
     done
 else
-    run_test default contrib/armci-test ''
+    run_check default ''
 fi
-
-focused_tests=(
-    test_onesided
-    test_onesided_shared
-    test_putv
-    test_accs
-    test_puts_gets
-    test_rmw_fadd
-    test_mutex
-    contrib/non-blocking/simple
-)
-for test_name in "${focused_tests[@]}"; do
-    if [[ -x tests/$test_name ]]; then
-        run_test default "$test_name" ''
-    fi
-done
 
 clear_armci_environment
 echo "summary: $(awk -F '\t' 'NR>1 {n[$7]++} END {for (r in n) printf "%s=%d ", r, n[r]}' "$result_file")"

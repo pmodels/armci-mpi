@@ -19,7 +19,7 @@ tested combination.
 submits one 20-element array on each requested partition.  Each array element
 selects one source tree, MPI/backend build, and fabric (`ib` or `tcp`).
 
-The request-based tree runs `tests/contrib/armci-test` for these profiles:
+The request-based tree runs the complete `make check` suite for these profiles:
 
 | Profile | Environment change from defaults |
 | --- | --- |
@@ -44,11 +44,11 @@ The request-based tree runs `tests/contrib/armci-test` for these profiles:
 | `strided_iov/direct` | both `ARMCI_STRIDED_METHOD` values |
 | `strict_completion` | requests, target flushes, full flushes, and checked locks |
 
-The default profile also runs focused scalar, strided, VECTOR, atomic, mutex,
-and nonblocking-handle tests on both trees.  Every test runs with
-`ARMCI_VERBOSE=2`, and complete stdout and stderr are retained under the shared
-result directory.  The explicit `iov_direct` profile therefore records whether
-Open MPI forced VECTOR operations back to `BATCHED`.
+The baseline tree runs the complete suite with the default environment.  A
+tuple passes only when `make check` exits successfully and its Automake summary
+reports exactly `TOTAL: 43`, `PASS: 43`, and `FAIL: 0`.  Every test runs with
+`ARMCI_VERBOSE=2`.  The complete `make check` output, suite summary, and
+individual test logs are retained in a profile-specific result directory.
 
 All TCP cases run over IPoIB, not the nodes' native Ethernet adapters.  The
 runner requires `ib0_mlx5` to be up, to report the InfiniBand ARP hardware type,
