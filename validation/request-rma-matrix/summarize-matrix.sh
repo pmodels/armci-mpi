@@ -31,9 +31,9 @@ if (( first )); then
 fi
 
 {
-    printf 'platform\ttree\tstack\tnetwork\tresult\tcount\n'
+    printf 'platform\ttree\tstack\tnetwork\tallocate\tstrided\tvector\tatomicity\tflush_request_atomics\tresult\tcount\n'
     awk -F '\t' 'BEGIN {OFS="\t"}
-        NR > 1 {count[$1 FS $2 FS $3 FS $4 FS $7]++}
+        NR > 1 {count[$1 FS $2 FS $3 FS $4 FS $11 FS $12 FS $13 FS $14 FS $15 FS $7]++}
         END {for (key in count) print key, count[key]}' "$combined" | sort
 } >"$summary"
 

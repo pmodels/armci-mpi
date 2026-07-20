@@ -38,7 +38,7 @@ log_root=$MATRIX_RESULTS_ROOT/logs/$result_stem
 local_build=/tmp/armci-request-matrix-${SLURM_ARRAY_JOB_ID:-$$}-$case_index
 
 mkdir -p "$MATRIX_RESULTS_ROOT" "$log_root"
-printf 'platform\ttree\tstack\tnetwork\tprofile\ttest\tresult\trc\tseconds\tdetail\n' >"$result_file"
+printf 'platform\ttree\tstack\tnetwork\tprofile\ttest\tresult\trc\tseconds\tdetail\tallocate\tstrided\tvector\tatomicity\tflush_request_atomics\n' >"$result_file"
 
 if [[ ! -x $shared_build/tests/contrib/armci-test ]]; then
     echo "missing build: $shared_build" >&2
@@ -128,11 +128,23 @@ fi
 
 if [[ $stack == ompi5-ofi && $network == tcp ]]; then
     detail="Open MPI 5 has no OSC component capable of RMA over the libfabric TCP provider"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$platform" "$tree" "$stack" "$network" unavailable unavailable \
-        SKIP 0 0 "$detail" >>"$result_file"
+    for allocate in 0 1; do
+        for strided in DIRECT IOV; do
+            for vector in DIRECT BATCHED; do
+                for atomicity in 0 1; do
+                    for flush_request_atomics in 0 1; do
+                        profile="allocate_${allocate}-strided_${strided}-vector_${vector}-atomicity_${atomicity}-flush_${flush_request_atomics}"
+                        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                            "$platform" "$tree" "$stack" "$network" "$profile" make-check \
+                            SKIP 0 0 "$detail" "$allocate" "$strided" "$vector" \
+                            "$atomicity" "$flush_request_atomics" >>"$result_file"
+                    done
+                done
+            done
+        done
+    done
     echo "backend=$backend network=$network ib_device=none ipoib_interface=$ipoib_interface"
-    echo "summary: SKIP=1 ($detail)"
+    echo "summary: SKIP=32 ($detail)"
     echo "result_file=$result_file"
     exit 0
 fi
@@ -206,7 +218,8 @@ clear_armci_environment()
 
 run_check()
 {
-    local profile=$1 settings=$2
+    local profile=$1 settings=$2 allocate=$3 strided=$4 vector=$5 atomicity=$6
+    local flush_request_atomics=$7
     local profile_log_root=$log_root/$profile
     local check_log=$profile_log_root/check.log
     local suite_log=$profile_log_root/test-suite.log
@@ -244,52 +257,28 @@ run_check()
     fi
 
     detail="$passed/$total passed; FAIL=$failed SKIP=$skipped"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$platform" "$tree" "$stack" "$network" "$profile" make-check \
-        "$result" "$rc" "$elapsed" "$detail" >>"$result_file"
+        "$result" "$rc" "$elapsed" "$detail" "$allocate" "$strided" \
+        "$vector" "$atomicity" "$flush_request_atomics" >>"$result_file"
     printf '%-24s %-4s rc=%-3d %4ds %s\n' \
         "$profile" "$result" "$rc" "$elapsed" "$detail"
 }
 
-profiles=(
-    'default|'
-    'request_atomics_0|ARMCI_USE_REQUEST_ATOMICS=0'
-    'request_atomics_1|ARMCI_USE_REQUEST_ATOMICS=1'
-    'request_atomics_flush|ARMCI_USE_REQUEST_ATOMICS=1 ARMCI_FLUSH_REQUEST_ATOMICS=1'
-    'explicit_progress_0|ARMCI_EXPLICIT_NB_PROGRESS=0'
-    'explicit_progress_1|ARMCI_EXPLICIT_NB_PROGRESS=1'
-    'rma_atomicity_0|ARMCI_RMA_ATOMICITY=0'
-    'rma_atomicity_1|ARMCI_RMA_ATOMICITY=1'
-    'no_flush_local_1|ARMCI_NO_FLUSH_LOCAL=1'
-    'rma_nocheck_0|ARMCI_RMA_NOCHECK=0'
-    'rma_nocheck_1|ARMCI_RMA_NOCHECK=1'
-    'win_create|ARMCI_USE_WIN_ALLOCATE=0'
-    'alloc_shm_0|ARMCI_USE_ALLOC_SHM=0'
-    'disable_shm_acc_1|ARMCI_DISABLE_SHM_ACC=1'
-    'same_op_1|ARMCI_USE_SAME_OP=1'
-    'ordering_none|ARMCI_RMA_ORDERING=none'
-    'barrier_syncs_1|ARMCI_MSG_BARRIER_SYNCS=1'
-    'shr_copy|ARMCI_SHR_BUF_METHOD=COPY'
-    'shr_noguard|ARMCI_SHR_BUF_METHOD=NOGUARD'
-    'iov_auto|ARMCI_IOV_METHOD=AUTO'
-    'iov_consrv|ARMCI_IOV_METHOD=CONSRV'
-    'iov_batched|ARMCI_IOV_METHOD=BATCHED'
-    'iov_direct|ARMCI_IOV_METHOD=DIRECT'
-    'iov_batched_limit_1|ARMCI_IOV_METHOD=BATCHED ARMCI_IOV_BATCHED_LIMIT=1'
-    'iov_checks_1|ARMCI_IOV_CHECKS=1'
-    'strided_iov|ARMCI_STRIDED_METHOD=IOV'
-    'strided_direct|ARMCI_STRIDED_METHOD=DIRECT'
-    'strict_completion|ARMCI_USE_REQUEST_ATOMICS=1 ARMCI_FLUSH_REQUEST_ATOMICS=1 ARMCI_NO_FLUSH_LOCAL=1 ARMCI_RMA_NOCHECK=0 ARMCI_EXPLICIT_NB_PROGRESS=0'
-)
-
-if [[ $tree == pr ]]; then
-    for profile_entry in "${profiles[@]}"; do
-        IFS='|' read -r profile settings <<<"$profile_entry"
-        run_check "$profile" "$settings"
+for allocate in 0 1; do
+    for strided in DIRECT IOV; do
+        for vector in DIRECT BATCHED; do
+            for atomicity in 0 1; do
+                for flush_request_atomics in 0 1; do
+                    profile="allocate_${allocate}-strided_${strided}-vector_${vector}-atomicity_${atomicity}-flush_${flush_request_atomics}"
+                    settings="ARMCI_USE_WIN_ALLOCATE=$allocate ARMCI_STRIDED_METHOD=$strided ARMCI_IOV_METHOD=$vector ARMCI_RMA_ATOMICITY=$atomicity ARMCI_USE_REQUEST_ATOMICS=1 ARMCI_FLUSH_REQUEST_ATOMICS=$flush_request_atomics"
+                    run_check "$profile" "$settings" "$allocate" "$strided" \
+                        "$vector" "$atomicity" "$flush_request_atomics"
+                done
+            done
+        done
     done
-else
-    run_check default ''
-fi
+done
 
 clear_armci_environment
 echo "summary: $(awk -F '\t' 'NR>1 {n[$7]++} END {for (r in n) printf "%s=%d ", r, n[r]}' "$result_file")"
