@@ -125,6 +125,11 @@ if [[ $backend == ucx ]]; then
     else
         export UCX_TLS=tcp,sm,self
         unset UCX_NET_DEVICES
+        if [[ $stack == ompi* ]]; then
+            export OMPI_MCA_pml=ob1
+            export OMPI_MCA_btl=self,tcp
+            export OMPI_MCA_osc=ucx
+        fi
     fi
 else
     unset UCX_TLS UCX_NET_DEVICES
@@ -135,6 +140,12 @@ else
     else
         export FI_PROVIDER=tcp
         unset FI_VERBS_DEVICE_NAME FI_VERBS_IFACE FI_VERBS_PREFER_XRC FI_OFI_RXM_USE_SRX
+        if [[ $stack == ompi5-ofi ]]; then
+            export OMPI_MCA_pml=ob1
+            unset OMPI_MCA_mtl
+            export OMPI_MCA_btl=self,ofi
+            export OMPI_MCA_btl_ofi_mode=2
+        fi
     fi
 fi
 
@@ -248,7 +259,7 @@ focused_tests=(
     test_puts_gets
     test_rmw_fadd
     test_mutex
-    contrib/non-blocking/overlap
+    contrib/non-blocking/simple
 )
 for test_name in "${focused_tests[@]}"; do
     if [[ -x tests/$test_name ]]; then

@@ -50,6 +50,13 @@ and nonblocking-handle tests on both trees.  Every test runs with
 result directory.  The explicit `iov_direct` profile therefore records whether
 Open MPI forced VECTOR operations back to `BATCHED`.
 
+For TCP, Open MPI uses transport-specific component selections.  UCX RMA uses
+the UCX OSC while OB1/TCP carries MPI point-to-point traffic, because the UCX
+PML intentionally refuses a TCP-only UCX configuration.  OFI uses OB1 with the
+OFI BTL in two-sided-and-one-sided mode, because the OFI MTL rejects the TCP
+provider.  These selections keep the ARMCI window path on the backend named by
+the matrix while allowing MPI control traffic to start reliably.
+
 Typical use is:
 
 ```sh
