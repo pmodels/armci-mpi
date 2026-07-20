@@ -50,14 +50,22 @@ and nonblocking-handle tests on both trees.  Every test runs with
 result directory.  The explicit `iov_direct` profile therefore records whether
 Open MPI forced VECTOR operations back to `BATCHED`.
 
+All TCP cases run over IPoIB, not the nodes' native Ethernet adapters.  The
+runner requires `ib0_mlx5` to be up, to report the InfiniBand ARP hardware type,
+and to have an IPv4 address on every allocated node.  It binds UCX with
+`UCX_NET_DEVICES`, libfabric with `FI_TCP_IFACE`, and Open MPI's TCP BTL and UCX
+OSC with their interface/device selection variables.
+
 For TCP, Open MPI uses transport-specific component selections.  UCX RMA uses
 the UCX OSC while OB1/TCP carries MPI point-to-point traffic, because the UCX
-PML intentionally refuses a TCP-only UCX configuration.  OFI uses OB1 with the
-OFI BTL in two-sided-and-one-sided mode, because the OFI MTL rejects the TCP
-provider.  The runner explicitly admits TCP through the UCX OSC and OFI BTL
-component allow-lists, whose Open MPI defaults prefer RDMA-capable providers.
-These selections keep the ARMCI window path on the backend named by the matrix
-while allowing MPI control traffic to start reliably.
+PML intentionally refuses a TCP-only UCX configuration.  OFI/TCP uses the OFI
+MTL for messages and `osc=pt2pt` for RMA over those messages.  Open MPI's OFI
+BTL cannot use the TCP provider because the BTL requires native RDMA and atomic
+capabilities.  The runner explicitly admits TCP through the UCX OSC and OFI
+common provider allow-lists, whose Open MPI defaults prefer RDMA-capable
+providers.  These selections keep all network traffic on the backend named by
+the matrix while allowing MPI control traffic and RMA windows to start
+reliably.
 
 Typical use is:
 
