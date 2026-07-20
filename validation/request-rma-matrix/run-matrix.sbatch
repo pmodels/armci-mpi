@@ -129,6 +129,8 @@ if [[ $backend == ucx ]]; then
             export OMPI_MCA_pml=ob1
             export OMPI_MCA_btl=self,tcp
             export OMPI_MCA_osc=ucx
+            export OMPI_MCA_osc_ucx_tls=tcp
+            export OMPI_MCA_osc_ucx_devices=any
         fi
     fi
 else
@@ -145,6 +147,8 @@ else
             unset OMPI_MCA_mtl
             export OMPI_MCA_btl=self,ofi
             export OMPI_MCA_btl_ofi_mode=2
+            export OMPI_MCA_btl_ofi_provider_include=tcp
+            export OMPI_MCA_btl_ofi_provider_exclude=
         fi
     fi
 fi
