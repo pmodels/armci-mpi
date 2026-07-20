@@ -12,7 +12,7 @@ set -uo pipefail
 
 mpi_releases=${MPI_RELEASES:-$HOME/MPI/external/mpi-releases}
 hpcx_root=${HPCX_ROOT:-/global/software/rocky-9.x86_64/modules/gcc/11/hpcx/2.50}
-rdma_compat=${RDMA_COMPAT:-/global/scratch/users/$USER/armci-val/rdmacore}
+libfabric_compat=${LIBFABRIC_COMPAT:-$MATRIX_BUILD_ROOT/libfabric-2.6.0-rdma114}
 
 cases=()
 for tree in master pr; do
@@ -108,9 +108,12 @@ if [[ $platform == rome ]]; then
         source "$mpi_releases/env/preload-ucx-1.21.x-rdma114.sh" >/dev/null
         export UCX_IB_MLX5_DEVX=try
         export UCX_IB_PCI_RELAXED_ORDERING=auto
-    elif [[ $network == ib ]]; then
-        export LD_LIBRARY_PATH=$rdma_compat${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-        export IBV_DRIVERS_PATH=$rdma_compat/libibverbs
+    elif [[ $backend == ofi ]]; then
+        if [[ ! -f $libfabric_compat/lib/libfabric.so ]]; then
+            echo "missing Rome-compatible libfabric: $libfabric_compat" >&2
+            exit 2
+        fi
+        export LD_LIBRARY_PATH=$libfabric_compat/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
     fi
 fi
 
