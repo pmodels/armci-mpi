@@ -9,7 +9,7 @@ non-request baseline on two nodes.  It covers:
 - UCX `rc_x` and OFI `verbs;ofi_rxm` over InfiniBand;
 - UCX and OFI TCP providers;
 - Iris, Thor, and Rome x86_64 nodes; and
-- the older rdma-core-compatible UCX and verbs libraries on Rome.
+- UCX and libfabric builds compiled against Rome's older rdma-core.
 
 The available HPC-X Open MPI 4 installation does not contain an OFI MTL, BTL,
 or OSC component, so Open MPI 4/OFI is unsupported and is not mislabeled as a
@@ -56,10 +56,18 @@ Typical use is:
 validation/request-rma-matrix/build-matrix.sh \
     /path/to/src-master /path/to/src-pr /shared/path/builds
 
+LIBFABRIC_SOURCE=$HOME/MPI/external/mpi-releases/src/libfabric-2.6.0 \
+LIBFABRIC_INSTALL=/shared/path/builds/libfabric-2.6.0-rdma114 \
+sbatch validation/request-rma-matrix/build-libfabric-rome.sbatch
+
 SBATCH_ACCOUNT=project \
 validation/request-rma-matrix/submit-matrix.sh \
     /shared/path/builds /shared/path/results
 ```
+
+Wait for the Rome libfabric build to finish before submitting the matrix.  Set
+`LIBFABRIC_COMPAT` during submission if its install path differs from
+`BUILD_DIRECTORY/libfabric-2.6.0-rdma114`.
 
 The result directory contains one TSV and one log directory per array task.
 Run `summarize-matrix.sh RESULTS` after all jobs finish to produce a combined
