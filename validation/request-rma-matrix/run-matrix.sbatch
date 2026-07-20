@@ -16,6 +16,7 @@ libfabric_compat=${LIBFABRIC_COMPAT:-$MATRIX_BUILD_ROOT/libfabric-2.6.0-rdma114}
 mpi_check_timeout=${MATRIX_MPI_CHECK_TIMEOUT:-110}
 make_check_timeout=${MATRIX_MAKE_CHECK_TIMEOUT:-300}
 profile_filter=${MATRIX_PROFILE_FILTER:-}
+use_request_atomics=${MATRIX_USE_REQUEST_ATOMICS:-1}
 
 cases=()
 for tree in master pr; do
@@ -200,6 +201,7 @@ fi
 echo "case=$result_stem nodes=$SLURM_NODELIST"
 echo "mpi=$(${launcher[0]} --version 2>&1 | head -1)"
 echo "backend=$backend network=$network ib_device=${ib_device:-none} ipoib_interface=${ipoib_interface:-none}"
+echo "use_request_atomics=$use_request_atomics"
 echo "source_commit=$(<matrix-source-commit.txt)"
 echo "placement=$(timeout 120 "${launcher[@]}" hostname 2>&1 | sort | uniq -c | tr '\n' ' ')"
 
@@ -279,7 +281,7 @@ for allocate in 0 1; do
                     if [[ -n $profile_filter && $profile != "$profile_filter" ]]; then
                         continue
                     fi
-                    settings="ARMCI_USE_WIN_ALLOCATE=$allocate ARMCI_STRIDED_METHOD=$strided ARMCI_IOV_METHOD=$vector ARMCI_RMA_ATOMICITY=$atomicity ARMCI_USE_REQUEST_ATOMICS=1 ARMCI_FLUSH_REQUEST_ATOMICS=$flush_request_atomics"
+                    settings="ARMCI_USE_WIN_ALLOCATE=$allocate ARMCI_STRIDED_METHOD=$strided ARMCI_IOV_METHOD=$vector ARMCI_RMA_ATOMICITY=$atomicity ARMCI_USE_REQUEST_ATOMICS=$use_request_atomics ARMCI_FLUSH_REQUEST_ATOMICS=$flush_request_atomics"
                     run_check "$profile" "$settings" "$allocate" "$strided" \
                         "$vector" "$atomicity" "$flush_request_atomics"
                 done
