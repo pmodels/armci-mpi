@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 static void check(int rc, const char *operation)
 {
@@ -35,8 +36,13 @@ int main(int argc, char **argv)
     const int split_origin = argc > 5 ? atoi(argv[5]) : 0;
     const int stride = block_length;
     const int origin_stride = argc > 6 ? atoi(argv[6]) : stride;
+    const char *operation = argc > 7 ? argv[7] : "rput";
     if (request_count <= 0 || block_count <= 0 || block_length <= 0 ||
         origin_stride < block_length) {
+        MPI_Abort(MPI_COMM_WORLD, 2);
+    }
+    if (strcmp(operation, "put") != 0 && strcmp(operation, "rput") != 0 &&
+        strcmp(operation, "raccumulate") != 0) {
         MPI_Abort(MPI_COMM_WORLD, 2);
     }
 
@@ -148,9 +154,22 @@ int main(int argc, char **argv)
                   "MPI_Type_create_indexed_block target");
             check(MPI_Type_commit(&origin_types[request]), "MPI_Type_commit origin");
             check(MPI_Type_commit(&target_types[request]), "MPI_Type_commit target");
-            check(MPI_Rput(origin_base, 1, origin_types[request], 0, 0, 1,
-                           target_types[request], window, &requests[request]),
-                  "MPI_Rput");
+            requests[request] = MPI_REQUEST_NULL;
+            if (strcmp(operation, "put") == 0) {
+                check(MPI_Put(origin_base, 1, origin_types[request], 0, 0, 1,
+                              target_types[request], window),
+                      "MPI_Put");
+            } else if (strcmp(operation, "raccumulate") == 0) {
+                check(MPI_Raccumulate(origin_base, 1, origin_types[request], 0,
+                                      0, 1, target_types[request], MPI_REPLACE,
+                                      window, &requests[request]),
+                      "MPI_Raccumulate");
+            } else {
+                check(MPI_Rput(origin_base, 1, origin_types[request], 0, 0, 1,
+                               target_types[request], window,
+                               &requests[request]),
+                      "MPI_Rput");
+            }
             if (free_before_wait) {
                 check(MPI_Type_free(&origin_types[request]), "MPI_Type_free origin");
                 check(MPI_Type_free(&target_types[request]), "MPI_Type_free target");
@@ -194,9 +213,10 @@ int main(int argc, char **argv)
             }
         }
         printf("requests=%d blocks=%d length=%d free_before_wait=%d "
-               "split_origin=%d origin_stride=%d wrong=%d %s\n",
+               "split_origin=%d origin_stride=%d operation=%s wrong=%d %s\n",
                request_count, block_count, block_length, free_before_wait,
-               split_origin, origin_stride, wrong, wrong == 0 ? "OK" : "WRONG");
+               split_origin, origin_stride, operation, wrong,
+               wrong == 0 ? "OK" : "WRONG");
     }
     check(MPI_Win_free(&window), "MPI_Win_free");
     check(MPI_Finalize(), "MPI_Finalize");
