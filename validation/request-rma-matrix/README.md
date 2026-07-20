@@ -58,14 +58,12 @@ OSC with their interface/device selection variables.
 
 For TCP, Open MPI uses transport-specific component selections.  UCX RMA uses
 the UCX OSC while OB1/TCP carries MPI point-to-point traffic, because the UCX
-PML intentionally refuses a TCP-only UCX configuration.  OFI/TCP uses the OFI
-MTL for messages and `osc=pt2pt` for RMA over those messages.  Open MPI's OFI
-BTL cannot use the TCP provider because the BTL requires native RDMA and atomic
-capabilities.  The runner explicitly admits TCP through the UCX OSC and OFI
-common provider allow-lists, whose Open MPI defaults prefer RDMA-capable
-providers.  These selections keep all network traffic on the backend named by
-the matrix while allowing MPI control traffic and RMA windows to start
-reliably.
+PML intentionally refuses a TCP-only UCX configuration.  Open MPI 5 OFI/TCP is
+reported as unavailable: its OFI BTL requires native RDMA and atomic
+capabilities that the libfabric TCP provider does not supply, and this Open MPI
+installation has no pt2pt OSC that could implement RMA over OFI MTL messages.
+MPICH 5 OFI/TCP remains fully exercised with `FI_PROVIDER=tcp` and
+`FI_TCP_IFACE=ib0_mlx5`.
 
 Typical use is:
 
