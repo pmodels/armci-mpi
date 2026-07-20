@@ -37,8 +37,8 @@ make install >"$install_dir/logs/install.log" 2>&1
     echo "source_commit=$(git -C "$source_dir" rev-parse HEAD)"
     echo "rdma_core=$(rpm -q rdma-core libibverbs 2>/dev/null | tr '\n' ' ')"
     ldd "$install_dir/lib/libfabric.so"
-    LD_LIBRARY_PATH=$install_dir/lib "$install_dir/bin/fi_info" -p tcp | head -40
-    LD_LIBRARY_PATH=$install_dir/lib "$install_dir/bin/fi_info" -p 'verbs;ofi_rxm' | head -80
+    LD_LIBRARY_PATH=$install_dir/lib "$install_dir/bin/fi_info" -p tcp
+    LD_LIBRARY_PATH=$install_dir/lib "$install_dir/bin/fi_info" -p 'verbs;ofi_rxm'
 } >"$install_dir/logs/verification.log" 2>&1
 
 echo "installed Rome-compatible libfabric in $install_dir"
