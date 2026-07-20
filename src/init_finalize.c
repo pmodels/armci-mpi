@@ -365,6 +365,17 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       ARMCII_Warning("Ignoring unknown value for ARMCI_IOV_METHOD (%s)\n", var);
   }
 
+#ifdef OPEN_MPI
+  if (ARMCII_GLOBAL_STATE.iov_method != ARMCII_IOV_BATCHED) {
+    if (ARMCI_GROUP_WORLD.rank == 0 && var != NULL) {
+      ARMCII_Warning("Ignoring ARMCI_IOV_METHOD=%s with Open MPI; "
+                     "VECTOR operations require BATCHED because Open MPI RMA "
+                     "is incorrect with indexed datatypes.\n", var);
+    }
+    ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+  }
+#endif
+
   var = ARMCII_Getenv("ARMCI_STRIDED_METHOD");
   if (var != NULL) {
     if (strcmp(var, "IOV") == 0) {
@@ -377,7 +388,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   }
 
 #ifdef OPEN_MPI
-  if (ARMCII_GLOBAL_STATE.iov_method == ARMCII_IOV_DIRECT || ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
+  if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("MPI Datatypes are broken in RMA in many versions of Open-MPI!\n");
 #if defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
@@ -859,4 +870,3 @@ int PARMCI_Finalize(void) {
 void ARMCI_Cleanup(void) {
   return;
 }
-

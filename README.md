@@ -196,6 +196,12 @@ Boolean environment variables are enabled when set to a value beginning with
   direct implementation that generates datatypes for the origin and target and
   issues a single operation using them.
 
+  Open MPI always uses `BATCHED` for VECTOR operations, regardless of this
+  setting.  Its RMA implementations can lose updates when
+  `MPI_Accumulate` uses indexed datatypes, including indexed datatypes that
+  describe a single predefined element.  `ARMCI_STRIDED_METHOD=DIRECT`
+  remains an independent choice for strided operations.
+
 `ARMCI_IOV_CHECKS` (boolean)
 
   Enable (expensive) IOV safety/debugging checks (not recommended for
