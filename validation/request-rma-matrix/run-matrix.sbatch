@@ -13,6 +13,9 @@ set -uo pipefail
 mpi_releases=${MPI_RELEASES:-$HOME/MPI/external/mpi-releases}
 hpcx_root=${HPCX_ROOT:-/global/software/rocky-9.x86_64/modules/gcc/11/hpcx/2.50}
 libfabric_compat=${LIBFABRIC_COMPAT:-$MATRIX_BUILD_ROOT/libfabric-2.6.0-rdma114}
+mpi_check_timeout=${MATRIX_MPI_CHECK_TIMEOUT:-110}
+make_check_timeout=${MATRIX_MAKE_CHECK_TIMEOUT:-300}
+profile_filter=${MATRIX_PROFILE_FILTER:-}
 
 cases=()
 for tree in master pr; do
@@ -63,19 +66,19 @@ case "$stack" in
         ;;
     ompi5-ucx)
         source "$mpi_releases/env/activate-openmpi-5.0.10-ucx.sh" >/dev/null
-        launcher=(mpirun --timeout 110 -n 4 --map-by ppr:2:node)
+        launcher=(mpirun --timeout "$mpi_check_timeout" -n 4 --map-by ppr:2:node)
         backend=ucx
         ;;
     ompi5-ofi)
         source "$mpi_releases/env/activate-openmpi-5.0.10-ofi.sh" >/dev/null
-        launcher=(mpirun --timeout 110 -n 4 --map-by ppr:2:node)
+        launcher=(mpirun --timeout "$mpi_check_timeout" -n 4 --map-by ppr:2:node)
         backend=ofi
         ;;
     ompi4-ucx)
         export HPCX_ENABLE_OMPI4=1
         source "$hpcx_root/hpcx-init-ompi.sh"
         hpcx_load
-        launcher=(mpirun --timeout 110 -n 4 --map-by ppr:2:node)
+        launcher=(mpirun --timeout "$mpi_check_timeout" -n 4 --map-by ppr:2:node)
         backend=ucx
         ;;
 esac
@@ -83,8 +86,9 @@ esac
 if [[ $stack == mpich* ]]; then
     check_launcher=(mpiexec -n 2 -ppn 1)
 else
-    check_launcher=(mpirun --timeout 110 -n 2 --map-by ppr:1:node)
+    check_launcher=(mpirun --timeout "$mpi_check_timeout" -n 2 --map-by ppr:1:node)
 fi
+mpi_command_timeout=$((mpi_check_timeout + 10))
 
 choose_ib_device()
 {
@@ -234,8 +238,8 @@ run_check()
     find . -type f -name '*.log' -delete
 
     started=$(date +%s)
-    timeout --kill-after=30s 300s \
-        make check MPIEXEC="timeout --kill-after=10s 120s ${check_launcher[*]}" \
+    timeout --kill-after=30s "${make_check_timeout}s" \
+        make check MPIEXEC="timeout --kill-after=10s ${mpi_command_timeout}s ${check_launcher[*]}" \
         >"$check_log" 2>&1
     rc=$?
     finished=$(date +%s)
@@ -272,6 +276,9 @@ for allocate in 0 1; do
             for atomicity in 0 1; do
                 for flush_request_atomics in 0 1; do
                     profile="allocate_${allocate}-strided_${strided}-vector_${vector}-atomicity_${atomicity}-flush_${flush_request_atomics}"
+                    if [[ -n $profile_filter && $profile != "$profile_filter" ]]; then
+                        continue
+                    fi
                     settings="ARMCI_USE_WIN_ALLOCATE=$allocate ARMCI_STRIDED_METHOD=$strided ARMCI_IOV_METHOD=$vector ARMCI_RMA_ATOMICITY=$atomicity ARMCI_USE_REQUEST_ATOMICS=1 ARMCI_FLUSH_REQUEST_ATOMICS=$flush_request_atomics"
                     run_check "$profile" "$settings" "$allocate" "$strided" \
                         "$vector" "$atomicity" "$flush_request_atomics"
