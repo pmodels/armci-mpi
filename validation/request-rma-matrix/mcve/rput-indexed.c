@@ -33,17 +33,26 @@ int main(int argc, char **argv)
     const int block_length = argc > 3 ? atoi(argv[3]) : 20;
     const int free_before_wait = argc > 4 ? atoi(argv[4]) : 1;
     const int split_origin = argc > 5 ? atoi(argv[5]) : 0;
-    if (request_count <= 0 || block_count <= 0 || block_length <= 0) {
+    const int stride = block_length + 3;
+    const int origin_stride = argc > 6 ? atoi(argv[6]) : stride;
+    if (request_count <= 0 || block_count <= 0 || block_length <= 0 ||
+        origin_stride < block_length) {
         MPI_Abort(MPI_COMM_WORLD, 2);
     }
 
-    const int stride = block_length + 3;
     const int request_span = block_count * stride;
-    const int element_count = request_count * request_span;
+    const int target_element_count = request_count * request_span;
+    const int origin_element_count =
+        request_count * block_count * origin_stride + block_length;
+    const int source_element_count =
+        origin_element_count > target_element_count
+            ? origin_element_count
+            : target_element_count;
     double *base = NULL;
     MPI_Win window = MPI_WIN_NULL;
     const MPI_Aint bytes = rank == 0
-                               ? (MPI_Aint)element_count * (MPI_Aint)sizeof(*base)
+                               ? (MPI_Aint)target_element_count *
+                                     (MPI_Aint)sizeof(*base)
                                : 0;
     check(MPI_Win_allocate(bytes, sizeof(*base), MPI_INFO_NULL, MPI_COMM_WORLD,
                            &base, &window),
@@ -51,7 +60,7 @@ int main(int argc, char **argv)
     check(MPI_Win_set_errhandler(window, MPI_ERRORS_RETURN),
           "MPI_Win_set_errhandler");
     if (rank == 0) {
-        for (int i = 0; i < element_count; ++i) base[i] = 0.0;
+        for (int i = 0; i < target_element_count; ++i) base[i] = 0.0;
     }
 
     check(MPI_Win_lock_all(0, window), "MPI_Win_lock_all");
@@ -60,7 +69,7 @@ int main(int argc, char **argv)
     if (rank == 1) {
         double *source = split_origin
                              ? NULL
-                             : malloc((size_t)element_count * sizeof(*source));
+                             : malloc((size_t)source_element_count * sizeof(*source));
         double **segments = split_origin
                                 ? malloc((size_t)request_count *
                                          (size_t)block_count * sizeof(*segments))
@@ -93,7 +102,7 @@ int main(int argc, char **argv)
                 }
             }
         } else {
-            for (int i = 0; i < element_count; ++i) source[i] = (double)(i + 1);
+            for (int i = 0; i < source_element_count; ++i) source[i] = 0.0;
         }
 
         for (int request = 0; request < request_count; ++request) {
@@ -121,7 +130,12 @@ int main(int argc, char **argv)
                     displacements[block] = (int)(bytes / sizeof(*segment));
                 } else {
                     displacements[block] =
-                        request * request_span + block * stride;
+                        (request * block_count + block) * origin_stride;
+                    const int first = request * request_span + block * stride;
+                    for (int element = 0; element < block_length; ++element) {
+                        source[displacements[block] + element] =
+                            (double)(first + element + 1);
+                    }
                 }
             }
             check(MPI_Type_create_indexed_block(block_count, block_length,
@@ -180,9 +194,9 @@ int main(int argc, char **argv)
             }
         }
         printf("requests=%d blocks=%d length=%d free_before_wait=%d "
-               "split_origin=%d wrong=%d %s\n",
+               "split_origin=%d origin_stride=%d wrong=%d %s\n",
                request_count, block_count, block_length, free_before_wait,
-               split_origin, wrong, wrong == 0 ? "OK" : "WRONG");
+               split_origin, origin_stride, wrong, wrong == 0 ? "OK" : "WRONG");
     }
     check(MPI_Win_free(&window), "MPI_Win_free");
     check(MPI_Finalize(), "MPI_Finalize");
