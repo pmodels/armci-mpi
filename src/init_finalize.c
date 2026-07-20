@@ -295,15 +295,20 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 
   /* Check for IOV and Strided flags */
 
+  /* Relevant bugs:
+   * https://github.com/open-mpi/ompi/issues/14181 OMPI5 indexed_block + accumulate broken
+   * https://github.com/open-mpi/ompi/issues/14175 OMPI4/5 hindexed + accumulate broken
+   */
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
   /* Open-MPI 5 RMA works a lot better than older releases... */
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
-#else
-  /* IOV_DIRECT leads to addr=NULL errors when ARMCI_{GetV,PutV} are used
-   * Jeff: Is this still true? */
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+#elif defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION >= 5)
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
+#else
+  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
+  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
 #endif
 
 #ifdef NO_SEATBELTS
@@ -344,7 +349,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
 #else
   const int iov_dtype_chunk_default = 0;
 #endif
-  ARMCII_GLOBAL_STATE.iov_dtype_chunk      = ARMCII_Getenv_int("ARMCI_IOV_DTYPE_CHUNK", iov_dtype_chunk_default);
+  ARMCII_GLOBAL_STATE.iov_dtype_chunk = ARMCII_Getenv_int("ARMCI_IOV_DTYPE_CHUNK", iov_dtype_chunk_default);
   if (ARMCII_GLOBAL_STATE.iov_dtype_chunk < 0) {
     ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_DTYPE_CHUNK (%d)\n", ARMCII_GLOBAL_STATE.iov_dtype_chunk);
     ARMCII_GLOBAL_STATE.iov_dtype_chunk = 0;
@@ -392,7 +397,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("MPI Datatypes are broken in RMA in many versions of Open-MPI!\n");
 #if defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
-      ARMCII_Warning("Open-MPI 4.0.0 RMA with datatypes is definitely broken."
+      ARMCII_Warning("Open-MPI 4 RMA with datatypes is definitely broken."
                      "See https://github.com/open-mpi/ompi/issues/6275 for details.\n");
 #endif
     }
@@ -442,7 +447,16 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   ARMCII_GLOBAL_STATE.use_same_op=ARMCII_Getenv_bool("ARMCI_USE_SAME_OP", 0);
 
   /* Enable RMA element-wise atomicity (affects ARMCI Put/Get) */
-  ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 1);
+  ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 0);
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
+  if (ARMCII_GLOBAL_STATE.rma_atomicty) {
+    if (ARMCI_GROUP_WORLD.rank == 0) {
+      ARMCII_Warning("MPI get_accumulate(REPLACE) is buggy with Open-MPI 4.x UCX on IB"
+                     " (https://github.com/open-mpi/ompi/issues/14173); "
+                     "set ARMCI_RMA_ATOMICITY=0 to disable.\n");
+    }
+  }
+#endif
 
   /* RMA ordering info key - this is the actual string we pass to MPI */
   ARMCII_Getenv_char(ARMCII_GLOBAL_STATE.rma_ordering, "ARMCI_RMA_ORDERING", "rar,raw,war,waw",
@@ -465,9 +479,11 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   ARMCII_GLOBAL_STATE.use_request_atomics=ARMCII_Getenv_bool("ARMCI_USE_REQUEST_ATOMICS", use_request_atomics_default);
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
   if (ARMCII_GLOBAL_STATE.use_request_atomics) {
+    if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("MPI request-based atomics are buggy with Open-MPI 4.x UCX on IB"
-		     " (https://github.com/open-mpi/ompi/issues/14173); "
-		     "set ARMCI_USE_REQUEST_ATOMICS=0 to disable.\n");
+                     " (https://github.com/open-mpi/ompi/issues/14173); "
+                     "set ARMCI_USE_REQUEST_ATOMICS=0 to disable.\n");
+    }
   }
 #endif
 
