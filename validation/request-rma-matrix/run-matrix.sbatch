@@ -170,9 +170,7 @@ run_test()
     if [[ -n $settings ]]; then
         eval "export $settings"
     fi
-    if [[ $stack == ompi* && $profile == iov_direct ]]; then
-        export ARMCI_VERBOSE=1
-    fi
+    export ARMCI_VERBOSE=2
 
     started=$(date +%s)
     timeout --kill-after=10s 120s "${launcher[@]}" "$test_path" >"$log_file" 2>&1
