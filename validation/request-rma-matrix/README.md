@@ -19,33 +19,22 @@ tested combination.
 submits one 20-element array on each requested partition.  Each array element
 selects one source tree, MPI/backend build, and fabric (`ib` or `tcp`).
 
-The request-based tree runs the complete `make check` suite for these profiles:
+Both source trees run the complete `make check` suite for the 32-point Cartesian
+product of these environment dimensions:
 
-| Profile | Environment change from defaults |
-| --- | --- |
-| `default` | none |
-| `request_atomics_0` | `ARMCI_USE_REQUEST_ATOMICS=0` |
-| `request_atomics_1` | `ARMCI_USE_REQUEST_ATOMICS=1` |
-| `request_atomics_flush` | request atomics and their target flush enabled |
-| `explicit_progress_0/1` | both `ARMCI_EXPLICIT_NB_PROGRESS` values |
-| `rma_atomicity_0/1` | both `ARMCI_RMA_ATOMICITY` values |
-| `no_flush_local_1` | `ARMCI_NO_FLUSH_LOCAL=1` |
-| `rma_nocheck_0/1` | both `ARMCI_RMA_NOCHECK` values |
-| `win_create` | `ARMCI_USE_WIN_ALLOCATE=0` |
-| `alloc_shm_0` | `ARMCI_USE_ALLOC_SHM=0` |
-| `disable_shm_acc_1` | `ARMCI_DISABLE_SHM_ACC=1` |
-| `same_op_1` | `ARMCI_USE_SAME_OP=1` |
-| `ordering_none` | `ARMCI_RMA_ORDERING=none` |
-| `barrier_syncs_1` | `ARMCI_MSG_BARRIER_SYNCS=1` |
-| `shr_copy/noguard` | both shared-buffer policies |
-| `iov_auto/consrv/batched/direct` | every `ARMCI_IOV_METHOD` value |
-| `iov_batched_limit_1` | one operation per BATCHED epoch |
-| `iov_checks_1` | expensive VECTOR validation enabled |
-| `strided_iov/direct` | both `ARMCI_STRIDED_METHOD` values |
-| `strict_completion` | requests, target flushes, full flushes, and checked locks |
+| Summary column | Environment variable | Values |
+| --- | --- | --- |
+| `allocate` | `ARMCI_USE_WIN_ALLOCATE` | `0`, `1` |
+| `strided` | `ARMCI_STRIDED_METHOD` | `DIRECT`, `IOV` |
+| `vector` | `ARMCI_IOV_METHOD` | `DIRECT`, `BATCHED` |
+| `atomicity` | `ARMCI_RMA_ATOMICITY` | `0`, `1` |
+| `flush_request_atomics` | `ARMCI_FLUSH_REQUEST_ATOMICS` | `0`, `1` |
 
-The baseline tree runs the complete suite with the default environment.  A
-tuple passes only when `make check` exits successfully and its Automake summary
+`ARMCI_USE_REQUEST_ATOMICS=1` is fixed throughout the grid so both values of
+`FLUSH_REQUEST_ATOMICS` exercise the request-based atomic path.
+
+Each source tree runs the same grid.  A tuple passes only when `make check`
+exits successfully and its Automake summary
 reports exactly `TOTAL: 43`, `PASS: 43`, and `FAIL: 0`.  Every test runs with
 `ARMCI_VERBOSE=2`.  The complete `make check` output, suite summary, and
 individual test logs are retained in a profile-specific result directory.
