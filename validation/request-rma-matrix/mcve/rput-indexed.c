@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     const int block_length = argc > 3 ? atoi(argv[3]) : 20;
     const int free_before_wait = argc > 4 ? atoi(argv[4]) : 1;
     const int split_origin = argc > 5 ? atoi(argv[5]) : 0;
-    const int stride = block_length + 3;
+    const int stride = block_length;
     const int origin_stride = argc > 6 ? atoi(argv[6]) : stride;
     if (request_count <= 0 || block_count <= 0 || block_length <= 0 ||
         origin_stride < block_length) {
