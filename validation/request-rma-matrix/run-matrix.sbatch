@@ -278,7 +278,7 @@ for allocate in 0 1; do
             for atomicity in 0 1; do
                 for flush_request_atomics in 0 1; do
                     profile="allocate_${allocate}-strided_${strided}-vector_${vector}-atomicity_${atomicity}-flush_${flush_request_atomics}"
-                    if [[ -n $profile_filter && $profile != "$profile_filter" ]]; then
+                    if [[ -n $profile_filter && $profile != $profile_filter ]]; then
                         continue
                     fi
                     settings="ARMCI_USE_WIN_ALLOCATE=$allocate ARMCI_STRIDED_METHOD=$strided ARMCI_IOV_METHOD=$vector ARMCI_RMA_ATOMICITY=$atomicity ARMCI_USE_REQUEST_ATOMICS=$use_request_atomics ARMCI_FLUSH_REQUEST_ATOMICS=$flush_request_atomics"
