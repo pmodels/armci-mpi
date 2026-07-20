@@ -45,9 +45,10 @@ The request-based tree runs `tests/contrib/armci-test` for these profiles:
 | `strict_completion` | requests, target flushes, full flushes, and checked locks |
 
 The default profile also runs focused scalar, strided, VECTOR, atomic, mutex,
-and nonblocking-handle tests on both trees.  Open MPI runs with
-`ARMCI_VERBOSE=1` for the explicit `iov_direct` profile, allowing the log to
-prove that the implementation forced VECTOR operations back to `BATCHED`.
+and nonblocking-handle tests on both trees.  Every test runs with
+`ARMCI_VERBOSE=2`, and complete stdout and stderr are retained under the shared
+result directory.  The explicit `iov_direct` profile therefore records whether
+Open MPI forced VECTOR operations back to `BATCHED`.
 
 Typical use is:
 
