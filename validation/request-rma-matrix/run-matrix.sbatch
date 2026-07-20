@@ -120,6 +120,17 @@ if [[ $network == tcp ]]; then
     fi
 fi
 
+if [[ $stack == ompi5-ofi && $network == tcp ]]; then
+    detail="Open MPI 5 has no OSC component capable of RMA over the libfabric TCP provider"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$platform" "$tree" "$stack" "$network" unavailable unavailable \
+        SKIP 0 0 "$detail" >>"$result_file"
+    echo "backend=$backend network=$network ib_device=none ipoib_interface=$ipoib_interface"
+    echo "summary: SKIP=1 ($detail)"
+    echo "result_file=$result_file"
+    exit 0
+fi
+
 if [[ $platform == rome ]]; then
     if [[ $backend == ucx ]]; then
         source "$mpi_releases/env/preload-ucx-1.21.x-rdma114.sh" >/dev/null
@@ -161,13 +172,6 @@ else
         export FI_PROVIDER=tcp
         export FI_TCP_IFACE=$ipoib_interface
         unset FI_VERBS_DEVICE_NAME FI_VERBS_IFACE FI_VERBS_PREFER_XRC FI_OFI_RXM_USE_SRX
-        if [[ $stack == ompi5-ofi ]]; then
-            export OMPI_MCA_pml=cm
-            export OMPI_MCA_mtl=ofi
-            export OMPI_MCA_osc=pt2pt
-            export OMPI_MCA_opal_common_ofi_provider_include=tcp
-            export OMPI_MCA_opal_common_ofi_provider_exclude=
-        fi
     fi
 fi
 
