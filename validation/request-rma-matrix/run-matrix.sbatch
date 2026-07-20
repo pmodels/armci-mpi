@@ -103,6 +103,23 @@ if [[ $network == ib ]]; then
     }
 fi
 
+ipoib_interface=
+if [[ $network == tcp ]]; then
+    ipoib_interface=ib0_mlx5
+    if ! srun --nodes="$SLURM_JOB_NUM_NODES" \
+            --ntasks="$SLURM_JOB_NUM_NODES" \
+            bash -c '
+                interface=$1
+                [[ -r /sys/class/net/$interface/type ]] || exit 1
+                [[ $(</sys/class/net/$interface/type) == 32 ]] || exit 1
+                [[ $(</sys/class/net/$interface/operstate) == up ]] || exit 1
+                ip -o -4 addr show dev "$interface" scope global | grep -q .
+            ' bash "$ipoib_interface"; then
+        echo "IPoIB interface $ipoib_interface is not usable on every allocated node" >&2
+        exit 2
+    fi
+fi
+
 if [[ $platform == rome ]]; then
     if [[ $backend == ucx ]]; then
         source "$mpi_releases/env/preload-ucx-1.21.x-rdma114.sh" >/dev/null
@@ -124,13 +141,14 @@ if [[ $backend == ucx ]]; then
         export UCX_NET_DEVICES=$ib_device:1
     else
         export UCX_TLS=tcp,sm,self
-        unset UCX_NET_DEVICES
+        export UCX_NET_DEVICES=$ipoib_interface
         if [[ $stack == ompi* ]]; then
             export OMPI_MCA_pml=ob1
             export OMPI_MCA_btl=self,tcp
+            export OMPI_MCA_btl_tcp_if_include=$ipoib_interface
             export OMPI_MCA_osc=ucx
             export OMPI_MCA_osc_ucx_tls=tcp
-            export OMPI_MCA_osc_ucx_devices=any
+            export OMPI_MCA_osc_ucx_devices=$ipoib_interface
         fi
     fi
 else
@@ -141,21 +159,21 @@ else
         unset FI_VERBS_IFACE FI_VERBS_PREFER_XRC FI_OFI_RXM_USE_SRX
     else
         export FI_PROVIDER=tcp
+        export FI_TCP_IFACE=$ipoib_interface
         unset FI_VERBS_DEVICE_NAME FI_VERBS_IFACE FI_VERBS_PREFER_XRC FI_OFI_RXM_USE_SRX
         if [[ $stack == ompi5-ofi ]]; then
-            export OMPI_MCA_pml=ob1
-            unset OMPI_MCA_mtl
-            export OMPI_MCA_btl=self,ofi
-            export OMPI_MCA_btl_ofi_mode=2
-            export OMPI_MCA_btl_ofi_provider_include=tcp
-            export OMPI_MCA_btl_ofi_provider_exclude=
+            export OMPI_MCA_pml=cm
+            export OMPI_MCA_mtl=ofi
+            export OMPI_MCA_osc=pt2pt
+            export OMPI_MCA_opal_common_ofi_provider_include=tcp
+            export OMPI_MCA_opal_common_ofi_provider_exclude=
         fi
     fi
 fi
 
 echo "case=$result_stem nodes=$SLURM_NODELIST"
 echo "mpi=$(${launcher[0]} --version 2>&1 | head -1)"
-echo "backend=$backend network=$network ib_device=${ib_device:-none}"
+echo "backend=$backend network=$network ib_device=${ib_device:-none} ipoib_interface=${ipoib_interface:-none}"
 echo "source_commit=$(<matrix-source-commit.txt)"
 echo "placement=$(timeout 120 "${launcher[@]}" hostname 2>&1 | sort | uniq -c | tr '\n' ' ')"
 
