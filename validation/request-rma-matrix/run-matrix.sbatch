@@ -234,7 +234,8 @@ run_check()
     find . -type f -name '*.log' -delete
 
     started=$(date +%s)
-    make check MPIEXEC="timeout --kill-after=10s 120s ${check_launcher[*]}" \
+    timeout --kill-after=30s 300s \
+        make check MPIEXEC="timeout --kill-after=10s 120s ${check_launcher[*]}" \
         >"$check_log" 2>&1
     rc=$?
     finished=$(date +%s)
