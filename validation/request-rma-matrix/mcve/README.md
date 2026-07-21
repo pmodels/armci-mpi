@@ -14,7 +14,7 @@ The issue-submission versions are deliberately fixed-case programs:
 | File | Default result | Adjacent working control |
 | --- | --- | --- |
 | `ompi-ucx-rput-minimal.c` | Open MPI/UCX aborts on request 255 | Compile with `-DREQUEST_COUNT=254` |
-| `mpich-ofi-rput-minimal.c` | MPICH CH4/OFI segfaults in `MPI_Rput` | Compile with `-DUSE_BLOCKING_PUT` |
+| `mpich-ofi-rput-minimal.c` | MPICH CH4/OFI segfaults in `MPI_Rput` | Compile with `-DUSE_NONREQUEST_PUT` |
 
 `rput-many.c` and `rput-indexed.c` retain configurable forms used to establish
 the thresholds and operation matrix.  All four programs are pure MPI C; none
@@ -80,7 +80,8 @@ mpicc -std=c99 -O2 -g -Wall -Wextra -Werror \
 mpiexec -n 2 ./mpich-ofi-rput-minimal
 ```
 
-Compile the blocking-operation control with `-DUSE_BLOCKING_PUT`.
+Compile the non-request-based `MPI_Put` control with
+`-DUSE_NONREQUEST_PUT`.
 
 `rput-indexed.c` builds a sparse indexed origin datatype and an adjacent-block
 indexed target datatype.  The smallest tested failure has two blocks of 20

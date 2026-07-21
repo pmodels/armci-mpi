@@ -7,7 +7,7 @@ sparse indexed datatype and the target indexed datatype describes adjacent
 blocks.  The minimal reproducer needs only two blocks of 20 doubles separated
 by a one-double gap at the origin.
 
-The same datatype transfer succeeds with blocking `MPI_Put`.  The
+The same datatype transfer succeeds with non-request-based `MPI_Put`.  The
 request-based program also succeeds with CH4/UCX.  The crash occurs before
 `MPI_Rput` returns, so datatype-free timing is not involved.
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         check(MPI_Type_commit(&origin_type), "MPI_Type_commit origin");
         check(MPI_Type_commit(&target_type), "MPI_Type_commit target");
 
-#ifdef USE_BLOCKING_PUT
+#ifdef USE_NONREQUEST_PUT
         check(MPI_Put(origin, 1, origin_type, 0, 0, 1, target_type, window),
               "MPI_Put");
 #else
@@ -101,11 +101,11 @@ mpicc -std=c99 -O2 -g -Wall -Wextra -Werror \
 mpiexec -n 2 ./mpich-ofi-rput-minimal
 ```
 
-Build the blocking-operation control by changing only `MPI_Rput` to
-`MPI_Put` through the supplied compile-time switch:
+Build the non-request-based control by changing only `MPI_Rput` to `MPI_Put`
+through the supplied compile-time switch:
 
 ```sh
-mpicc -std=c99 -O2 -g -Wall -Wextra -Werror -DUSE_BLOCKING_PUT \
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror -DUSE_NONREQUEST_PUT \
     mpich-ofi-rput-minimal.c -o mpich-ofi-put-control
 mpiexec -n 2 ./mpich-ofi-put-control
 ```
@@ -128,9 +128,9 @@ MPIDI_NM_mpi_rput
 PMPI_Rput
 ```
 
-The program compiled with `USE_BLOCKING_PUT` exits with status zero.  The
-request failure and blocking control were repeated over OFI verbs/RXM and OFI
-TCP on two independent two-node systems.  The request program passes with
+The program compiled with `USE_NONREQUEST_PUT` exits with status zero.  The
+request failure and non-request control were repeated over OFI verbs/RXM and
+OFI TCP on two independent two-node systems.  The request program passes with
 CH4/UCX over both transports.
 
 ## Root-cause analysis
@@ -173,4 +173,3 @@ accumulate datatype.  This reproducer:
 - needs only two small indexed blocks; and
 - terminates with a NULL-request segmentation fault rather than a UCX header
   size error.
-
