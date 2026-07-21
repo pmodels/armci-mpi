@@ -16,6 +16,7 @@ mpi_releases=${MPI_RELEASES:-$HOME/MPI/external/mpi-releases}
 hpcx_root=${HPCX_ROOT:-/global/software/rocky-9.x86_64/modules/gcc/11/hpcx/2.50}
 timeout_seconds=${DIAG_TIMEOUT:-300}
 arguments=${DIAG_ARGUMENTS:-}
+cppflags=${DIAG_CPPFLAGS:-}
 
 case $DIAG_STACK in
     mpich5-ucx)
@@ -109,11 +110,13 @@ fi
 
 mkdir -p "$DIAG_ROOT/bin"
 binary=$DIAG_ROOT/bin/${SLURM_JOB_ID}-$(basename "${DIAG_SOURCE%.c}")
-mpicc -std=c99 -O2 -g -Wall -Wextra -Werror "$DIAG_SOURCE" -o "$binary"
+read -r -a cppflag_array <<<"$cppflags"
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror "${cppflag_array[@]}" \
+    "$DIAG_SOURCE" -o "$binary"
 
 echo "stack=$DIAG_STACK backend=$backend network=$DIAG_NETWORK nodes=$SLURM_NODELIST"
 echo "mpi=$(${launcher[0]} --version 2>&1 | head -1)"
-echo "source=$DIAG_SOURCE arguments=$arguments timeout=$timeout_seconds"
+echo "source=$DIAG_SOURCE cppflags=$cppflags arguments=$arguments timeout=$timeout_seconds"
 echo "placement=$(timeout 60 "${launcher[@]}" hostname 2>&1 | sort | uniq -c | tr '\n' ' ')"
 
 read -r -a argument_array <<<"$arguments"
