@@ -5,6 +5,13 @@
 #include <stdint.h>
 #include <string.h>
 
+/*
+ * MPICH 5 CH4/OFI does not create the public RMA request before its packed
+ * noncontiguous MPI_Rput path initializes a completion chunk.  A sparse
+ * indexed origin and contiguous target therefore dereference a NULL request.
+ * Blocking MPI_Put, MPI_Raccumulate(MPI_REPLACE), and CH4/UCX are controls.
+ */
+
 static void check(int rc, const char *operation)
 {
     if (rc != MPI_SUCCESS) {

@@ -70,6 +70,14 @@ int PARMCI_Rmw(int op, void *ploc, void *prem, int value, int proc)
   else
     ARMCII_Error("invalid operation (%d)", op);
 
+  /* The request path only has a possible synchronization advantage with
+   * USE_REQUEST_ATOMICS=1 and FLUSH_REQUEST_ATOMICS=0.  MPI_Wait provides the
+   * result at the origin but does not target-complete the replacement, and the
+   * contended swap test can consequently hang.  Adding the required target
+   * flush removes the point of request-based MPI_REPLACE for a blocking swap.
+   * If the two operations are split in the future, request atomics may still
+   * be worth retaining for fetch-and-add. */
+
   /* We hold the DLA lock if (src_mreg != NULL). */
 
   if (is_swap) {

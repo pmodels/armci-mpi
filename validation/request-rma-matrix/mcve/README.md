@@ -1,0 +1,122 @@
+# Request-RMA standalone reproducers
+
+These two-rank MPI programs preserve the two new implementation defects found
+by the ARMCI-MPI request-RMA matrix.  They do not depend on ARMCI-MPI.  The
+generic `../run-mcve.sbatch` driver compiles a selected source, places one rank
+on each of two nodes, selects native InfiniBand or TCP over `ib0_mlx5`, applies
+a hard timeout, and retains the complete Slurm output.
+
+The full investigation table, backtraces, job IDs, and ARMCI mitigations are
+in [`../ROOT-CAUSE-RESULTS.md`](../ROOT-CAUSE-RESULTS.md).
+
+## Open MPI 5/UCX outstanding request puts
+
+`rput-many.c` issues scalar `MPI_Rput` operations to one peer without
+completing any request until all operations have been initiated.  With Open
+MPI 5.0.10rc2 and UCX 1.21, the boundary is deterministic on Iris and Thor
+over both native InfiniBand and TCP over IPoIB:
+
+| Outstanding `MPI_Rput` requests | Result |
+| ---: | --- |
+| 254 | `OK` |
+| 255 | UCX abort: endpoint reference count is already `UINT8_MAX` |
+
+Compile and run directly in an already selected MPI environment:
+
+```sh
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror rput-many.c -o rput-many
+mpiexec -n 2 ./rput-many 254
+mpiexec -n 2 ./rput-many 255
+```
+
+The failure path is:
+
+```text
+MPI_Rput
+ompi_osc_ucx_rput
+opal_common_ucx_wpmem_flush_ep_nb
+ucp_worker_flush_nb
+ucp_worker_flush_req_set_next_ep
+ucp_ep_refcount_add
+```
+
+Despite the Open MPI helper's `flush_ep` name, it starts a worker flush for
+each RMA request.  Each unfinished worker flush holds another reference on the
+same UCX endpoint.  The endpoint already has one reference, so 254 request
+flushes fill the eight-bit counter and request 255 triggers the assertion.
+
+This is not Open MPI issue 14181, 14175, or 14173.  It requires no derived
+datatype or accumulate operation and fails at a precise outstanding-request
+count.
+
+## MPICH 5/OFI packed indexed `MPI_Rput`
+
+`rput-indexed.c` builds a sparse indexed origin datatype and an adjacent-block
+indexed target datatype.  The smallest tested failure has two blocks of 20
+doubles with a one-double gap in the origin:
+
+```sh
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror rput-indexed.c -o rput-indexed
+mpiexec -n 2 ./rput-indexed 1 1 20 1 0 21 rput
+mpiexec -n 2 ./rput-indexed 1 2 20 1 0 21 rput
+```
+
+The one-block control prints `OK`.  The two-block case receives signal 11 in:
+
+```text
+issue_packed_put
+MPIDI_OFI_INIT_CHUNK_CONTEXT
+MPIDI_OFI_pack_put
+MPIDI_OFI_do_put
+MPIDI_NM_mpi_rput
+MPI_Rput
+```
+
+`MPIDI_OFI_pack_put` retains a pointer to the output request but never creates
+the request object.  `MPIDI_OFI_INIT_CHUNK_CONTEXT` then dereferences that NULL
+request to increment its completion counter.  MPICH's working no-pack path
+explicitly creates the request before initializing completion chunks.
+
+Hold the datatype and transport constant while selecting working operation
+controls with the final argument:
+
+```sh
+mpiexec -n 2 ./rput-indexed 1 2 20 1 0 21 put
+mpiexec -n 2 ./rput-indexed 1 2 20 1 0 21 raccumulate
+```
+
+Both controls verify successfully with MPICH CH4/OFI.  The original `rput`
+case fails over OFI verbs/RXM and OFI TCP on Iris and Thor, while the same
+program passes over CH4/UCX.  This is not MPICH issue 7886, which is a CH4/UCX
+active-message header overflow involving accumulate and a much larger type.
+
+The positional arguments to `rput-indexed.c` are:
+
+| Position | Meaning | Reproducing value |
+| ---: | --- | --- |
+| 1 | request count | `1` |
+| 2 | indexed blocks per request | `2` |
+| 3 | doubles per block | `20` |
+| 4 | free datatypes before waiting | `1` |
+| 5 | use separately allocated origins | `0` |
+| 6 | origin stride in doubles | `21` |
+| 7 | `put`, `rput`, or `raccumulate` | `rput` |
+
+The crash occurs inside `MPI_Rput`, before datatype release, so changing
+argument 4 does not repair it.
+
+## Two-node transport driver
+
+Submit either program through the retained driver by exporting these values:
+
+```text
+DIAG_STACK=ompi5-ucx or mpich5-ofi
+DIAG_NETWORK=ib or tcp
+DIAG_SOURCE=absolute path to one source above
+DIAG_ROOT=absolute result directory
+DIAG_ARGUMENTS=the program arguments
+DIAG_TIMEOUT=120
+```
+
+For `DIAG_NETWORK=tcp`, the driver explicitly selects IPoIB interface
+`ib0_mlx5`.  It never selects a native Ethernet interface.
