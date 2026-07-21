@@ -154,6 +154,23 @@ enable target flushes.  This should not be filed as an MPI implementation bug.
 
 ## Timeouts shown to be performance-bound
 
+The preferred Open MPI configurations were also rerun with
+`OMPI_MCA_btl_ofi_progress_interval=100`:
+
+| MPI/backend/network | Iris | Thor | Interpretation |
+| --- | --- | --- | --- |
+| Open MPI 4/UCX/IPoIB | 43/43 in 228 seconds | 43/43 in 292 seconds | Passing tuple, although barely inside the five-minute bound on Thor |
+| Open MPI 5/UCX/IPoIB | 42/43 in 266 seconds | 42/43 in 285 seconds | `benchmarks/rmw_perf` remains the sole failure |
+| Open MPI 5/OFI/IB | timeout at 300 seconds | timeout at 300 seconds | No test-suite summary was produced before the bound |
+
+The UCX/IPoIB launcher selects `pml=ob1`, `btl=self,tcp`, and `osc=ucx`, so an
+OFI-BTL progress interval is not expected to affect its RMA path.  The Open
+MPI 4 passes should therefore be treated as successful reruns, not proof that
+this parameter fixed UCX.  The parameter does exercise the Open MPI 5 OFI
+configuration, where it did not bring the preferred tuple inside the required
+bound.  Logs are under `ompi-ucx-ipoib-ofi-progress-100` in the external
+validation-results tree.
+
 The Open MPI 4/UCX IPoIB `STRIDED=IOV` `armci-test` controls complete in 64
 seconds on Iris and 70 seconds on Thor (jobs 621160 and 621166).  The prior
 matrix timeouts therefore do not identify a permanent stall in that test.  A
