@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * Open MPI 5 osc/ucx creates a nonblocking UCX worker flush for every
+ * MPI_Rput request.  UCX holds an endpoint reference for each unfinished
+ * worker flush, so request 255 aborts at the uint8_t endpoint-refcount limit.
+ * Request counts through 254 are the adjacent working control.
+ */
+
 static void check(int rc, const char *operation)
 {
     if (rc != MPI_SUCCESS) {
