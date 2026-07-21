@@ -20,6 +20,14 @@ The defects are independent of these previously reported problems:
 - [MPICH issue 7886](https://github.com/pmodels/mpich/issues/7886), a CH4/UCX
   active-message header overflow involving a large accumulate datatype.
 
+Both default failure cases and both compile-time controls were repeated on two
+independent two-node systems:
+
+| Pure-MPI program | Default case | Adjacent control |
+| --- | --- | --- |
+| Open MPI 5/UCX outstanding `MPI_Rput` | 255 requests: signal 6 at the UCX endpoint-refcount assertion | 254 requests: exit status 0 |
+| MPICH 5/OFI indexed `MPI_Rput` | Request put: signal 11 in the packed put path | Blocking `MPI_Put`: exit status 0 |
+
 ## Open MPI 5/UCX: the 255th outstanding `MPI_Rput` aborts
 
 ### Summary
@@ -76,6 +84,9 @@ worker flush.  Each unfinished worker flush retains the endpoint.  UCX stores
 the endpoint reference count in eight bits.  The endpoint's existing reference
 plus 254 unfinished flushes fills the counter, and the 255th flush triggers the
 assertion.
+
+The native stack trace reaches `PMPI_Rput` directly, so reproducing or
+explaining this failure does not require a PMPI tracing interposer.
 
 ### Complete source: `ompi-ucx-rput-minimal.c`
 
@@ -194,6 +205,8 @@ MPICH's no-pack path explicitly calls
 initializing a completion chunk.  The packed put and get paths omit the
 equivalent request creation.  The omission is present in MPICH 5.0.1 and was
 also present in the MPICH `main` branch when this report was prepared.
+The crash occurs synchronously inside the only `MPI_Rput` call, so a PMPI
+interposer would not provide additional call-sequence information.
 
 ### Complete source: `mpich-ofi-rput-minimal.c`
 
