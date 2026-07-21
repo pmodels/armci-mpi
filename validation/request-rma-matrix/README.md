@@ -11,6 +11,10 @@ non-request baseline on two nodes.  It covers:
 - Iris, Thor, and Rome x86_64 nodes; and
 - UCX and libfabric builds compiled against Rome's older rdma-core.
 
+The final no-override production sweep, including OFI PSM3 and the VibeMPI
+follow-up, is recorded in
+[`DEFAULT-PRODUCTION-VALIDATION.md`](DEFAULT-PRODUCTION-VALIDATION.md).
+
 The available HPC-X Open MPI 4 installation does not contain an OFI MTL, BTL,
 or OSC component, so Open MPI 4/OFI is unsupported and is not mislabeled as a
 tested combination.
