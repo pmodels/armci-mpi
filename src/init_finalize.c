@@ -298,25 +298,24 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Relevant bugs:
    * https://github.com/open-mpi/ompi/issues/14181 OMPI5 indexed_block + accumulate broken
    * https://github.com/open-mpi/ompi/issues/14175 OMPI4/5 hindexed + accumulate broken
+   * https://github.com/pmodels/mpich/issues/7886  MPICH (h)indexed(block) + accumulate broken on UCX
    */
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 5)
   /* Open-MPI 5 RMA works a lot better than older releases... */
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_IOV;
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
-#elif defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION >= 5)
+#else
+  /* IOV performance is irrelevant to NWChem so we take the safe default... */
   ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
   ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_BATCHED;
-#else
-  ARMCII_GLOBAL_STATE.strided_method = ARMCII_STRIDED_DIRECT;
-  ARMCII_GLOBAL_STATE.iov_method = ARMCII_IOV_DIRECT;
 #endif
 
 #ifdef NO_SEATBELTS
   ARMCII_GLOBAL_STATE.iov_checks        = 0;
 #endif
   ARMCII_GLOBAL_STATE.iov_checks        = ARMCII_Getenv_bool("ARMCI_IOV_CHECKS", 0);
-  ARMCII_GLOBAL_STATE.iov_batched_limit = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
 
+  ARMCII_GLOBAL_STATE.iov_batched_limit = ARMCII_Getenv_int("ARMCI_IOV_BATCHED_LIMIT", 0);
   if (ARMCII_GLOBAL_STATE.iov_batched_limit < 0) {
     ARMCII_Warning("Ignoring invalid value for ARMCI_IOV_BATCHED_LIMIT (%d)\n",
                    ARMCII_GLOBAL_STATE.iov_batched_limit);
@@ -392,14 +391,11 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
     }
   }
 
-#ifdef OPEN_MPI
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION <= 4)
   if (ARMCII_GLOBAL_STATE.strided_method == ARMCII_STRIDED_DIRECT) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
-      ARMCII_Warning("MPI Datatypes are broken in RMA in many versions of Open-MPI!\n");
-#if defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
       ARMCII_Warning("Open-MPI 4 RMA with datatypes is definitely broken."
                      "See https://github.com/open-mpi/ompi/issues/6275 for details.\n");
-#endif
     }
   }
 #endif
@@ -471,6 +467,10 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Use request-based RMA for atomic operations.  Disabled by default on Open MPI 4.x,
    * whose UCX (<= 1.20) hangs on a contended request-based swap (Get/Rget_accumulate) on
    * InfiniBand (https://github.com/open-mpi/ompi/issues/14173); fixed in Open MPI 5. */
+  /* There may be legit MPI semantic issues here for CSWAP at least, since MPI_Wait
+   * does not guarentee remote completion of an atomic.
+   * I may need to separate the behavior of CSWAP and RMW...
+   * Related: https://github.com/mpi-forum/mpi-issues/issues/129 */
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
   const int use_request_atomics_default = 0;
 #else
