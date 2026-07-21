@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         check(MPI_Type_commit(&origin_type), "MPI_Type_commit origin");
         check(MPI_Type_commit(&target_type), "MPI_Type_commit target");
 
-#ifdef USE_BLOCKING_PUT
+#ifdef USE_NONREQUEST_PUT
         check(MPI_Put(origin, 1, origin_type, 0, 0, 1, target_type, window),
               "MPI_Put");
 #else
