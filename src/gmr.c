@@ -860,7 +860,10 @@ int gmr_fetch_and_op(gmr_t *mreg, void *src, void *out, void *dst,
     MPI_Request req;
     MPI_Rget_accumulate(src, 1, type, out, 1, type, grp_proc, (MPI_Aint) disp, 1, type, op, mreg->window, &req);
     MPI_Wait(&req, MPI_STATUS_IGNORE);
-    if (ARMCII_GLOBAL_STATE.flush_request_atomics) {
+    /* Need to force a flush on SWAP (op=REPLACE) to fix spin-lock test case.
+     * This is an MPI semantic issue, not an implementation problem,
+     * so it should remain in the code indefinitely. */
+    if (op == MPI_REPLACE || ARMCII_GLOBAL_STATE.flush_request_atomics) {
       MPI_Win_flush(grp_proc, mreg->window);
     }
 
