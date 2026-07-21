@@ -16,6 +16,52 @@ gmr_t *gmr_list = NULL;
 static pthread_mutex_t gmr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+#ifdef USE_RMA_REQUESTS
+
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION >= 5)
+/* Open MPI's UCX OSC component implements each request-based RMA operation
+ * with a nonblocking UCX worker flush.  UCX aborts when the 255th unfinished
+ * flush overflows its eight-bit endpoint reference count.  Bound operations
+ * process-wide because the affected worker is shared by handles and windows. */
+#define ARMCII_OMPI_REQUEST_RMA_LIMIT 128
+static unsigned int ompi_request_rma_issued = 0;
+#endif
+
+static void gmr_request_rma_begin(void)
+{
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION >= 5)
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_lock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
+
+  if (ompi_request_rma_issued >= ARMCII_OMPI_REQUEST_RMA_LIMIT) {
+    for (gmr_t *mreg = gmr_list; mreg != NULL; mreg = mreg->next) {
+      MPI_Win_flush_local_all(mreg->window);
+    }
+    ompi_request_rma_issued = 0;
+  }
+#endif
+}
+
+static void gmr_request_rma_end(void)
+{
+#if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION >= 5)
+  ++ompi_request_rma_issued;
+
+#ifdef HAVE_PTHREADS
+  if (ARMCII_GLOBAL_STATE.thread_level == MPI_THREAD_MULTIPLE) {
+    int ptrc = pthread_mutex_unlock(&gmr_list_mutex);
+    ARMCII_Assert(ptrc == 0);
+  }
+#endif
+#endif
+}
+
+#endif
+
 /** Create a distributed shared memory region. Collective on ARMCI group.
   *
   * @param[in]  local_size Size of the local slice of the memory region.
@@ -502,6 +548,8 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   if (handle!=NULL) {
 
     MPI_Request req = MPI_REQUEST_NULL;
+
+    gmr_request_rma_begin();
  
     if (ARMCII_GLOBAL_STATE.rma_atomicity) {
         MPI_Raccumulate(src, src_count, src_type, grp_proc,
@@ -512,6 +560,8 @@ int gmr_put_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
                  (MPI_Aint) disp, dst_count, dst_type,
                  mreg->window, &req);
     }
+
+    gmr_request_rma_end();
  
     gmr_handle_add_request(handle, req);
 
@@ -601,6 +651,8 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
   if (handle!=NULL) {
 
     MPI_Request req = MPI_REQUEST_NULL;
+
+    gmr_request_rma_begin();
  
     if (ARMCII_GLOBAL_STATE.rma_atomicity) {
         // Using the source type instead of MPI_BYTE works around an MPICH bug that appears with
@@ -614,6 +666,8 @@ int gmr_get_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src_type,
                  (MPI_Aint) disp, src_count, src_type,
                  mreg->window, &req);
     }
+
+    gmr_request_rma_end();
  
     gmr_handle_add_request(handle, req);
 
@@ -703,10 +757,14 @@ int gmr_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype src
   if (handle!=NULL) {
 
     MPI_Request req = MPI_REQUEST_NULL;
+
+    gmr_request_rma_begin();
  
     MPI_Raccumulate(src, src_count, src_type, grp_proc,
                     (MPI_Aint) disp, dst_count, dst_type,
                     MPI_SUM, mreg->window, &req);
+
+    gmr_request_rma_end();
  
     gmr_handle_add_request(handle, req);
 
@@ -796,11 +854,15 @@ int gmr_get_accumulate_typed(gmr_t *mreg, void *src, int src_count, MPI_Datatype
   if (handle!=NULL) {
 
     MPI_Request req = MPI_REQUEST_NULL;
+
+    gmr_request_rma_begin();
  
     MPI_Rget_accumulate(src, src_count, src_type, 
                         out, out_count, out_type,
                         grp_proc, (MPI_Aint) disp, dst_count, dst_type,
                         op, mreg->window, &req);
+
+    gmr_request_rma_end();
  
     gmr_handle_add_request(handle, req);
 
