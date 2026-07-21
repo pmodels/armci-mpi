@@ -9,7 +9,28 @@ a hard timeout, and retains the complete Slurm output.
 The full investigation table, backtraces, job IDs, and ARMCI mitigations are
 in [`../ROOT-CAUSE-RESULTS.md`](../ROOT-CAUSE-RESULTS.md).
 
+The issue-submission versions are deliberately fixed-case programs:
+
+| File | Default result | Adjacent working control |
+| --- | --- | --- |
+| `ompi-ucx-rput-minimal.c` | Open MPI/UCX aborts on request 255 | Compile with `-DREQUEST_COUNT=254` |
+| `mpich-ofi-rput-minimal.c` | MPICH CH4/OFI segfaults in `MPI_Rput` | Compile with `-DUSE_BLOCKING_PUT` |
+
+`rput-many.c` and `rput-indexed.c` retain configurable forms used to establish
+the thresholds and operation matrix.  All four programs are pure MPI C; none
+includes an ARMCI header or links an ARMCI library.
+
 ## Open MPI 5/UCX outstanding request puts
+
+The fixed issue MCVE is `ompi-ucx-rput-minimal.c`:
+
+```sh
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror \
+    ompi-ucx-rput-minimal.c -o ompi-ucx-rput-minimal
+mpiexec -n 2 ./ompi-ucx-rput-minimal
+```
+
+Compile the neighboring passing case with `-DREQUEST_COUNT=254`.
 
 `rput-many.c` issues scalar `MPI_Rput` operations to one peer without
 completing any request until all operations have been initiated.  With Open
@@ -50,6 +71,16 @@ datatype or accumulate operation and fails at a precise outstanding-request
 count.
 
 ## MPICH 5/OFI packed indexed `MPI_Rput`
+
+The fixed issue MCVE is `mpich-ofi-rput-minimal.c`:
+
+```sh
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror \
+    mpich-ofi-rput-minimal.c -o mpich-ofi-rput-minimal
+mpiexec -n 2 ./mpich-ofi-rput-minimal
+```
+
+Compile the blocking-operation control with `-DUSE_BLOCKING_PUT`.
 
 `rput-indexed.c` builds a sparse indexed origin datatype and an adjacent-block
 indexed target datatype.  The smallest tested failure has two blocks of 20
