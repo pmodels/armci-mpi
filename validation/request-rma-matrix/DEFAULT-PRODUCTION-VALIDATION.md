@@ -80,7 +80,7 @@ native UCX IB and UCX TCP over IPoIB on both Iris and Thor.  All four runs exit
 zero in two to five seconds.  This directly validates the request-throttle
 mitigation in `779bba4` in addition to the standard 43-test suite.
 
-## VibeMPI follow-up
+## Initial VibeMPI baseline
 
 ARMCI-MPI was also built with the VibeMPI installation requested for follow-up
 testing.  VibeMPI identifies itself as `vibempi 0.1 (MPI ABI 1.0)`.  The same
@@ -120,9 +120,53 @@ repeatable 43/43 workarounds: UCX TCP over IPoIB and OFI PSM3.  It does not
 make VibeMPI generally reliable.  Native UCX IB retains failures in the direct
 MPI dimensional test and `armci-perf`; OFI verbs and VibeMPI TCP remain
 platform-dependent; and OFI TCP exceeds the five-minute bound on Thor.
-Consequently a VibeMPI user can use `ARMCI_STRIDED_METHOD=IOV` with UCX TCP or
-OFI PSM3 as a provisional workaround, but ARMCI-MPI should not silently apply
-that setting as a universal VibeMPI default.
+Consequently the initial VibeMPI checkout was not production-qualified.  These
+results motivated fixes in VibeMPI rather than an ARMCI-MPI IOV workaround.
+
+## VibeMPI RMA fixes and final validation
+
+VibeMPI commit `9c5ae32de9df0187385c715903ecca1edcf32aaf` contains the RMA fixes
+developed from the initial failures.  In particular, the changes correct packed
+subarray ordering and request completion, order operations across rendezvous and
+native paths, honor OFI atomic limits, repair UCX put local completion, and add
+the application-progress worker flush required by detached UCX puts.  Direct
+strided ARMCI operations therefore exercise MPI subarray datatypes in every run
+below; no run uses `ARMCI_STRIDED_METHOD=IOV`.
+
+The remaining OFI `verbs;ofi_rxm` investigation isolated corruption to native
+window RMA when it shares a window domain with the active-message fallback.
+Reducing the native-operation window to one, copying inbound payloads, changing
+the stream fragment size, disabling internal rendezvous RMA, and routing only
+derived operations through active messages did not eliminate corruption.  A
+fully active-message window passes the exact large `ARMCI_AccS` reproducer both
+with and without native rendezvous enabled.  VibeMPI therefore disables native
+window RMA for this provider pair at `9c5ae32`; the diagnostic override
+`VIBEMPI_OFI_NATIVE_RMA=1` restores the unsafe path.  This fallback is correct
+but too slow to finish the complete ARMCI suite within the five-minute
+production limit.
+
+The final no-override ARMCI-MPI sweep produced the following results.  Every run
+used `ARMCI_VERBOSE=2`, direct strided operations, batched vector operations,
+two nodes, and IPoIB for TCP transports.  The elapsed time is in seconds.
+
+| VibeMPI transport at `9c5ae32` | Iris | Thor |
+| --- | --- | --- |
+| UCX IB | 43/43 (111) | 43/43 (118) |
+| UCX TCP over IPoIB | 43/43 (152), rerun | 43/43 (174) |
+| OFI verbs;ofi_rxm | TIMEOUT (300) | TIMEOUT (300) |
+| OFI PSM3 | 43/43 (163) | 43/43 (171) |
+| OFI TCP over IPoIB | 43/43 (297) | TIMEOUT (300) |
+| VibeMPI TCP over IPoIB | 43/43 (160) | 43/43 (171) |
+
+The first final Iris UCX TCP attempt reached 42/43 in 218 seconds because
+`armci-test` timed out in atomic swap.  That attempt remains a recorded failure;
+an immediate identical rerun passed 43/43 in 152 seconds.  The final commit also
+passes on Thor, but UCX IB is the less variable production choice.  OFI TCP on
+Iris is too close to the acceptance limit to be a preferred production path.
+Complete logs and TSV summaries are retained in
+`default-production-sweep-8ccfcbf/results` with variants `final-9c5ae32` and
+`ucx-tcp-rerun-9c5ae32`; focused verbs/RXM evidence is in
+`iris-vibempi-ofi-verbs-rxm-force-am-armci-perf-0488a26`.
 
 ## Production decision
 
@@ -134,8 +178,11 @@ path for every primary MPI implementation:
 - Open MPI 4 passes with UCX IB on Iris and Thor.
 - Open MPI 5 passes with UCX IB on Iris and Thor and with OFI PSM3 on all three
   platforms.
+- VibeMPI `9c5ae32` passes with direct MPI subarray datatypes over UCX IB, OFI
+  PSM3, and its native TCP transport on Iris and Thor.
 
 Therefore commit `8ccfcbf` is ready for production with the qualified paths
 above.  Provider selection remains material: MPICH PSM3 and all paths marked
-`TIMEOUT` must be excluded.  VibeMPI remains unqualified pending resolution or
-mitigation of its multidimensional RMA correctness failure.
+`TIMEOUT` must be excluded.  VibeMPI is qualified only on the passing transports
+listed above; its OFI verbs/RXM active-message mitigation is correctness-safe
+but does not meet the full-suite performance bound.
