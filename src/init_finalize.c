@@ -449,7 +449,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Enable RMA element-wise atomicity (affects ARMCI Put/Get) */
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 0);
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
-  if (ARMCII_GLOBAL_STATE.rma_atomicty) {
+  if (ARMCII_GLOBAL_STATE.rma_atomicity) {
     if (ARMCI_GROUP_WORLD.rank == 0) {
       ARMCII_Warning("MPI get_accumulate(REPLACE) is buggy with Open-MPI 4.x UCX on IB"
                      " (https://github.com/open-mpi/ompi/issues/14173); "
