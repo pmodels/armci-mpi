@@ -55,3 +55,47 @@ The scripts, microbenchmark, complete logs, and tabular results are under
   their 110-second per-test limit; the latter progressed through its
   256-by-1024 case before timing out.  These are recorded as failures.  No
   corruption or crash was observed before the suite was terminated.
+
+## VibeMPI timeout root cause
+
+The VibeMPI failures are performance timeouts in its default OFI `native` RMW
+protocol, not failures of the accumulate-granularity hint.  VibeMPI maps a
+contiguous predefined reduction to native provider atomics and deliberately
+decomposes it into one scalar `fi_atomic` operation per basic element.  A
+large `MPI_Accumulate` therefore posts tens of thousands of fabric atomics.
+
+ARMCI's strided test uses a stride of 1024 doubles.  A 512-column patch stays
+noncontiguous and uses VibeMPI's packed AM path, while a 1024-column patch
+collapses to one contiguous region and enters the scalar-native-atomic path.
+This creates the apparent latency cliff:
+
+| ARMCI patch | Native OFI | Native RMA disabled |
+|---:|---:|---:|
+| 64 by 512 | 0.917 ms | 0.872 ms |
+| 64 by 1024 | 1058.420 ms | 1.225 ms |
+| 256 by 512 | 3.301 ms | 3.403 ms |
+| 256 by 1024 | 4240.351 ms | 4.366 ms |
+
+A pure-MPI reproducer confirms linear scaling with the number of scalar
+atomics:
+
+| Doubles | Bytes | Native OFI | Native RMA disabled |
+|---:|---:|---:|---:|
+| 512 | 4096 | 11.515 ms | 2.445 ms |
+| 1024 | 8192 | 18.966 ms | 2.438 ms |
+| 8192 | 65536 | 136.105 ms | 2.547 ms |
+| 65536 | 524288 | 1061.284 ms | 4.332 ms |
+
+Pure `MPI_Get` and `MPI_Put` tests from 4088 through 8192 bytes do not have a
+size cliff, which rules out generic `fi_read`, `fi_write`, and RXM eager-limit
+behavior.  Changing `mpi_accumulate_granularity` from 1048576 to 1 also leaves
+the 256-by-1024 time unchanged at about 4.24 seconds.
+
+VibeMPI's newer `VIBEMPI_OFI_RMW_PROTOCOL=locked` path is the effective
+mitigation.  With the current `fec427b` library preloaded, the 256-by-1024 case
+takes 5.045 ms with `locked` versus 4235.717 ms with the default `native`
+protocol, an approximately 840-fold speedup.  The installed `a2e462b` library
+predates that protocol.  VibeMPI should either default OFI RMW to `locked` or
+otherwise select one atomicity domain per window that does not scalarize bulk
+accumulates; simply mixing a large-operation AM fallback with provider atomics
+would not preserve MPI accumulate atomicity.
