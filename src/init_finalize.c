@@ -442,6 +442,15 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
   /* Pass accumulate_ops = same_op info key to window constructor */
   ARMCII_GLOBAL_STATE.use_same_op=ARMCII_Getenv_bool("ARMCI_USE_SAME_OP", 0);
 
+  /* Pass mpi_accumulate_granularity=<this> to window constructor */
+  ARMCII_GLOBAL_STATE.accumulate_granularity =
+      ARMCII_Getenv_int("ARMCI_ACCUMULATE_GRANULARITY", 1024 * 1024);
+  if (ARMCII_GLOBAL_STATE.accumulate_granularity < 0) {
+    ARMCII_Warning("Ignoring invalid value for ARMCI_ACCUMULATE_GRANULARITY (%d)\n",
+                   ARMCII_GLOBAL_STATE.accumulate_granularity);
+    ARMCII_GLOBAL_STATE.accumulate_granularity = 1024 * 1024;
+  }
+
   /* Enable RMA element-wise atomicity (affects ARMCI Put/Get) */
   ARMCII_GLOBAL_STATE.rma_atomicity=ARMCII_Getenv_bool("ARMCI_RMA_ATOMICITY", 0);
 #if defined(OPEN_MPI) && defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION == 4)
@@ -649,6 +658,7 @@ int PARMCI_Init_thread_comm(int armci_requested, MPI_Comm comm) {
       printf("  USE_ALLOC_SHM          = %s\n", ARMCII_GLOBAL_STATE.use_alloc_shm          ? "TRUE" : "FALSE");
       printf("  DISABLE_SHM_ACC        = %s\n", ARMCII_GLOBAL_STATE.disable_shm_accumulate ? "TRUE" : "FALSE");
       printf("  USE_SAME_OP            = %s\n", ARMCII_GLOBAL_STATE.use_same_op            ? "TRUE" : "FALSE");
+      printf("  ACCUMULATE_GRANULARITY = %d\n", ARMCII_GLOBAL_STATE.accumulate_granularity);
       printf("  RMA_ORDERING           = %s\n", ARMCII_GLOBAL_STATE.rma_ordering);
 
       /* ARMCI-MPI internal options */

@@ -51,14 +51,18 @@
 armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int count, ARMCI_Group *pgroup) {
   int         ierr, i;
   armcix_mutex_hdl_t hdl;
+  MPI_Info info;
 
   hdl = malloc(sizeof(struct armcix_mutex_hdl_s));
   ARMCII_Assert(hdl != NULL);
 
   MPI_Comm_dup(pgroup->comm, &hdl->comm);
 
+  MPI_Info_create(&info);
+  ARMCII_Set_accumulate_granularity(info, count*sizeof(long));
+
   if (count > 0) {
-    MPI_Alloc_mem(count*sizeof(long), MPI_INFO_NULL, &hdl->base);
+    MPI_Alloc_mem(count*sizeof(long), info, &hdl->base);
     ARMCII_Assert(hdl->base != NULL);
   } else {
     hdl->base = NULL;
@@ -71,8 +75,9 @@ armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int count, ARMCI_Group *pgroup) {
     hdl->base[i] = 0;
 
   ierr = MPI_Win_create(hdl->base, count*sizeof(long), sizeof(long) /* displacement size */,
-                        MPI_INFO_NULL, hdl->comm, &hdl->window);
+                        info, hdl->comm, &hdl->window);
   ARMCII_Assert(ierr == MPI_SUCCESS);
+  MPI_Info_free(&info);
 
   return hdl;
 }
@@ -229,4 +234,3 @@ void ARMCIX_Unlock_hdl(armcix_mutex_hdl_t hdl, int mutex, int world_proc) {
   MPI_Accumulate(&unlock_val, 1, MPI_LONG, proc, mutex, 1, MPI_LONG, MPI_SUM, hdl->window);
   MPI_Win_unlock(proc, hdl->window);
 }
-

@@ -142,6 +142,8 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
   /* tell MPICH that the disp_unit is always the same (and always 1) */
   MPI_Info_set(win_info, "same_disp_unit", "true");
 
+  ARMCII_Set_accumulate_granularity(win_info, (MPI_Aint) local_size);
+
   /* tell MPICH that we do not need a contiguous shared memory domain */
   MPI_Info_set(win_info, "alloc_shared_noncontig", "false");
 
@@ -191,7 +193,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
         MPI_Alloc_mem(local_size, win_info, &(alloc_slices[alloc_me].base));
         ARMCII_Assert(alloc_slices[alloc_me].base != NULL);
       }
-      MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
+      MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, win_info, group->comm, &mreg->window);
   }
   else if (ARMCII_GLOBAL_STATE.use_win_allocate == 1) {
 
@@ -216,7 +218,7 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
             ARMCII_Error("MEMKIND failed to allocate memory! (errno=%d)\n", errno);
         }
       }
-      MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, MPI_INFO_NULL, group->comm, &mreg->window);
+      MPI_Win_create(alloc_slices[alloc_me].base, (MPI_Aint) local_size, 1, win_info, group->comm, &mreg->window);
   }
 #endif
   else {
