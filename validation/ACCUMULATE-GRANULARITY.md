@@ -50,7 +50,8 @@ The scripts, microbenchmark, complete logs, and tabular results are under
 - MPICH 5.0.1 OFI over TCP passed 43/43 tests on the login node.
 - Open MPI 5.0.10 over TCP passed 43/43 tests on the login node.
 - The VibeMPI two-node OFI focused sweep passed 30/30 runs.
-- A complete VibeMPI OFI run did not finish within the five-minute suite cap.
+- The original complete VibeMPI OFI run did not finish within the five-minute
+  suite cap.
   `contiguous-bench`, `strided-bench`, and `ARMCI_AccS_latency` each exceeded
   their 110-second per-test limit; the latter progressed through its
   256-by-1024 case before timing out.  These are recorded as failures.  No
@@ -99,3 +100,54 @@ predates that protocol.  VibeMPI should either default OFI RMW to `locked` or
 otherwise select one atomicity domain per window that does not scalarize bulk
 accumulates; simply mixing a large-operation AM fallback with provider atomics
 would not preserve MPI accumulate atomicity.
+
+## Retest with provider-sized vector atomics
+
+VibeMPI commit `5ab2a13125dc24f861b068c199e00811ea5ef748`, which includes
+`36a1c02` (provider-sized vector atomics), removes the scalar submission
+overhead. The current build was preloaded because the installed VibeMPI
+library was still at `a2e462b`. With native OFI RMA, the default native RMW
+protocol, and bundled libfabric `verbs;ofi_rxm`, the focused measurements were:
+
+| Operation | Old native implementation | Provider-sized implementation | Result |
+|---|---:|---:|---:|
+| Pure MPI, 65536 doubles | 1061.284 ms | 4.868 ms | correct |
+| ARMCI, 256 by 1024 | 4240.351 ms | 2.213 ms | correct |
+
+The performance fix exposes a separate correctness problem under concurrent
+derived-datatype accumulates. The complete default suite finished in 3:49 but
+passed only 42/43 tests. `tests/contrib/armci-test` lost an update in the
+three-dimensional atomic-accumulate case. Three independent isolated reruns
+all failed, in 35--37 seconds, at the two- or three-dimensional accumulate
+case. Representative failures were:
+
+```
+ERROR: a [0,1] (proc=1):2000.000000 b [0,1] 1990.000000
+ERROR: a [1,0] (proc=1):20.000000 b [1,0] 19.800000
+ERROR: a [1,0,0] (proc=1):20.000000 b [1,0,0] 19.900000
+```
+
+The control matrix isolates the failure to vector provider atomics used for
+the direct strided datatype path:
+
+| VibeMPI native RMA | RMW protocol | ARMCI strided method | `armci-test` |
+|---:|---|---|---:|
+| 1 | native | DIRECT | failed 3/3 |
+| 1 | locked | DIRECT | passed |
+| 0 | native | DIRECT | passed |
+| 1 | native | IOV | passed |
+
+The previous VibeMPI implementation explicitly limited provider atomics to one
+element because some providers accepted multi-element requests but silently
+updated only a prefix. The new implementation trusts the count returned by
+`fi_atomicvalid`. These results show that a multi-element atomic accepted by
+verbs/RxM is not reliable under the concurrent reductions in `armci-test`.
+This is not a datatype-construction failure: the same direct derived datatypes
+pass with the locked protocol, and the same native protocol passes when ARMCI
+decomposes the operation through IOV.
+
+As a production workaround, `VIBEMPI_OFI_RMW_PROTOCOL=locked` passed the clean
+two-node suite 43/43 in 3:02. The default native protocol is therefore not yet
+production-safe over `verbs;ofi_rxm`, despite the focused single-operation
+performance improvement. Full logs and focused controls are retained under
+`armci-val/accumulate-granularity-20260722`.
