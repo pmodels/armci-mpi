@@ -114,6 +114,7 @@ typedef struct {
   int           rma_nocheck;            /* Use MPI_MODE_NOCHECK on synchronization calls that take assertion    */
   int           disable_shm_accumulate; /* Set the disable_shm_accumulate window info key to true               */
   int           use_same_op;            /* Set accumulate_ops=same_op window info key                           */
+  int           accumulate_granularity; /* Set mpi_accumulate_granularity window info key                       */
   int           use_request_atomics;    /* Use request-based RMA for atomic operations                          */
   int           flush_request_atomics;  /* Force remote completion (Win_flush) after request-based atomics      */
   char          rma_ordering[20];       /* Set accumulate_ordering=<this> window info key                       */
@@ -146,6 +147,7 @@ extern pthread_t      ARMCI_Progress_thread;
 /* Utility functions */
 
 void  ARMCII_Bzero(void *buf, armci_size_t size);
+void  ARMCII_Set_accumulate_granularity(MPI_Info info, MPI_Aint size);
 char *ARMCII_Getenv(const char *varname);
 int   ARMCII_Getenv_bool(const char *varname, int default_value);
 int   ARMCII_Getenv_int(const char *varname, int default_value);

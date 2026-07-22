@@ -53,6 +53,7 @@ armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int my_count, ARMCI_Group *pgroup) 
   for (i = 0; i < max_count; i++) {
     int   size = 0;
     void *base = NULL;
+    MPI_Info info;
 
     if (i < my_count) {
       MPI_Alloc_mem(nproc, MPI_INFO_NULL, &hdl->bases[i]);
@@ -63,7 +64,10 @@ armcix_mutex_hdl_t ARMCIX_Create_mutexes_hdl(int my_count, ARMCI_Group *pgroup) 
       size = nproc;
     }
 
-    MPI_Win_create(base, size, sizeof(uint8_t), MPI_INFO_NULL, hdl->grp.comm, &hdl->windows[i]);
+    MPI_Info_create(&info);
+    ARMCII_Set_accumulate_granularity(info, size);
+    MPI_Win_create(base, size, sizeof(uint8_t), info, hdl->grp.comm, &hdl->windows[i]);
+    MPI_Info_free(&info);
   }
 
   return hdl;
