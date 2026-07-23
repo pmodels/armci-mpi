@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <mpi.h>
 
 #include <armci.h>
@@ -166,7 +167,11 @@ char *ARMCII_Getenv(const char *varname) {
 int ARMCII_Getenv_int(const char *varname, int default_value) {
   const char *var = getenv(varname);
   if (var) {
-    return atoi(var);
+    int value = atol(var);
+    /* clamp to the range of int, just in case */
+    if (value > INT_MAX) value = INT_MAX;
+    if (value < INT_MIN) value = INT_MIN;
+    return value;
   } else {
     return default_value;
   }
