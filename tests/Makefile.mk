@@ -2,6 +2,8 @@
 # Copyright (C) 2010. See COPYRIGHT in top-level directory.
 #
 
+noinst_HEADERS += tests/armci_acc_test_types.h
+
 check_PROGRAMS += tests/test_onesided         \
                   tests/test_onesided_shared  \
                   tests/test_onesided_shared_dla \
@@ -17,6 +19,8 @@ check_PROGRAMS += tests/test_onesided         \
                   tests/test_malloc_group     \
                   tests/test_accs             \
                   tests/test_accs_dla         \
+                  tests/test_acc_overlap      \
+                  tests/test_location_consistency \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
@@ -41,6 +45,8 @@ TESTS          += tests/test_onesided         \
                   tests/test_malloc_group     \
                   tests/test_accs             \
                   tests/test_accs_dla         \
+                  tests/test_acc_overlap      \
+                  tests/test_location_consistency \
                   tests/test_puts             \
                   tests/test_puts_gets        \
                   tests/test_puts_gets_dla    \
@@ -69,6 +75,8 @@ tests_test_group_split_LDADD = libarmci.la
 tests_test_malloc_group_LDADD = libarmci.la
 tests_test_accs_LDADD = libarmci.la
 tests_test_accs_dla_LDADD = libarmci.la
+tests_test_acc_overlap_LDADD = libarmci.la
+tests_test_location_consistency_LDADD = libarmci.la
 tests_test_puts_LDADD = libarmci.la
 tests_test_puts_gets_LDADD = libarmci.la
 tests_test_puts_gets_dla_LDADD = libarmci.la
