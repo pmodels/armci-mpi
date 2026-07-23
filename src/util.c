@@ -133,7 +133,7 @@ void ARMCII_Bzero(void *buf, armci_size_t size) {
 
 void ARMCII_Set_accumulate_granularity(MPI_Info info, MPI_Aint size) {
   const int granularity =
-      size < 8 ? 1 : ARMCII_GLOBAL_STATE.accumulate_granularity;
+      size <= 128 ? 1 : ARMCII_GLOBAL_STATE.accumulate_granularity;
   char value[32] = {0};
   snprintf(value, sizeof(value), "%d", granularity);
   MPI_Info_set(info, "mpi_accumulate_granularity", value);

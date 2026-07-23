@@ -167,8 +167,7 @@ Boolean environment variables are enabled when set to a value beginning with
 `ARMCI_ACCUMULATE_GRANULARITY` (nonnegative integer)
 
   Set the `mpi_accumulate_granularity` window info hint, in bytes.  The default
-  is 1048576.  ARMCI-MPI always uses 1 for a local window smaller than eight
-  bytes.
+  is 1048576.  ARMCI-MPI always uses 1 for a local window smaller than 129 bytes.
 
 ## Noncollective Groups
 
