@@ -101,10 +101,8 @@ typedef struct {
   int           cache_rank_translation; /* Enable caching of translation between absolute and group ranks       */
   int           verbose;                /* ARMCI should produce extra status output                             */
   int           thread_level;           /* THREAD_{SINGLE,FUNNELED,SERIALIZED,MULTIPLE} ala MPI                 */
-#ifdef HAVE_PTHREADS
   int           progress_thread;        /* Create progress thread                                               */
   int           progress_usleep;        /* Argument to usleep() to throttling polling                           */
-#endif
   int           use_win_allocate;       /* Use win_allocate or win_create (or special memory...)                */
   int           msg_barrier_syncs;      /* Call MPI_Win_sync in armci_msg_barrier                               */
   int           explicit_nb_progress;   /* Poke the MPI progress engine at the end of nonblocking (NB) calls    */
