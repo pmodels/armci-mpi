@@ -1,6 +1,6 @@
 # Request-RMA standalone reproducers
 
-These two-rank MPI programs preserve the two new implementation defects found
+These two-rank MPI programs preserve implementation defects found
 by the ARMCI-MPI request-RMA matrix.  They do not depend on ARMCI-MPI.  The
 generic `../run-mcve.sbatch` driver compiles a selected source, places one rank
 on each of two nodes, selects native InfiniBand or TCP over `ib0_mlx5`, applies
@@ -15,10 +15,38 @@ The issue-submission versions are deliberately fixed-case programs:
 | --- | --- | --- |
 | `ompi-ucx-rput-minimal.c` | Open MPI/UCX aborts on request 255 | Compile with `-DREQUEST_COUNT=254` |
 | `mpich-ofi-rput-minimal.c` | MPICH CH4/OFI segfaults in `MPI_Rput` | Compile with `-DUSE_NONREQUEST_PUT` |
+| `mpich-ucx-rget-vector.c` | MPICH CH4/UCX completes an empty `MPI_Rget` | Compile with `-DUSE_GET=1` |
 
 `rput-many.c` and `rput-indexed.c` retain configurable forms used to establish
-the thresholds and operation matrix.  All four programs are pure MPI C; none
+the thresholds and operation matrix.  All programs are pure MPI C; none
 includes an ARMCI header or links an ARMCI library.
+
+## MPICH 5/UCX noncontiguous `MPI_Rget`
+
+`mpich-ucx-rget-vector.c` seeds a remote window with a contiguous `MPI_Put`,
+then fetches 16 two-double blocks with `MPI_Rget` and vector datatypes:
+
+```sh
+mpicc -std=c99 -O2 -g -Wall -Wextra -Werror \
+    mpich-ucx-rget-vector.c -o mpich-ucx-rget-vector
+mpiexec -n 2 ./mpich-ucx-rget-vector
+```
+
+MPICH 5.0.1 CH4/UCX returns successfully from `MPI_Wait`, but every selected
+element remains at its sentinel value.  The defect occurs over both native
+InfiniBand and TCP over IPoIB.
+
+Compile the non-request control with `-DUSE_GET=1`.  It passes with the same
+vector datatypes.  `MPI_Rget` also passes when both datatypes are predefined,
+and the vector case passes over CH4/OFI.  Defining either
+`ORIGIN_VECTOR=0` or `TARGET_VECTOR=0` independently still fails, so a
+noncontiguous datatype in either argument is sufficient.
+
+The UCX netmod's noncontiguous branch calls the non-request
+`MPIDIG_mpi_get`, ignoring the request pointer supplied by `MPI_Rget`.
+The outer wrapper sees a NULL request and returns an already-completed request
+while the active-message get remains outstanding.  The same code is present
+in MPICH 5.0.1 and MPICH `main` as inspected on 2026-07-23.
 
 ## Open MPI 5/UCX outstanding request puts
 
