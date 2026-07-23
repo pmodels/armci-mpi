@@ -1,10 +1,11 @@
 # Request-RMA standalone reproducers
 
-These two-rank MPI programs preserve implementation defects found
-by the ARMCI-MPI request-RMA matrix.  They do not depend on ARMCI-MPI.  The
-generic `../run-mcve.sbatch` driver compiles a selected source, places one rank
-on each of two nodes, selects native InfiniBand or TCP over `ib0_mlx5`, applies
-a hard timeout, and retains the complete Slurm output.
+These MPI programs preserve implementation defects found by the ARMCI-MPI
+request-RMA matrix.  They do not depend on ARMCI-MPI.  Most use two ranks,
+while the Open MPI OFI window-allocation reproducer requires multiple ranks
+per node.  The generic `../run-mcve.sbatch` driver compiles a selected source,
+places one rank on each of two nodes, selects native InfiniBand or TCP over
+`ib0_mlx5`, applies a hard timeout, and retains the complete Slurm output.
 
 The full investigation table, backtraces, job IDs, and ARMCI mitigations are
 in [`../ROOT-CAUSE-RESULTS.md`](../ROOT-CAUSE-RESULTS.md).
@@ -16,6 +17,7 @@ The issue-submission versions are deliberately fixed-case programs:
 | `ompi-ucx-rput-minimal.c` | Open MPI/UCX aborts on request 255 | Compile with `-DREQUEST_COUNT=254` |
 | `mpich-ofi-rput-minimal.c` | MPICH CH4/OFI segfaults in `MPI_Rput` | Compile with `-DUSE_NONREQUEST_PUT` |
 | `mpich-ucx-rget-vector.c` | MPICH CH4/UCX completes an empty `MPI_Rget` | Compile with `-DUSE_GET=1` |
+| `ompi-ofi-win-allocate.c` | Open MPI `osc/rdma` segfaults after `MPI_Win_allocate` | Run with argument `create` |
 
 `rput-many.c` and `rput-indexed.c` retain configurable forms used to establish
 the thresholds and operation matrix.  All programs are pure MPI C; none
