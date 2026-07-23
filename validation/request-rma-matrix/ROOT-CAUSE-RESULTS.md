@@ -33,6 +33,7 @@ The complete diagnostic logs are under:
 | --- | --- | --- |
 | Open MPI 5/UCX, `STRIDED=IOV`, non-atomic request puts | New Open MPI/UCX request-RMA defect: the 255th outstanding `MPI_Rput` aborts at UCX's 8-bit endpoint reference limit over IB and IPoIB | Do not permit 255 outstanding Open MPI UCX request puts to one endpoint; force `STRIDED=DIRECT` or complete request batches below the limit |
 | MPICH 5/OFI, `VECTOR=DIRECT`, `ATOMICITY=0` | New MPICH CH4/OFI packed-`MPI_Rput` NULL-request dereference | Force `VECTOR=BATCHED` or `ATOMICITY=1` until MPICH is fixed |
+| MPICH 5/UCX, noncontiguous request gets | New MPICH CH4/UCX `MPI_Rget` completion bug: the noncontiguous fallback starts non-request `MPIDIG_mpi_get` and returns a completed request | Use non-request `MPI_Get`, `STRIDED=IOV`, or `RMA_ATOMICITY=1` until MPICH is fixed |
 | Any request-atomic configuration with `FLUSH_REQUEST_ATOMICS=0` | ARMCI completion-semantics defect; `MPI_Wait` does not provide target completion | Force `FLUSH_REQUEST_ATOMICS=1` when request atomics are enabled |
 | Open MPI 4/UCX IPoIB timeouts | Slow and variable, but the isolated test completes; the whole-suite witness still exceeded five minutes | Keep these tuples failed; no additional stuck MPI call was localized |
 | Open MPI 5/UCX IPoIB `rmw_perf` timeout | Extreme atomic latency, not a hang | Treat the original bound as a test failure; no correctness workaround is indicated |

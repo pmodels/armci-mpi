@@ -86,8 +86,12 @@ All 180-second timeouts are failures.
 Both OFI verbs/RxM and OFI TCP/IPoIB passed all 39 invocations.  UCX failures
 are explicit `armci-test` data mismatches in its nonblocking get/put section;
 MPI subsequently exits with status zero, but the log contains the mismatch
-and `ARMCI Error: Bailing out`.  This is consistent with the previously
-observed MPICH UCX active-message issue.
+and `ARMCI Error: Bailing out`.  The pure-MPI investigation identifies a
+distinct MPICH CH4/UCX defect: noncontiguous `MPI_Rget` returns a completed
+request before its active-message fallback has transferred any data.  See
+[`MPICH5-UCX-RGET-DERIVED-BUG-REPORT.md`](MPICH5-UCX-RGET-DERIVED-BUG-REPORT.md).
+This is not the large-accumulate active-message header overflow in MPICH issue
+7886.
 
 The MPICH OFI PSM3 provider fails during `MPI_Init`, before ARMCI
 initialization.  PSM3 attempts to initialize an unusable `mlx5_0` UD queue
