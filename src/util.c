@@ -41,6 +41,11 @@ void PARMCI_Barrier(void) {
   PARMCI_AllFence();
   MPI_Barrier(ARMCI_GROUP_WORLD.comm);
   ARMCII_Sync();
+  /* the extra barrier after ARMCII_Sync is necessary in exotic cases.
+   * this aligns ARMCI_Barrier with armci_msg_barrier. */
+  if (ARMCII_GLOBAL_STATE.msg_barrier_syncs) {
+    MPI_Barrier(ARMCI_GROUP_WORLD.comm);
+  }
 }
 
 /* -- begin weak symbols block -- */
