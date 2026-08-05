@@ -262,36 +262,6 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
                    mreg->window);
 
   {
-#if 0
-    int unified = false;
-    void    *attr_ptr;
-    int     *attr_val;
-    int      attr_flag;
-    /* this function will always return flag=false in MPI-2 */
-    MPI_Win_get_attr(mreg->window, MPI_WIN_MODEL, &attr_ptr, &attr_flag);
-    if (attr_flag) {
-      attr_val = (int*)attr_ptr;
-      if (world_me==0) {
-        if ( (*attr_val)==MPI_WIN_SEPARATE ) {
-          printf("MPI_WIN_MODEL = MPI_WIN_SEPARATE \n" );
-          unified = false;
-        } else if ( (*attr_val)==MPI_WIN_UNIFIED ) {
-#ifdef DEBUG
-          printf("MPI_WIN_MODEL = MPI_WIN_UNIFIED \n" );
-#endif
-          unified = true;
-        } else {
-          printf("MPI_WIN_MODEL = %d (not UNIFIED or SEPARATE) \n", *attr_val );
-          unified = false;
-        }
-      }
-    } else {
-      if (world_me==0) {
-        printf("MPI_WIN_MODEL attribute missing \n");
-      }
-      unified = false;
-    }
-#else
     const int unified = ARMCII_Is_win_unified(mreg->window);
     const int print = ARMCII_GLOBAL_STATE.verbose;
     if (unified == 1) {
@@ -304,13 +274,15 @@ gmr_t *gmr_create(gmr_size_t local_size, void **base_ptrs, ARMCI_Group *group) {
         mreg->unified = false;
         if (print > 1) printf("MPI_WIN_MODEL not available\n");
     }
-#endif
+#if 1
+    /* we will likely disable this later once separate model fixes are validated */
     if (!(mreg->unified) && (ARMCII_GLOBAL_STATE.shr_buf_method == ARMCII_SHR_BUF_NOGUARD) ) {
       if (world_me==0) {
         printf("Please re-run with ARMCI_SHR_BUF_METHOD=COPY\n");
       }
       /* ARMCI_Error("MPI_WIN_SEPARATE with NOGUARD", 1); */
     }
+#endif
   }
 
 #ifdef HAVE_PTHREADS
@@ -1029,11 +1001,6 @@ int gmr_flushall(gmr_t *mreg, int local_only) {
   */
 int gmr_sync(gmr_t *mreg)
 {
-#if 0
-  // what is the point of this?
-  int grp_me = ARMCII_Translate_absolute_to_group(&mreg->group, ARMCI_GROUP_WORLD.rank);
-  ARMCII_Assert(grp_me >= 0);
-#endif
   ARMCII_Assert_msg(mreg->window != MPI_WIN_NULL, "A non-null mreg contains a null window.");
 
   if (!(mreg->unified)) {
